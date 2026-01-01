@@ -31,7 +31,7 @@ for p in tqdm(all_products, total=len(all_products)):
 
 
 with open('./resources_100/documents.jsonl', 'w+') as f:
-    for doc in docs[:100]:
+    for doc in docs:
         f.write(json.dumps(doc) + '\n')
 
 with open('./resources/documents.jsonl', 'w+') as f:
@@ -39,9 +39,9 @@ with open('./resources/documents.jsonl', 'w+') as f:
         f.write(json.dumps(doc) + '\n')
 
 with open('./resources_1k/documents.jsonl', 'w+') as f:
-    for doc in docs[:1000]:
+    for doc in docs:
         f.write(json.dumps(doc) + '\n')
 
 with open('./resources_100k/documents.jsonl', 'w+') as f:
-    for doc in docs[:100000]:
+    for doc in docs:
         f.write(json.dumps(doc) + '\n')

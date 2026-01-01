@@ -1,0 +1,95 @@
+{
+  "metadata": {
+    "timestamp": "20251223_213929",
+    "model_path": "./ckpts/web_click/epoch_9_original/model.pth",
+    "num_episodes": 20,
+    "split": "test",
+    "use_softmax": true,
+    "use_bart": true,
+    "partial_threshold": 0.1,
+    "statistics": {
+      "total_episodes": 20,
+      "successful": 1,
+      "failed": 9,
+      "partial": 10,
+      "avg_reward": 1.8283333333333331,
+      "avg_steps": 12.85,
+      "avg_partial_reward": 2.6566666666666667,
+      "avg_complete_failure_reward": 0.0
+    }
+  },
+  "num_trajectories": 1,
+  "trajectories": [
+    {
+      "task_id": 0,
+      "goal": "Instruction: i need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars",
+      "steps": [
+        {
+          "step_idx": 0,
+          "observation": "WebShop\nInstruction: \ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Search [button_]\n",
+          "valid_actions": [
+            "search[long clip-in hair extension natural looking]",
+            "search[long clip-in hair extension]",
+            "search[natural looking hair extension]",
+            "search[short clip-in hair extension natural looking]",
+            "search[natural looking long clip-in hair extension]",
+            "search[short clip-in hair extension]",
+            "search[natural looking hair extension long clip-in]",
+            "search[hair extension natural looking]",
+            "search[a long clip-in hair extension]",
+            "search[natural looking human hair extension]",
+            "search[i need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars]"
+          ],
+          "action_taken": "search[hair extension natural looking]",
+          "goal": "Instruction: i need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars",
+          "reward": 0.0,
+          "done": false,
+          "next_observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B09MM9NCQQ [button_]\nSimayixx Christmas Gift Wigs Hair Extensions 24 Inches Synthetic Long Natural Black Thick Clip Straight Hair Stylish Fasionable Fabulous Hair Piece 6 Pieces Popular Hairstyle(E)\n$7.83\n\n[button] B09QMJ5KQH [button_]\nMessy Bun Scrunchie Hair Bun Extensions Wavy Curly Messy Donut Hairpieces Synthetic Donut Updo Hair Pieces for Women and Girls (black brown)\n$100.0\n\n[button] B09CGNH5XT [button_]\nDual Magnetic Lashes, Magnets False Eyelashes, Soft 3D No Glue Fake Lashes Extension with Tweezers, Natural Look Eyelashes Set with 6 Pieces / 3 Pairs /Mini HD Makeup Mirror\n$9.99\n\n[button] B09G2F3HQ2 [button_]\nLurrose 6pcs Girls Hair Bow Ribbon Barrettes Hair Bow Ribbon Clip Wig Hair Bow Clips with Alligator Clip and Hair Extensions Hair Accessory for Toddler Girls Children\n$11.99\n\n[button] B08ZKDQPZ3 [button_]\nHair Tinsel Kit Strands With Tool 47 Inch 12 Colors 2100 Strands Fairy Hair Tinsel Kit Hair Extensions Sparkling Glitter Shiny Silk Tinsel (12 colors)\n$13.96\n\n[button] B096MM7XM4 [button_]\n36pcs / Bag Hair Extension Tape, Lace Front Wig Double Sided Adhesive Tape,Wigs Adhesive Tape Accessor for Hair Extensions Wigs Supplies\n$11.69\n\n[button] B07CKTXS1J [button_]\nShea Moisture Coconut & Hibiscus Curl & Shine Shampoo, 19.5 Pound\n$18.0\n\n[button] B08SMS3CNY [button_]\nLevel 3 Temporary Beard Color - For Black Hair Beards - Full Beard in Minutes - Easy to Apply and No Mixing Required L3 - Level Three Natural Looking Black Dye\n$18.32\n\n[button] B004RK7I2W [button_]\nETUDE HOUSE Dr. Mascara Fixer For Perfect Lash 01 (Natural Volume Up) | Long-Lasting Smudge-Proof Mascara Fixer with Care Effect | Korean Makeup\n$6.4\n\n[button] B07FLKB8CV [button_]\nVamp Up Love is in the Hair! Castor Oil Hair Shampoo, Hair Conditioner and Hair Styling Spray with Natural Ingredients Smooth, Nourishes, Strengthen & Silky to Touch Hair (Shampoo)\n$22.99\n"
+        },
+        {
+          "step_idx": 1,
+          "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B09MM9NCQQ [button_]\nSimayixx Christmas Gift Wigs Hair Extensions 24 Inches Synthetic Long Natural Black Thick Clip Straight Hair Stylish Fasionable Fabulous Hair Piece 6 Pieces Popular Hairstyle(E)\n$7.83\n\n[button] B09QMJ5KQH [button_]\nMessy Bun Scrunchie Hair Bun Extensions Wavy Curly Messy Donut Hairpieces Synthetic Donut Updo Hair Pieces for Women and Girls (black brown)\n$100.0\n\n[button] B09CGNH5XT [button_]\nDual Magnetic Lashes, Magnets False Eyelashes, Soft 3D No Glue Fake Lashes Extension with Tweezers, Natural Look Eyelashes Set with 6 Pieces / 3 Pairs /Mini HD Makeup Mirror\n$9.99\n\n[button] B09G2F3HQ2 [button_]\nLurrose 6pcs Girls Hair Bow Ribbon Barrettes Hair Bow Ribbon Clip Wig Hair Bow Clips with Alligator Clip and Hair Extensions Hair Accessory for Toddler Girls Children\n$11.99\n\n[button] B08ZKDQPZ3 [button_]\nHair Tinsel Kit Strands With Tool 47 Inch 12 Colors 2100 Strands Fairy Hair Tinsel Kit Hair Extensions Sparkling Glitter Shiny Silk Tinsel (12 colors)\n$13.96\n\n[button] B096MM7XM4 [button_]\n36pcs / Bag Hair Extension Tape, Lace Front Wig Double Sided Adhesive Tape,Wigs Adhesive Tape Accessor for Hair Extensions Wigs Supplies\n$11.69\n\n[button] B07CKTXS1J [button_]\nShea Moisture Coconut & Hibiscus Curl & Shine Shampoo, 19.5 Pound\n$18.0\n\n[button] B08SMS3CNY [button_]\nLevel 3 Temporary Beard Color - For Black Hair Beards - Full Beard in Minutes - Easy to Apply and No Mixing Required L3 - Level Three Natural Looking Black Dye\n$18.32\n\n[button] B004RK7I2W [button_]\nETUDE HOUSE Dr. Mascara Fixer For Perfect Lash 01 (Natural Volume Up) | Long-Lasting Smudge-Proof Mascara Fixer with Care Effect | Korean Makeup\n$6.4\n\n[button] B07FLKB8CV [button_]\nVamp Up Love is in the Hair! Castor Oil Hair Shampoo, Hair Conditioner and Hair Styling Spray with Natural Ingredients Smooth, Nourishes, Strengthen & Silky to Touch Hair (Shampoo)\n$22.99\n",
+          "valid_actions": [
+            "click[back to search]",
+            "click[next >]",
+            "click[item - simayixx christmas gift wigs hair extensions 24 inches synthetic long natural black thick clip straight hair stylish fasionable fabulous hair piece 6 pieces popular hairstyle(e)]",
+            "click[item - messy bun scrunchie hair bun extensions wavy curly messy donut hairpieces synthetic donut updo hair pieces for women and girls (black brown)]",
+            "click[item - dual magnetic lashes, magnets false eyelashes, soft 3d no glue fake lashes extension with tweezers, natural look eyelashes set with 6 pieces / 3 pairs /mini hd makeup mirror]",
+            "click[item - lurrose 6pcs girls hair bow ribbon barrettes hair bow ribbon clip wig hair bow clips with alligator clip and hair extensions hair accessory for toddler girls children]",
+            "click[item - hair tinsel kit strands with tool 47 inch 12 colors 2100 strands fairy hair tinsel kit hair extensions sparkling glitter shiny silk tinsel (12 colors)]",
+            "click[item - 36pcs / bag hair extension tape, lace front wig double sided adhesive tape,wigs adhesive tape accessor for hair extensions wigs supplies]",
+            "click[item - shea moisture coconut & hibiscus curl & shine shampoo, 19.5 pound]",
+            "click[item - level 3 temporary beard color - for black hair beards - full beard in minutes - easy to apply and no mixing required l3 - level three natural looking black dye]",
+            "click[item - etude house dr. mascara fixer for perfect lash 01 (natural volume up) | long-lasting smudge-proof mascara fixer with care effect | korean makeup]",
+            "click[item - vamp up love is in the hair! castor oil hair shampoo, hair conditioner and hair styling spray with natural ingredients smooth, nourishes, strengthen & silky to touch hair (shampoo)]"
+          ],
+          "action_taken": "click[item - lurrose 6pcs girls hair bow ribbon barrettes hair bow ribbon clip wig hair bow clips with alligator clip and hair extensions hair accessory for toddler girls children]",
+          "goal": "Instruction: i need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars",
+          "reward": 0.0,
+          "done": false,
+          "next_observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nLurrose 6pcs Girls Hair Bow Ribbon Barrettes Hair Bow Ribbon Clip Wig Hair Bow Clips with Alligator Clip and Hair Extensions Hair Accessory for Toddler Girls Children\nPrice: $11.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n"
+        },
+        {
+          "step_idx": 2,
+          "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nLurrose 6pcs Girls Hair Bow Ribbon Barrettes Hair Bow Ribbon Clip Wig Hair Bow Clips with Alligator Clip and Hair Extensions Hair Accessory for Toddler Girls Children\nPrice: $11.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+          "valid_actions": [
+            "click[back to search]",
+            "click[< prev]",
+            "click[description]",
+            "click[features]",
+            "click[reviews]",
+            "click[buy now]"
+          ],
+          "action_taken": "click[buy now]",
+          "goal": "Instruction: i need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars",
+          "reward": 10.0,
+          "done": true,
+          "next_observation": "Thank you for shopping with us!\nYour code: \nNone\n (Paste it in your MTurk interface.)\nPurchased\nasin\nB09G2F3HQ2\noptions\n{}\nattrs\nNone\ncategory\nNone\nquery\nNone\nproduct category\nNone\nTarget\nasin\noptions\nattrs\nprice upper\ninstuction text\ncategory\nproduct category\nquery\nGoal \nNone\nReward\nYour score (min 0.0, max 1.0)\n1.0\nReward Details \nNone\n"
+        }
+      ],
+      "reward": 10.0,
+      "success": true,
+      "num_steps": 3
+    }
+  ]
+}

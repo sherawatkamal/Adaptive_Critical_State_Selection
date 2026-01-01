@@ -23,7 +23,8 @@ from pathlib import Path
 
 import datasets
 import torch
-from datasets import load_dataset, load_metric
+from datasets import load_dataset
+import evaluate
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 
@@ -32,8 +33,8 @@ from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import set_seed
 from huggingface_hub import Repository
+from torch.optim import AdamW
 from transformers import (
-    AdamW,
     AutoConfig,
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -75,7 +76,7 @@ task_to_keys = {
 }
 
 tokenizer = AutoTokenizer.from_pretrained(
-    'bert-base-uncased', truncation_side='left')
+    'bert-large-uncased', truncation_side='left')
 print(len(tokenizer))
 tokenizer.add_tokens(['[button]', '[button_]', '[clicked button]',
                      '[clicked button_]'], special_tokens=True)
@@ -242,7 +243,7 @@ def parse_args():
     )
     parser.add_argument(
         "--model_name_or_path",
-        default="bert-base-uncased",
+        default="bert-large-uncased",
         type=str,
         help="Path to pretrained model or model identifier from huggingface.co/models.",
     )
@@ -389,7 +390,7 @@ def main():
     #
     # In distributed training, the .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
-    # tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
+    # tokenizer = AutoTokenizer.from_pretrained('bert-large-uncased')
     config = BertConfigForWebshop(
         image=args.image, pretrain_bert=args.pretrain)
     model = BertModelForWebshop(config)
@@ -467,7 +468,7 @@ def main():
         accelerator.init_trackers("glue_no_trainer", experiment_config)
 
     # Get the metric function
-    metric = load_metric("accuracy")
+    metric = evaluate.load("accuracy")
 
     # Train!
     total_batch_size = args.per_device_train_batch_size * \

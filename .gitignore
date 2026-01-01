@@ -1,18 +1,186 @@
-*.ipynb*
-*.pyc
-*.swp
+# =============================================================================
+# SageWebShop2 + ACSS Project - .gitignore
+# =============================================================================
+# Total excluded: ~77 GB of data, models, and indexes
+# =============================================================================
 
-.DS_Store
-.idea/
-.pytest_cache/
-.vscode/
+# -----------------------------------------------------------------------------
+# SEARCH ENGINE (26+ GB) - CRITICAL
+# -----------------------------------------------------------------------------
+search_engine/resources/
+search_engine/resources_100/
+search_engine/resources_1k/
+search_engine/resources_100k/
+search_engine/indexes/
+search_engine/indexes_100/
+search_engine/indexes_1k/
+search_engine/indexes_100k/
 
+# Catch-all for any search engine data
+*.jsonl
+*.fdt
+*.tvd
+*.pos
+*.doc
+*.tim
+*.dvd
+*.nvd
+*.tip
+
+# -----------------------------------------------------------------------------
+# MODEL CHECKPOINTS (36+ GB) - CRITICAL  
+# -----------------------------------------------------------------------------
+baseline_models/ckpts/
+*.pth
+*.pt
+*.bin
+checkpoint-*/
+epoch_*/
+
+# Specific model directories (if ckpts/ pattern doesn't catch them)
+baseline_models/ckpts/web_click_deberta/
+baseline_models/ckpts/web_click_bert_large/
+baseline_models/ckpts/web_click/
+baseline_models/ckpts/web_search/
+
+# -----------------------------------------------------------------------------
+# EEF OUTPUT FILES (100+ MB JSON files)
+# -----------------------------------------------------------------------------
+baseline_models/eef_output*/
+*_M5_N10_*.json
+*_baseline_*.json
+*_entropy_*.json
+training_all_*.json
+
+# Keep small config/result JSONs, exclude large trajectory JSONs
+# If you need to track specific small JSONs, use: git add -f filename.json
+
+# -----------------------------------------------------------------------------
+# TRAJECTORIES AND SIMULATION DATA
+# -----------------------------------------------------------------------------
+trajectories/
+*_trajectories.json
+*_trajectories/
+gpt4_trajectories/
+gpt3_trajectories/
+simulation_results/
+sim_*/
+
+# -----------------------------------------------------------------------------
+# PYTHON CACHE AND ENVIRONMENTS
+# -----------------------------------------------------------------------------
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+.env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+conda-env/
+
+# -----------------------------------------------------------------------------
+# EXPERIMENT TRACKING
+# -----------------------------------------------------------------------------
+wandb/
+mlruns/
+tensorboard/
+runs/
+logs/
+*.log
+outputs/
+results/
+
+# -----------------------------------------------------------------------------
+# IDE AND EDITOR
+# -----------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.code-workspace
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# -----------------------------------------------------------------------------
+# OS FILES
+# -----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# -----------------------------------------------------------------------------
+# SECRETS AND CONFIG
+# -----------------------------------------------------------------------------
+.env
+.env.local
+.env.*.local
+secrets.json
+config.local.json
+*.key
+*.pem
+
+# -----------------------------------------------------------------------------
+# TEMPORARY AND MISC
+# -----------------------------------------------------------------------------
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.cache
+*.pkl
+*.pickle
+.cache/
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+
+# =============================================================================
+# WHITELIST - Files to KEEP even if they match patterns above
+# =============================================================================
+# Use: git add -f <filename> to force-add specific files
+# 
+# Examples of files you might want to keep:
+# - Small config JSONs
+# - Example/sample data (if small)
+# - Documentation images
+# =============================================================================data/items_ins_v2.json
 data/
-search_engine/indexes*
-search_engine/resources*
-transfer/flagged
-user_session_logs/
-
-
-*_err_*.log
