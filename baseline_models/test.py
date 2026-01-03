@@ -127,7 +127,10 @@ if __name__ == "__main__":
 
     print('idx | reward (model), reward (rule)')
     scores_softmax, scores_rule = [], []
-    for i in range(500):
+
+    num_trajectories = 20
+
+    for i in range(num_trajectories):
         score_softmax, score_rule = episode(model, idx=i, softmax=args.softmax, bart_model=bart_model), episode(model, idx=i, rule=True)
         print(i, '|', score_softmax * 10, score_rule * 10)  # env score is 0-10, paper is 0-100
         scores_softmax.append(score_softmax)
@@ -138,4 +141,4 @@ if __name__ == "__main__":
     harsh_rule = len([s for s in scores_rule if s == 10.0])
     print('------')
     print('avg test score (model, rule):', score_softmax * 10, score_rule * 10)
-    print('avg test success rate % (model, rule):', harsh_softmax / 500 * 100, harsh_rule / 500 * 100)
+    print('avg test success rate % (model, rule):', harsh_softmax / num_trajectories * 100, harsh_rule / num_trajectories * 100)
