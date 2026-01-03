@@ -81,6 +81,10 @@ class WebEnv:
                 [f'{att} {query}' for att in atts] + [inst.lower()]
         return texts
 
+    def get_available_actions(self):
+        return self.env.get_available_actions()
+    
+    
     def get_valid_actions(self):
         valid_info = self.env.get_available_actions()
         if valid_info['has_search_bar']:  # only search action available

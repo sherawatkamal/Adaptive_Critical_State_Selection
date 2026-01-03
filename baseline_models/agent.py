@@ -1,3 +1,9 @@
+from typing import List, Optional, Tuple
+import torch
+import torch.nn.functional as F
+
+
+
 class Agent:
     """Agent wrapper - NO BART, with TRUE entropy computation"""
     

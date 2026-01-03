@@ -2,26 +2,37 @@
 
 conda env create -p /home/<YOUR USERNAME HERE>/env/acss --file acss_conda_environment.yml
 source activate /home/<YOUR USERNAME HERE>/env/webshop  (this only works for arc because it requires source activate instead of conda activate)
-pip install setuptools==65.5.0 
+<!-- pip install setuptools==65.5.0 
 pip install wheel==0.38.0
 pip install env train selenium thefuzz gym==0.24.0 transformers==4.57.1
 pip install optimum-quanto accelerate transformers
-pip install spacy
+pip install spacy -->
 python -m spacy download en_core_web_sm
 pip install en_core_web_sm
+pip install logger
+pip install datasets
+pip install evaluate
+pip install accelerate
 pip install wandb
+
+install tokenizers-0.20.3 transformers-4.46.3
+
+<!-- pip install wandb
 pip install cleantext
 pip install pyserini
 pip install rank_bm25
 pip install gdown
-pip install evaluate
+pip install evaluate -->
+
+pip uninstall faiss
+pip install faiss-cpu
 
 
 (also only for ARC)
 module load Java
 module load Miniconda3
 
-
+mkdir data
 cd data
 
 gdown https://drive.google.com/uc?id=1EgHdxQ_YxqIQlvvq5iKlCrkEKR6-j0Ib

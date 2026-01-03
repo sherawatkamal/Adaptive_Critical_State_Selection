@@ -60,8 +60,7 @@ from models.bert import BertModelForWebshop, BertConfigForWebshop
 
 logger = get_logger(__name__)
 
-require_version("datasets>=1.8.0",
-                "To fix: pip install -r examples/pytorch/text-classification/requirements.txt")
+require_version("datasets>=1.8.0", "To fix: pip install -r examples/pytorch/text-classification/requirements.txt")
 
 task_to_keys = {
     "cola": ("sentence", None),
@@ -75,11 +74,9 @@ task_to_keys = {
     "wnli": ("sentence1", "sentence2"),
 }
 
-tokenizer = AutoTokenizer.from_pretrained(
-    'bert-large-uncased', truncation_side='left')
+tokenizer = AutoTokenizer.from_pretrained('bert-large-uncased', truncation_side='left')
 print(len(tokenizer))
-tokenizer.add_tokens(['[button]', '[button_]', '[clicked button]',
-                     '[clicked button_]'], special_tokens=True)
+tokenizer.add_tokens(['[button]', '[button_]', '[clicked button]', '[clicked button_]'], special_tokens=True)
 print(len(tokenizer))
 
 PATH = "./data/il_trajs_finalized_images.jsonl"
@@ -155,6 +152,7 @@ def get_data(split, mem=False, filter_search=True):
                     random.sample(range(6, len(valid_acts)), 10)
                 if idx not in new_idxs:
                     new_idxs += [idx]
+                    
                 new_idxs = sorted(new_idxs)
                 valid_acts = [valid_acts[i] for i in new_idxs]
                 idx = new_idxs.index(idx)
@@ -166,15 +164,15 @@ def get_data(split, mem=False, filter_search=True):
     print('total transitions and bad transitions: {} {}'.format(cnt, bad))
     state_list, action_list = list(
         map(process, state_list)), list(map(process, action_list))
+    
     return state_list, action_list, idx_list, size_list, image_list
+
 
 
 def get_dataset(split, mem=False):
     states, actions, idxs, sizes, images = get_data(split, mem)
-    state_encodings = tokenizer(
-        states, padding='max_length', max_length=512, truncation=True, return_tensors='pt')
-    action_encodings = tokenizer(
-        actions, padding='max_length', max_length=128, truncation=True, return_tensors='pt')
+    state_encodings = tokenizer(states, padding='max_length', max_length=512, truncation=True, return_tensors='pt')
+    action_encodings = tokenizer(actions, padding='max_length', max_length=128, truncation=True, return_tensors='pt')
     dataset = {
         'state_input_ids': state_encodings['input_ids'],
         'state_attention_mask': state_encodings['attention_mask'],
@@ -188,8 +186,7 @@ def get_dataset(split, mem=False):
 
 
 def data_collator(batch):
-    state_input_ids, state_attention_mask, action_input_ids, action_attention_mask, sizes, labels, images = [
-    ], [], [], [], [], [], []
+    state_input_ids, state_attention_mask, action_input_ids, action_attention_mask, sizes, labels, images = [], [], [], [], [], [], []
     for sample in batch:
         state_input_ids.append(sample['state_input_ids'])
         state_attention_mask.append(sample['state_attention_mask'])
@@ -200,6 +197,7 @@ def data_collator(batch):
         images.append(sample['images'])
     max_state_len = max(sum(x) for x in state_attention_mask)
     max_action_len = max(sum(x) for x in action_attention_mask)
+    
     return {
         'state_input_ids': torch.tensor(state_input_ids)[:, :max_state_len],
         'state_attention_mask': torch.tensor(state_attention_mask)[:, :max_state_len],
@@ -391,8 +389,7 @@ def main():
     # In distributed training, the .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
     # tokenizer = AutoTokenizer.from_pretrained('bert-large-uncased')
-    config = BertConfigForWebshop(
-        image=args.image, pretrain_bert=args.pretrain)
+    config = BertConfigForWebshop(image=args.image, pretrain_bert=args.pretrain)
     model = BertModelForWebshop(config)
     # model.bert.resize_token_embeddings(len(tokenizer))
 

@@ -66,12 +66,9 @@ def find_large_files(directory, limit_mb=50):
 
 def main():
     parser = argparse.ArgumentParser(description='Find large files for GitHub')
-    parser.add_argument('directory', nargs='?', default='.', 
-                        help='Directory to scan (default: current)')
-    parser.add_argument('--limit', type=float, default=50,
-                        help='Size limit in MB (default: 50)')
-    parser.add_argument('--all', action='store_true',
-                        help='Include hidden directories')
+    parser.add_argument('directory', nargs='?', default='.', help='Directory to scan (default: current)')
+    parser.add_argument('--limit', type=float, default=50, help='Size limit in MB (default: 50)')
+    parser.add_argument('--all', action='store_true', help='Include hidden directories')
     args = parser.parse_args()
     
     print("=" * 60)
@@ -80,9 +77,7 @@ def main():
     print(f"\nScanning: {os.path.abspath(args.directory)}")
     print(f"Threshold: {args.limit} MB\n")
     
-    large_files, total_size, file_types = find_large_files(
-        args.directory, args.limit
-    )
+    large_files, total_size, file_types = find_large_files(args.directory, args.limit)
     
     # Report large files
     if large_files:
