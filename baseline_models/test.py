@@ -85,9 +85,9 @@ def episode(model, idx=None, verbose=False, softmax=False, rule=False, bart_mode
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Finetune a transformers model on a text classification task")
-    parser.add_argument("--model_path", type=str, default="./ckpts/web_click/epoch_9/model.pth", help="Where to store the final model.")
+    parser.add_argument("--model_path", type=str, default="./checkpoints/web_click/epoch_9/model.pth", help="Where to store the final model.")
     parser.add_argument("--mem", type=int, default=0, help="State with memory")
-    parser.add_argument("--bart_path", type=str, default='./ckpts/web_search/checkpoint-800', help="BART model path if using it")
+    parser.add_argument("--bart_path", type=str, default='./checkpoints/web_search/checkpoint-800', help="BART model path if using it")
     parser.add_argument("--bart", type=bool, default=True, help="Flag to specify whether to use bart or not (default: True)")
     parser.add_argument("--image", type=bool, default=True, help="Flag to specify whether to use image or not (default: True)")
     parser.add_argument("--softmax", type=bool, default=True, help="Flag to specify whether to use softmax sampling or not (default: True)")
@@ -127,7 +127,7 @@ if __name__ == "__main__":
 
     print('idx | reward (model), reward (rule)')
     scores_softmax, scores_rule = [], []
-    for i in range(500):
+    for i in range(2):
         score_softmax, score_rule = episode(model, idx=i, softmax=args.softmax, bart_model=bart_model), episode(model, idx=i, rule=True)
         print(i, '|', score_softmax * 10, score_rule * 10)  # env score is 0-10, paper is 0-100
         scores_softmax.append(score_softmax)

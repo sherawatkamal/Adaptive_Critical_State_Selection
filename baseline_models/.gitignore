@@ -1,6 +1,6 @@
 logs/
 wandb/
-ckpts/
+checkpoints/
 __pycache__/
 data/il_trajs_finalized_images.jsonl
 *.ipynb

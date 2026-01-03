@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """
-EEF Pipeline - With Decisional Uncertainty Calculation
+EEF Pipeline - With Detailed Segment Saving + TRUE Policy Entropy
+
+FIXED: State selection now uses TRUE policy entropy H(π|s) = -Σ π(a|s) log π(a|s)
+instead of action count log(|A|).
 
 Changes from original:
-1. Runs N rollouts (default 10) from each selected state to compute decisional uncertainty
-2. Calculates U(s) = p̂ × (1 - p̂) where p̂ = successes/N
-3. Saves detailed state analysis JSON with all rollout results
-4. Includes per-state uncertainty metrics and rollout details
+1. Added compute_true_entropy() to Agent class
+2. Fixed select_critical_states_entropy() to use true entropy from model logprobs
+3. Saves full success segments (reward=100) separately
+4. Saves improvement segments (reward > original) separately  
+5. Saves detailed state info for entropy analysis
+6. Includes recovery_step, final_reward, valid_actions in all outputs
 
 Default: Uses softmax exploration (use --greedy to disable)
 """
@@ -25,6 +30,13 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
+from train_rl import parse_args as webenv_args
+from env import WebEnv
+
+from train_choice_il import tokenizer, data_collator, process, process_goal
+from models.bert import BertModelForWebshop, BertConfigForWebshop
+
+
 
 # ============================================================================
 # ENVIRONMENT AND MODEL SETUP
@@ -37,9 +49,6 @@ def setup_environment(split='test'):
     # Temporarily clear sys.argv to prevent train_rl from parsing our args
     original_argv = sys.argv
     sys.argv = [sys.argv[0]]  # Keep only script name
-    
-    from train_rl import parse_args as webenv_args
-    from env import WebEnv
     
     env_args = webenv_args()[0]
     
@@ -55,10 +64,9 @@ def setup_environment(split='test'):
     return env
 
 
-def setup_model(model_path="./ckpts/web_click/epoch_9/model.pth"):
+
+def setup_model(model_path="./checkpoints/web_click/epoch_9/model.pth"):
     """Setup the IL model - NO BART, NO IMAGES"""
-    from train_choice_il import tokenizer, data_collator, process, process_goal
-    from models.bert import BertModelForWebshop, BertConfigForWebshop
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
@@ -80,8 +88,10 @@ def setup_model(model_path="./ckpts/web_click/epoch_9/model.pth"):
     }
 
 
+
+
 class Agent:
-    """Agent wrapper - NO BART"""
+    """Agent wrapper - NO BART, with TRUE entropy computation"""
     
     def __init__(self, models_dict):
         self.model = models_dict['model']
@@ -91,25 +101,25 @@ class Agent:
         self.process_goal = models_dict['process_goal']
         self.device = models_dict['device']
     
-    def get_action(self, obs: str, info: dict, method='softmax') -> Tuple[str, dict]:
-        """Get action from the model. Default is softmax for exploration."""
-        valid_acts = info.get('valid', [])
+
+
+    def get_action_probs(self, obs: str, valid_acts: List[str]) -> Optional[torch.Tensor]:
+        """
+        Get action probability distribution from model.
         
+        Returns:
+            Tensor of probabilities over valid_acts, or None if can't compute
+        """
         if not valid_acts:
-            return 'click[back to search]', {'type': 'fallback'}
+            return None
         
-        # Handle search page - NO BART
+        # Skip search states - can't compute entropy for generative actions
         if valid_acts[0].startswith('search['):
-            action = valid_acts[-1] if valid_acts else 'search[query]'
-            return action, {'type': 'search', 'selected': 'valid_acts[-1]'}
+            return None
         
         # Encode state and actions
-        state_encodings = self.tokenizer(
-            self.process(obs), max_length=512, truncation=True, padding='max_length'
-        )
-        action_encodings = self.tokenizer(
-            list(map(self.process, valid_acts)), max_length=512, truncation=True, padding='max_length'
-        )
+        state_encodings = self.tokenizer(self.process(obs), max_length=512, truncation=True, padding='max_length')
+        action_encodings = self.tokenizer(list(map(self.process, valid_acts)), max_length=512, truncation=True, padding='max_length')
         
         batch = {
             'state_input_ids': state_encodings['input_ids'],
@@ -127,11 +137,82 @@ class Agent:
             outputs = self.model(**batch)
             logits = outputs.logits[0]
             probs = F.softmax(logits, dim=0)
+        
+        return probs
+    
+
+    def compute_true_entropy(self, obs: str, valid_acts: List[str]) -> Tuple[float, float, float]:
+        """
+        Compute TRUE policy entropy: H(π|s) = -Σ π(a|s) log π(a|s)
+        
+        This is the CORRECT way to measure model uncertainty.
+        NOT log(|valid_actions|) which just counts buttons!
+        
+        Args:
+            obs: Observation string
+            valid_acts: List of valid action strings
             
-            if method == 'greedy':
-                idx = logits.argmax(0).item()
-            else:  # softmax (default)
-                idx = torch.multinomial(probs, 1)[0].item()
+        Returns:
+            (entropy, normalized_entropy, max_prob)
+            - entropy: Raw entropy in nats
+            - normalized_entropy: H / log(|A|), scaled to [0,1]
+            - max_prob: Confidence in top action (1 - this = uncertainty)
+        """
+        probs = self.get_action_probs(obs, valid_acts)
+        
+        if probs is None:
+            # Search state or error - return 0
+            return 0.0, 0.0, 1.0
+        
+        # Compute entropy: H = -Σ p log p
+        probs_clamped = probs.clamp(min=1e-10)
+        entropy = -(probs_clamped * torch.log(probs_clamped)).sum().item()
+        
+        # Normalized entropy: H / H_max where H_max = log(|A|)
+        n_actions = len(valid_acts)
+        max_entropy = np.log(n_actions) if n_actions > 1 else 1.0
+        normalized_entropy = entropy / max_entropy if max_entropy > 0 else 0.0
+        
+        # Max probability (confidence)
+        max_prob = probs.max().item()
+        
+        return entropy, normalized_entropy, max_prob
+    
+    def get_action(self, obs: str, info: dict, method='softmax') -> Tuple[str, dict]:
+        """Get action from the model. Default is softmax for exploration."""
+        valid_acts = info.get('valid', [])
+        
+        if not valid_acts:
+            return 'click[back to search]', {'type': 'fallback'}
+        
+        # Handle search page - NO BART
+        if valid_acts[0].startswith('search['):
+            action = valid_acts[-1] if valid_acts else 'search[query]'
+            return action, {
+                'type': 'search', 
+                'selected': 'valid_acts[-1]',
+                'entropy': 0.0,
+                'normalized_entropy': 0.0,
+            }
+        
+        # Get probabilities
+        probs = self.get_action_probs(obs, valid_acts)
+        
+        if probs is None:
+            return valid_acts[0], {'type': 'error'}
+        
+        # Compute entropy
+        probs_clamped = probs.clamp(min=1e-10)
+        entropy = -(probs_clamped * torch.log(probs_clamped)).sum().item()
+        n_actions = len(valid_acts)
+        max_entropy = np.log(n_actions) if n_actions > 1 else 1.0
+        normalized_entropy = entropy / max_entropy if max_entropy > 0 else 0.0
+        
+        # Select action
+        if method == 'greedy':
+            idx = probs.argmax().item()
+        else:  # softmax (default)
+            idx = torch.multinomial(probs, 1)[0].item()
         
         action = valid_acts[idx] if idx < len(valid_acts) else valid_acts[0]
         return action, {
@@ -140,6 +221,8 @@ class Agent:
             'num_valid': len(valid_acts),
             'confidence': probs[idx].item(),
             'action_probs': probs.cpu().tolist(),
+            'entropy': entropy,
+            'normalized_entropy': normalized_entropy,
         }
 
 
@@ -162,8 +245,7 @@ class EEFSimulator:
             'recoveries': 0,
         }
     
-    def simulate_from_state(self, task_id: int, target_step: int, 
-                           trajectory: Dict, method='softmax') -> Tuple[bool, float, List[Dict]]:
+    def simulate_from_state(self, task_id: int, target_step: int, trajectory: Dict, method='softmax') -> Tuple[bool, float, List[Dict]]:
         """Simulate from a specific step in the trajectory."""
         self.stats['total_simulations'] += 1
         
@@ -198,6 +280,7 @@ class EEFSimulator:
         
         self.stats['successful_replays'] += 1
         
+
         # PHASE 2: Agent-driven simulation from target state
         for sim_step in range(self.max_steps):
             valid_acts = info.get('valid', [])
@@ -229,124 +312,163 @@ class EEFSimulator:
         return False, 0.0, simulation_traj
 
 
+
+
 # ============================================================================
-# STATE SELECTION (ACSS)
+# STATE SELECTION (ACSS) - FIXED WITH TRUE ENTROPY
 # ============================================================================
 
-def select_critical_states_baseline(trajectory: Dict, M: int = 5) -> List[int]:
+def select_critical_states_baseline(trajectory: Dict, M: int = 5, agent=None) -> Tuple[List[int], List[Dict]]:
     """Baseline: Equal-interval skip-length selection"""
     steps = trajectory.get('steps', [])
     T = len(steps)
     if T <= 1:
-        return []
+        return [], []
     l = max(1, T // (M + 1))
-    return [m * l for m in range(1, M + 1) if m * l < T]
+    indices = [m * l for m in range(1, M + 1) if m * l < T]
+    
+    # Return empty entropy info for baseline
+    entropy_info = [{'state_idx': idx, 'true_entropy': 0.0, 'method': 'baseline'} for idx in indices]
+    return indices, entropy_info
 
 
-def select_critical_states_entropy(trajectory: Dict, M: int = 5) -> List[int]:
-    """ACSS: Entropy-approximation based selection"""
+def select_critical_states_entropy(trajectory: Dict, M: int = 5, agent=None) -> Tuple[List[int], List[Dict]]:
+    """
+    ACSS: TRUE policy entropy based selection (FIXED)
+    
+    Uses H(π|s) = -Σ π(a|s) log π(a|s) from model logprobs.
+    NOT log(|A|) which just counts actions!
+    
+    Args:
+        trajectory: Trajectory dict with 'steps'
+        M: Number of states to select
+        agent: Agent instance (required for true entropy)
+        
+    Returns:
+        (selected_indices, entropy_info)
+    """
     steps = trajectory.get('steps', [])
     T = len(steps)
     if T <= 1:
-        return []
+        return [], []
+    
+    # If no agent provided, fall back to baseline
+    if agent is None:
+        print("Warning: No agent provided for entropy calculation. Using baseline.")
+        return select_critical_states_baseline(trajectory, M, agent)
     
     scores = []
-    for i, step in enumerate(steps[:-1]):
-        n_actions = len(step.get('valid_actions', []))
-        entropy_score = np.log(n_actions + 1) / np.log(100)
+    for i, step in enumerate(steps[:-1]):  # Exclude last state
+        obs = step.get('observation', '')
+        valid_acts = step.get('valid_actions', [])
+        n_actions = len(valid_acts)
+        
+        # Position score (slight preference for earlier-middle states)
         position = i / max(T - 1, 1)
         position_score = np.exp(-0.5 * ((position - 0.4) / 0.3) ** 2)
-        score = 0.6 * entropy_score + 0.4 * position_score
-        scores.append((i, score, n_actions))
+        
+        # Check for search state
+        is_search = valid_acts and valid_acts[0].startswith('search[')
+        
+        if is_search or not valid_acts:
+            # For search states, use position only (can't compute entropy)
+            scores.append({
+                'state_idx': i,
+                'true_entropy': 0.0,
+                'normalized_entropy': 0.0,
+                'action_count_score': np.log(n_actions + 1) / np.log(100) if n_actions > 0 else 0,
+                'position_score': position_score,
+                'combined_score': 0.2 * position_score,  # Low score for search states
+                'n_actions': n_actions,
+                'max_prob': 1.0,
+                'is_search_state': True,
+                'method': 'true_entropy',
+            })
+            continue
+        
+        # Compute TRUE policy entropy from model
+        try:
+            entropy, normalized_entropy, max_prob = agent.compute_true_entropy(obs, valid_acts)
+        except Exception as e:
+            print(f"  Warning: Entropy computation failed for state {i}: {e}")
+            entropy, normalized_entropy, max_prob = 0.0, 0.0, 1.0
+        
+        # Also compute action count score for comparison/logging
+        action_count_score = np.log(n_actions + 1) / np.log(100)
+        
+        # Combined score: primarily entropy, with position tiebreaker
+        # Using normalized entropy so it's comparable across different action counts
+        combined_score = 0.8 * normalized_entropy + 0.2 * position_score
+        
+        scores.append({
+            'state_idx': i,
+            'true_entropy': entropy,
+            'normalized_entropy': normalized_entropy,
+            'action_count_score': action_count_score,
+            'position_score': position_score,
+            'combined_score': combined_score,
+            'n_actions': n_actions,
+            'max_prob': max_prob,
+            'is_search_state': False,
+            'method': 'true_entropy',
+        })
     
-    scores.sort(key=lambda x: x[1], reverse=True)
-    return sorted([idx for idx, _, _ in scores[:M]])
-
-
-def get_entropy_score(trajectory: Dict, state_idx: int) -> Tuple[float, float, float]:
-    """Get the entropy and position scores for a specific state"""
-    steps = trajectory.get('steps', [])
-    T = len(steps)
-    if state_idx >= len(steps):
-        return 0.0, 0.0, 0.0
+    # Filter out search states, then sort by combined score
+    choice_states = [s for s in scores if not s.get('is_search_state', False)]
+    choice_states.sort(key=lambda x: x['combined_score'], reverse=True)
     
-    n_actions = len(steps[state_idx].get('valid_actions', []))
-    entropy_score = np.log(n_actions + 1) / np.log(100)
-    position = state_idx / max(T - 1, 1)
-    position_score = np.exp(-0.5 * ((position - 0.4) / 0.3) ** 2)
-    combined_score = 0.6 * entropy_score + 0.4 * position_score
+    # Select top M
+    selected = choice_states[:M]
+    indices = sorted([s['state_idx'] for s in selected])
     
-    return entropy_score, position_score, combined_score
+    return indices, selected
 
 
 # ============================================================================
-# DECISIONAL UNCERTAINTY CALCULATION
+# EEF PIPELINE WITH DETAILED SAVING
 # ============================================================================
 
-def compute_decisional_uncertainty(successes: int, N: int) -> Dict:
+def run_eef_detailed(
+        env, agent, failures: List[Dict], 
+        M: int = 5, strategy: str = 'baseline',
+        simulation_budget: int = 10000, verbose: bool = True,
+        greedy: bool = False, num_attempts: int = 1
+    ):
     """
-    Compute decisional uncertainty using variance formula.
-    U(s) = p̂ × (1 - p̂), peaks at 0.25 when p̂ = 0.5
-    
-    Args:
-        successes: Number of successful rollouts
-        N: Total number of rollouts
-    
-    Returns:
-        Dictionary with p_hat and uncertainty values
-    """
-    p_hat = successes / N if N > 0 else 0
-    uncertainty = p_hat * (1 - p_hat)
-    return {
-        'p_hat': p_hat,
-        'uncertainty': uncertainty,
-        'successes': successes,
-        'total_rollouts': N,
-    }
-
-
-# ============================================================================
-# EEF PIPELINE WITH DECISIONAL UNCERTAINTY
-# ============================================================================
-
-def run_eef_detailed(env, agent, failures: List[Dict], 
-                     M: int = 5, N: int = 10, strategy: str = 'baseline',
-                     simulation_budget: int = 10000, verbose: bool = True,
-                     greedy: bool = False):
-    """
-    Run EEF pipeline with detailed segment saving and decisional uncertainty.
-    
-    For each selected state, runs N rollouts to compute:
-    - p̂ = successes / N
-    - U(s) = p̂ × (1 - p̂)
-    
-    Args:
-        M: Number of states to select per trajectory
-        N: Number of rollouts per state for uncertainty estimation (default 10)
+    Run EEF pipeline with detailed segment saving.
     
     Returns:
         - full_success_segments: States that achieved reward=100
         - improvement_segments: States that improved but didn't reach 100
         - all_beneficial_states: Detailed state info for entropy analysis
-        - detailed_analysis: Per-task breakdown with all rollout info
         - training_samples: All training data
         - stats: Pipeline statistics
     """
     simulator = EEFSimulator(env, agent, debug=verbose)
-    select_states = select_critical_states_entropy if strategy == 'entropy' else select_critical_states_baseline
+    
+    # Select state selection function
+    if strategy == 'entropy':
+        select_states = lambda traj, m: select_critical_states_entropy(traj, m, agent)
+    else:
+        select_states = lambda traj, m: select_critical_states_baseline(traj, m, agent)
     
     # Default is softmax, use greedy only if explicitly set
     action_method = 'greedy' if greedy else 'softmax'
     
     print(f"\n{'='*70}")
-    print(f"RUNNING EEF WITH DECISIONAL UNCERTAINTY")
+    print(f"PHASE 2: RUNNING EEF (DETAILED) - TRUE ENTROPY")
     print(f"{'='*70}")
     print(f"  Strategy: {strategy}")
+    
+    if strategy == 'entropy':
+        print(f"  Selection: H(π|s) = -Σ π(a|s) log π(a|s)  [TRUE POLICY ENTROPY]")
+    else:
+        print(f"  Selection: Equal intervals")
+
     print(f"  M (states per trajectory): {M}")
-    print(f"  N (rollouts per state): {N}")
     print(f"  Failures: {len(failures)}")
     print(f"  Simulation budget: {simulation_budget}")
-    print(f"  Action method: {action_method}")
+    print(f"  Action method: {action_method} (attempts per state: {num_attempts})")
     print(f"{'='*70}\n")
     
     # Separate collections
@@ -355,71 +477,57 @@ def run_eef_detailed(env, agent, failures: List[Dict],
     all_beneficial_states = []       # Detailed state info for ALL beneficial states
     all_simulated_states = []        # ALL states that were simulated (for analysis)
     
-    # Detailed per-task analysis
-    detailed_task_analysis = []
-    
     simulations_run = 0
     total_states_selected = 0
+    
+    # Track entropy statistics
+    all_selection_info = []
     
     for traj_idx, trajectory in enumerate(failures):
         task_id = trajectory['task_id']
         original_reward = trajectory.get('reward', 0)
         goal = trajectory.get('goal', '')
         traj_length = len(trajectory.get('steps', []))
-        critical_states = select_states(trajectory, M)
+        
+        # Select states using chosen strategy
+        critical_states, selection_info = select_states(trajectory, M)
         
         if not critical_states:
             continue
         
         total_states_selected += len(critical_states)
-        
-        # Initialize task analysis
-        task_analysis = {
-            'task_id': task_id,
-            'goal': goal[:500],
-            'trajectory_length': traj_length,
-            'original_reward': original_reward,
-            'strategy': strategy,
-            'selected_states': critical_states,
-            'num_states_selected': len(critical_states),
-            'state_details': [],
-            'task_summary': {
-                'total_rollouts': 0,
-                'total_successes': 0,
-                'total_improvements': 0,
-                'any_full_success': False,
-                'any_improvement': False,
-            }
-        }
+        all_selection_info.extend(selection_info)
         
         if verbose:
             print(f"\n  Task {task_id} ({traj_idx+1}/{len(failures)}):")
             print(f"    Trajectory length: {traj_length} steps")
             print(f"    Original reward: {original_reward:.0f}")
-            print(f"    Selected states: {critical_states}")
+            print(f"    Critical states: {critical_states}")
+            if strategy == 'entropy' and selection_info:
+                entropies = [f"{s.get('true_entropy', 0):.2f}" for s in selection_info[:3]]
+                print(f"    True entropies: {entropies}")
         
         for state_idx in critical_states:
             if simulations_run >= simulation_budget:
                 break
             
-            # Get the state info from trajectory
+            # Get the state info from trajectory for entropy analysis
             steps = trajectory.get('steps', [])
             state_obs = steps[state_idx].get('observation', '') if state_idx < len(steps) else ''
             state_valid_actions = steps[state_idx].get('valid_actions', []) if state_idx < len(steps) else []
             
-            # Get entropy scores for this state
-            entropy_score, position_score, combined_score = get_entropy_score(trajectory, state_idx)
+            # Get entropy info for this state
+            state_entropy_info = next(
+                (s for s in selection_info if s['state_idx'] == state_idx), 
+                {'true_entropy': 0.0, 'normalized_entropy': 0.0, 'action_count_score': 0.0}
+            )
             
-            # Run N rollouts for this state
-            rollout_results = []
-            successes = 0
-            improvements = 0
             best_reward = -1
             best_traj = None
             best_success = False
-            all_rewards = []
+            attempts_made = 0
             
-            for rollout_idx in range(N):
+            for attempt in range(num_attempts):
                 if simulations_run >= simulation_budget:
                     break
                 
@@ -427,81 +535,15 @@ def run_eef_detailed(env, agent, failures: List[Dict],
                     task_id, state_idx, trajectory, method=action_method
                 )
                 simulations_run += 1
+                attempts_made += 1
                 
-                # Record this rollout
-                rollout_info = {
-                    'rollout_idx': rollout_idx,
-                    'success': success,
-                    'reward': reward,
-                    'is_improvement': reward > original_reward,
-                    'num_steps': len([s for s in sim_traj if not s.get('is_replay', False)]),
-                }
-                rollout_results.append(rollout_info)
-                all_rewards.append(reward)
-                
-                if success:
-                    successes += 1
-                if reward > original_reward:
-                    improvements += 1
-                
-                # Track best result
                 if reward > best_reward:
                     best_reward = reward
                     best_traj = sim_traj
                     best_success = success
-            
-            # Compute decisional uncertainty
-            actual_rollouts = len(rollout_results)
-            uncertainty_info = compute_decisional_uncertainty(successes, actual_rollouts)
-            
-            # State-level detail
-            state_detail = {
-                'state_idx': state_idx,
-                'num_valid_actions': len(state_valid_actions),
-                'valid_actions': state_valid_actions[:20],  # Truncate for storage
                 
-                # Selection scores (for entropy strategy)
-                'entropy_score': entropy_score,
-                'position_score': position_score,
-                'combined_selection_score': combined_score,
-                
-                # Rollout statistics
-                'num_rollouts': actual_rollouts,
-                'num_successes': successes,
-                'num_improvements': improvements,
-                'success_rate': successes / actual_rollouts if actual_rollouts > 0 else 0,
-                'improvement_rate': improvements / actual_rollouts if actual_rollouts > 0 else 0,
-                
-                # Reward statistics
-                'rewards': all_rewards,
-                'mean_reward': float(np.mean(all_rewards)) if all_rewards else 0,
-                'std_reward': float(np.std(all_rewards)) if all_rewards else 0,
-                'min_reward': float(min(all_rewards)) if all_rewards else 0,
-                'max_reward': float(max(all_rewards)) if all_rewards else 0,
-                'best_reward': best_reward,
-                
-                # Decisional uncertainty
-                'p_hat': uncertainty_info['p_hat'],
-                'decisional_uncertainty': uncertainty_info['uncertainty'],
-                
-                # Best result info
-                'best_is_full_success': best_success and best_reward >= 100,
-                'best_is_improvement': best_reward > original_reward + 10,
-                
-                # All rollout details
-                'rollouts': rollout_results,
-            }
-            task_analysis['state_details'].append(state_detail)
-            
-            # Update task summary
-            task_analysis['task_summary']['total_rollouts'] += actual_rollouts
-            task_analysis['task_summary']['total_successes'] += successes
-            task_analysis['task_summary']['total_improvements'] += improvements
-            
-            if verbose:
-                print(f"    State {state_idx}: {successes}/{actual_rollouts} success, "
-                      f"p̂={uncertainty_info['p_hat']:.2f}, U={uncertainty_info['uncertainty']:.3f}, "
-                      f"best={best_reward:.0f}, valid_actions={len(state_valid_actions)}")
+                if success:
+                    break
             
             # Record ALL simulated states for analysis
             simulated_state_info = {
@@ -512,14 +554,15 @@ def run_eef_detailed(env, agent, failures: List[Dict],
                 'final_reward': best_reward,
                 'is_success': best_success,
                 'is_improvement': best_reward > original_reward + 10,
-                'state': state_obs[:2000],
+                'state': state_obs[:2000],  # Truncate for storage
                 'valid_actions': state_valid_actions,
                 'num_valid_actions': len(state_valid_actions),
-                'num_rollouts': actual_rollouts,
-                'num_successes': successes,
-                'p_hat': uncertainty_info['p_hat'],
-                'decisional_uncertainty': uncertainty_info['uncertainty'],
+                'attempts_made': attempts_made,
                 'strategy': strategy,
+                # Entropy info
+                'true_entropy': state_entropy_info.get('true_entropy', 0.0),
+                'normalized_entropy': state_entropy_info.get('normalized_entropy', 0.0),
+                'action_count_score': state_entropy_info.get('action_count_score', 0.0),
             }
             all_simulated_states.append(simulated_state_info)
             
@@ -527,15 +570,11 @@ def run_eef_detailed(env, agent, failures: List[Dict],
             is_full_success = best_success and best_reward >= 100
             is_improvement = best_reward > original_reward + 10
             
-            if is_full_success:
-                task_analysis['task_summary']['any_full_success'] = True
-            if is_improvement:
-                task_analysis['task_summary']['any_improvement'] = True
-            
             if is_full_success or is_improvement:
                 status = "SUCCESS" if is_full_success else "IMPROVED"
                 if verbose:
-                    print(f"      → ✓ {status}! {original_reward:.0f} → {best_reward:.0f}")
+                    print(f"    Step {state_idx}: ✓ {status}! {original_reward:.0f} → {best_reward:.0f} "
+                          f"(H={state_entropy_info.get('true_entropy', 0):.2f})")
                 
                 # Extract beneficial actions
                 new_actions = [s for s in best_traj if not s.get('is_replay', False)]
@@ -551,8 +590,8 @@ def run_eef_detailed(env, agent, failures: List[Dict],
                     'num_recovery_steps': len(new_actions),
                     'state_observation': state_obs[:2000],
                     'state_valid_actions': state_valid_actions,
-                    'p_hat': uncertainty_info['p_hat'],
-                    'decisional_uncertainty': uncertainty_info['uncertainty'],
+                    'true_entropy': state_entropy_info.get('true_entropy', 0.0),
+                    'normalized_entropy': state_entropy_info.get('normalized_entropy', 0.0),
                     'steps': new_actions,
                 }
                 
@@ -574,21 +613,13 @@ def run_eef_detailed(env, agent, failures: List[Dict],
                     'num_valid_actions': len(state_valid_actions),
                     'goal': goal[:500],
                     'strategy': strategy,
-                    'p_hat': uncertainty_info['p_hat'],
-                    'decisional_uncertainty': uncertainty_info['uncertainty'],
-                    'num_rollouts': actual_rollouts,
-                    'num_successes': successes,
+                    'true_entropy': state_entropy_info.get('true_entropy', 0.0),
+                    'normalized_entropy': state_entropy_info.get('normalized_entropy', 0.0),
+                    'action_count_score': state_entropy_info.get('action_count_score', 0.0),
                 })
-        
-        # Compute task-level uncertainty statistics
-        if task_analysis['state_details']:
-            uncertainties = [s['decisional_uncertainty'] for s in task_analysis['state_details']]
-            p_hats = [s['p_hat'] for s in task_analysis['state_details']]
-            task_analysis['task_summary']['mean_uncertainty'] = float(np.mean(uncertainties))
-            task_analysis['task_summary']['max_uncertainty'] = float(max(uncertainties))
-            task_analysis['task_summary']['mean_p_hat'] = float(np.mean(p_hats))
-        
-        detailed_task_analysis.append(task_analysis)
+            else:
+                if verbose:
+                    print(f"    Step {state_idx}: ✗ failed ({best_reward:.0f})")
         
         if simulations_run >= simulation_budget:
             print(f"\n  Budget exhausted after {traj_idx+1} trajectories")
@@ -631,16 +662,12 @@ def run_eef_detailed(env, agent, failures: List[Dict],
     # Combined training samples
     all_training_samples = training_samples_success + training_samples_improvement
     
-    # Compute global uncertainty statistics
-    all_uncertainties = [s['decisional_uncertainty'] for s in all_simulated_states]
-    all_p_hats = [s['p_hat'] for s in all_simulated_states]
+    # Compute entropy statistics
+    all_true_entropies = [s.get('true_entropy', 0) for s in all_selection_info if not s.get('is_search_state', False)]
+    all_action_counts = [s.get('action_count_score', 0) for s in all_selection_info if not s.get('is_search_state', False)]
     
     stats = {
-        'strategy': strategy,
-        'action_method': action_method,
-        'M': M,
-        'N': N,
-        'failures_processed': len(detailed_task_analysis),
+        'failures_processed': len(failures),
         'total_states_selected': total_states_selected,
         'simulations_run': simulations_run,
         'successful_replays': simulator.stats['successful_replays'],
@@ -651,25 +678,22 @@ def run_eef_detailed(env, agent, failures: List[Dict],
         'training_samples_success': len(training_samples_success),
         'training_samples_improvement': len(training_samples_improvement),
         'training_samples_total': len(all_training_samples),
-        
-        # Uncertainty statistics
-        'uncertainty_stats': {
-            'mean': float(np.mean(all_uncertainties)) if all_uncertainties else 0,
-            'std': float(np.std(all_uncertainties)) if all_uncertainties else 0,
-            'min': float(min(all_uncertainties)) if all_uncertainties else 0,
-            'max': float(max(all_uncertainties)) if all_uncertainties else 0,
-            'mean_p_hat': float(np.mean(all_p_hats)) if all_p_hats else 0,
+        'strategy': strategy,
+        'action_method': action_method,
+        # Entropy statistics
+        'entropy_stats': {
+            'mean_true_entropy': float(np.mean(all_true_entropies)) if all_true_entropies else 0,
+            'max_true_entropy': float(np.max(all_true_entropies)) if all_true_entropies else 0,
+            'mean_action_count_score': float(np.mean(all_action_counts)) if all_action_counts else 0,
         }
     }
     
     # Summary
     print(f"\n{'='*70}")
-    print(f"EEF PIPELINE STATISTICS")
+    print(f"EEF PIPELINE STATISTICS (DETAILED - TRUE ENTROPY)")
     print(f"{'='*70}")
     print(f"  Strategy:                 {strategy}")
     print(f"  Action method:            {action_method}")
-    print(f"  M (states/trajectory):    {M}")
-    print(f"  N (rollouts/state):       {N}")
     print(f"  Failures processed:       {stats['failures_processed']}")
     print(f"  States selected:          {stats['total_states_selected']}")
     print(f"  Simulations run:          {stats['simulations_run']}")
@@ -679,10 +703,10 @@ def run_eef_detailed(env, agent, failures: List[Dict],
     print(f"  Total Beneficial:         {stats['total_beneficial']}")
     print(f"  Recovery rate:            {stats['recovery_rate']:.2%}")
     print(f"  ---")
-    print(f"  Mean Uncertainty:         {stats['uncertainty_stats']['mean']:.4f}")
-    print(f"  Max Uncertainty:          {stats['uncertainty_stats']['max']:.4f}")
-    print(f"  Mean p̂:                   {stats['uncertainty_stats']['mean_p_hat']:.4f}")
-    print(f"  ---")
+    if strategy == 'entropy':
+        print(f"  Mean True Entropy:        {stats['entropy_stats']['mean_true_entropy']:.4f}")
+        print(f"  Max True Entropy:         {stats['entropy_stats']['max_true_entropy']:.4f}")
+        print(f"  ---")
     print(f"  Training samples (success):     {stats['training_samples_success']}")
     print(f"  Training samples (improvement): {stats['training_samples_improvement']}")
     print(f"  Training samples (total):       {stats['training_samples_total']}")
@@ -693,7 +717,6 @@ def run_eef_detailed(env, agent, failures: List[Dict],
         'improvement_segments': improvement_segments,
         'all_beneficial_states': all_beneficial_states,
         'all_simulated_states': all_simulated_states,
-        'detailed_task_analysis': detailed_task_analysis,
         'training_samples_success': training_samples_success,
         'training_samples_improvement': training_samples_improvement,
         'all_training_samples': all_training_samples,
@@ -706,37 +729,33 @@ def run_eef_detailed(env, agent, failures: List[Dict],
 # ============================================================================
 
 def main():
-    parser = argparse.ArgumentParser(description="EEF Pipeline with Decisional Uncertainty")
-    parser.add_argument("--failure_data", type=str, required=True,
-                       help="Path to pre-collected failure trajectories")
-    parser.add_argument("--strategy", type=str, default="baseline", 
-                       choices=['baseline', 'entropy'])
-    parser.add_argument("--M", type=int, default=5,
-                       help="Number of states to select per trajectory")
-    parser.add_argument("--N", type=int, default=10,
-                       help="Number of rollouts per state for uncertainty estimation")
+    parser = argparse.ArgumentParser(description="EEF Pipeline - Detailed Saving (TRUE ENTROPY)")
+    parser.add_argument("--failure_data", type=str, required=True, help="Path to pre-collected failure trajectories")
+    parser.add_argument("--strategy", type=str, default="baseline", choices=['baseline', 'entropy'])
+    parser.add_argument("--M", type=int, default=5)
     parser.add_argument("--simulation_budget", type=int, default=10000)
-    parser.add_argument("--greedy", action='store_true', default=False,
-                       help="Use greedy instead of softmax (default: softmax)")
-    parser.add_argument("--num_trajectories", type=int, default=None,
-                       help="Limit number of trajectories to process (default: all)")
-    parser.add_argument("--model_path", type=str, 
-                       default="./ckpts/web_click/epoch_9/model.pth")
-    parser.add_argument("--output_dir", type=str, default="./eef_output_uncertainty")
+    parser.add_argument("--greedy", action='store_true', default=False, help="Use greedy instead of softmax (default: softmax)")
+    parser.add_argument("--num_attempts", type=int, default=1)
+    parser.add_argument("--num_trajectories", type=int, default=None, help="Limit number of trajectories to process (default: all)")
+    parser.add_argument("--model_path", type=str, default="./checkpoints/web_click/epoch_9/model.pth")
+    parser.add_argument("--output_dir", type=str, default="./eef_output_detailed")
     parser.add_argument("--verbose", action='store_true', default=True)
     args = parser.parse_args()
     
+    
     action_method = 'greedy' if args.greedy else 'softmax'
     
+
     print("="*70)
-    print("EEF PIPELINE - DECISIONAL UNCERTAINTY")
+    print("EEF PIPELINE - DETAILED SAVING (TRUE ENTROPY)")
     print("="*70)
     print(f"  Model: {args.model_path}")
     print(f"  Strategy: {args.strategy}")
-    print(f"  M (states/trajectory): {args.M}")
-    print(f"  N (rollouts/state): {args.N}")
+    if args.strategy == 'entropy':
+        print(f"  Selection: H(π|s) = -Σ π(a|s) log π(a|s)  [TRUE POLICY ENTROPY]")
+    print(f"  M: {args.M}")
     print(f"  Budget: {args.simulation_budget}")
-    print(f"  Action method: {action_method}")
+    print(f"  Action method: {action_method} (attempts: {args.num_attempts})")
     print(f"  Num trajectories: {args.num_trajectories if args.num_trajectories else 'all'}")
     print("="*70)
     
@@ -750,6 +769,7 @@ def main():
     print(f"\nLoading failures from {args.failure_data}...")
     with open(args.failure_data, 'r') as f:
         failures = json.load(f)
+
     print(f"  Loaded {len(failures)} failures")
     
     # Limit trajectories if specified
@@ -761,64 +781,59 @@ def main():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     results = run_eef_detailed(
         env, agent, failures,
-        M=args.M, N=args.N, strategy=args.strategy,
+        M=args.M, strategy=args.strategy,
         simulation_budget=args.simulation_budget,
         verbose=args.verbose,
-        greedy=args.greedy
+        greedy=args.greedy,
+        num_attempts=args.num_attempts
     )
     
     # Save all outputs
-    prefix = f"{args.strategy}_M{args.M}_N{args.N}_{timestamp}"
+    prefix = f"{args.strategy}_{timestamp}"
     
-    # 1. MAIN OUTPUT: Detailed task analysis with all rollout info
-    path = os.path.join(args.output_dir, f"detailed_analysis_{prefix}.json")
-    with open(path, 'w') as f:
-        json.dump(results['detailed_task_analysis'], f, indent=2)
-    print(f"✓ Saved detailed analysis for {len(results['detailed_task_analysis'])} tasks to {path}")
-    
-    # 2. Full success segments
+    # 1. Full success segments
     path = os.path.join(args.output_dir, f"full_success_segments_{prefix}.json")
     with open(path, 'w') as f:
         json.dump(results['full_success_segments'], f, indent=2)
     print(f"✓ Saved {len(results['full_success_segments'])} full success segments to {path}")
     
-    # 3. Improvement segments
+    # 2. Improvement segments
     path = os.path.join(args.output_dir, f"improvement_segments_{prefix}.json")
     with open(path, 'w') as f:
         json.dump(results['improvement_segments'], f, indent=2)
     print(f"✓ Saved {len(results['improvement_segments'])} improvement segments to {path}")
     
-    # 4. All beneficial states (for entropy analysis)
+    # 3. All beneficial states (for entropy analysis)
     path = os.path.join(args.output_dir, f"beneficial_states_{prefix}.json")
     with open(path, 'w') as f:
         json.dump(results['all_beneficial_states'], f, indent=2)
     print(f"✓ Saved {len(results['all_beneficial_states'])} beneficial states to {path}")
     
-    # 5. ALL simulated states (for comprehensive analysis)
+    # 4. ALL simulated states (for comprehensive analysis)
     path = os.path.join(args.output_dir, f"all_simulated_states_{prefix}.json")
     with open(path, 'w') as f:
         json.dump(results['all_simulated_states'], f, indent=2)
     print(f"✓ Saved {len(results['all_simulated_states'])} simulated states to {path}")
     
-    # 6. Training samples - success only
+    # 5. Training samples - success only
     path = os.path.join(args.output_dir, f"training_success_{prefix}.json")
     with open(path, 'w') as f:
         json.dump(results['training_samples_success'], f, indent=2)
     print(f"✓ Saved {len(results['training_samples_success'])} success training samples to {path}")
     
-    # 7. Training samples - improvement only
+    # 6. Training samples - improvement only
     path = os.path.join(args.output_dir, f"training_improvement_{prefix}.json")
     with open(path, 'w') as f:
         json.dump(results['training_samples_improvement'], f, indent=2)
     print(f"✓ Saved {len(results['training_samples_improvement'])} improvement training samples to {path}")
     
-    # 8. Training samples - all combined
+    # 7. Training samples - all combined
     path = os.path.join(args.output_dir, f"training_all_{prefix}.json")
     with open(path, 'w') as f:
         json.dump(results['all_training_samples'], f, indent=2)
     print(f"✓ Saved {len(results['all_training_samples'])} total training samples to {path}")
     
-    # 9. Statistics
+    # 8. Statistics
     path = os.path.join(args.output_dir, f"stats_{prefix}.json")
     with open(path, 'w') as f:
         json.dump(results['stats'], f, indent=2)
@@ -828,57 +843,14 @@ def main():
     print("✓ EEF pipeline completed successfully!")
     print("="*70)
     print(f"\nOutput files in {args.output_dir}/:")
-    print(f"  - detailed_analysis_{prefix}.json     (MAIN: per-task breakdown with all rollouts)")
-    print(f"  - full_success_segments_{prefix}.json (reward=100)")
-    print(f"  - improvement_segments_{prefix}.json  (reward > original)")
-    print(f"  - beneficial_states_{prefix}.json     (for entropy analysis)")
-    print(f"  - all_simulated_states_{prefix}.json  (ALL simulated states)")
-    print(f"  - training_success_{prefix}.json      (training data from successes)")
-    print(f"  - training_improvement_{prefix}.json  (training data from improvements)")
-    print(f"  - training_all_{prefix}.json          (combined training data)")
-    print(f"  - stats_{prefix}.json                 (statistics)")
-    
-    print(f"\n{'='*70}")
-    print("DETAILED ANALYSIS JSON STRUCTURE:")
-    print(f"{'='*70}")
-    print("""
-Each task in detailed_analysis_{prefix}.json contains:
-{
-  "task_id": 123,
-  "goal": "Find a blue shirt...",
-  "trajectory_length": 8,
-  "original_reward": 30,
-  "strategy": "baseline|entropy",
-  "selected_states": [1, 3, 5],
-  "state_details": [
-    {
-      "state_idx": 1,
-      "num_valid_actions": 15,
-      "entropy_score": 0.58,
-      "position_score": 0.72,
-      "num_rollouts": 10,
-      "num_successes": 3,
-      "num_improvements": 5,
-      "p_hat": 0.3,
-      "decisional_uncertainty": 0.21,
-      "rewards": [0, 100, 30, 100, 50, ...],
-      "mean_reward": 45.0,
-      "rollouts": [
-        {"rollout_idx": 0, "success": false, "reward": 0},
-        {"rollout_idx": 1, "success": true, "reward": 100},
-        ...
-      ]
-    },
-    ...
-  ],
-  "task_summary": {
-    "total_rollouts": 30,
-    "total_successes": 7,
-    "mean_uncertainty": 0.18,
-    "any_full_success": true
-  }
-}
-""")
+    print(f"  - full_success_segments_{prefix}.json  (reward=100)")
+    print(f"  - improvement_segments_{prefix}.json   (reward > original)")
+    print(f"  - beneficial_states_{prefix}.json      (for entropy analysis)")
+    print(f"  - all_simulated_states_{prefix}.json   (ALL simulated states)")
+    print(f"  - training_success_{prefix}.json       (training data from successes)")
+    print(f"  - training_improvement_{prefix}.json   (training data from improvements)")
+    print(f"  - training_all_{prefix}.json           (combined training data)")
+    print(f"  - stats_{prefix}.json                  (statistics)")
 
 
 if __name__ == "__main__":

@@ -30,18 +30,18 @@ search_engine/indexes_100k/
 # -----------------------------------------------------------------------------
 # MODEL CHECKPOINTS (36+ GB) - CRITICAL  
 # -----------------------------------------------------------------------------
-baseline_models/ckpts/
+baseline_models/checkpoints/
 *.pth
 *.pt
 *.bin
 checkpoint-*/
 epoch_*/
 
-# Specific model directories (if ckpts/ pattern doesn't catch them)
-baseline_models/ckpts/web_click_deberta/
-baseline_models/ckpts/web_click_bert_large/
-baseline_models/ckpts/web_click/
-baseline_models/ckpts/web_search/
+# Specific model directories (if checkpoints/ pattern doesn't catch them)
+baseline_models/checkpoints/web_click_deberta/
+baseline_models/checkpoints/web_click_bert_large/
+baseline_models/checkpoints/web_click/
+baseline_models/checkpoints/web_search/
 
 # -----------------------------------------------------------------------------
 # EEF OUTPUT FILES (100+ MB JSON files)

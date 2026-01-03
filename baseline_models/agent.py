@@ -1,162 +1,134 @@
-import os
-import random
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from transformers import AutoTokenizer
-from collections import defaultdict, namedtuple
-
-from models.bert import BertConfigForWebshop, BertModelForWebshop
-from models.rnn import RCDQN
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-State = namedtuple('State', ('obs', 'goal', 'click', 'estimate', 'obs_str', 'goal_str', 'image_feat'))
-TransitionPG = namedtuple('TransitionPG', ('state', 'act', 'reward', 'value', 'valid_acts', 'done'))
-
-
-def discount_reward(transitions, last_values, gamma):
-    returns, advantages = [], []
-    R = last_values.detach()  # always detached
-    for t in reversed(range(len(transitions))):
-        _, _, rewards, values, _, dones = transitions[t]
-        R = torch.FloatTensor(rewards).to(device) + gamma * R * (1 - torch.FloatTensor(dones).to(device))
-        baseline = values
-        adv = R - baseline
-        returns.append(R)
-        advantages.append(adv)
-    return returns[::-1], advantages[::-1]
-
-
 class Agent:
-    def __init__(self, args):
-        # tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased', truncation_side='left', max_length=512)
-        self.tokenizer.add_tokens(['[button], [button_], [clicked button], [clicked button_]'], special_tokens=True)
-        vocab_size = len(self.tokenizer)
-        embedding_dim = args.embedding_dim
-
-        # network
-        if args.network == 'rnn':
-            self.network = RCDQN(vocab_size, embedding_dim, 
-                args.hidden_dim, args.arch_encoder, args.grad_encoder, None, args.gru_embed, args.get_image, args.bert_path)
-            self.network.rl_forward = self.network.forward
-        elif args.network == 'bert':
-            config = BertConfigForWebshop(image=args.get_image, pretrained_bert=(args.bert_path != 'scratch'))
-            self.network = BertModelForWebshop(config)
-            if args.bert_path != '' and args.bert_path != 'scratch':
-                self.network.load_state_dict(torch.load(args.bert_path, map_location=torch.device('cpu')), strict=False)
-        else:
-            raise ValueError('Unknown network: {}'.format(args.network))
-        self.network = self.network.to(device)
-
-        self.save_path = args.output_dir
-        self.clip = args.clip
-        self.w = {'loss_pg': args.w_pg, 'loss_td': args.w_td, 'loss_il': args.w_il, 'loss_en': args.w_en}
-        self.optimizer = torch.optim.Adam(self.network.parameters(), lr=args.learning_rate)
-        self.gamma = args.gamma
-
-    def build_state(self, ob, info):
-        """ Returns a state representation built from various info sources. """
-        obs_ids = self.encode(ob)
-        goal_ids = self.encode(info['goal'])
-        click = info['valid'][0].startswith('click[')
-        estimate = info['estimate_score']
-        obs_str = ob.replace('\n', '[SEP]')
-        goal_str = info['goal']
-        image_feat = info.get('image_feat')
-        return State(obs_ids, goal_ids, click, estimate, obs_str, goal_str, image_feat)
-
-
-    def encode(self, observation, max_length=512):
-        """ Encode an observation """
-        observation = observation.lower().replace('"', '').replace("'", "").strip()
-        observation = observation.replace('[sep]', '[SEP]')
-        token_ids = self.tokenizer.encode(observation, truncation=True, max_length=max_length)
-        return token_ids
-
-    def decode(self, act):
-        act = self.tokenizer.decode(act, skip_special_tokens=True)
-        act = act.replace(' [ ', '[').replace(' ]', ']')
-        return act
+    """Agent wrapper - NO BART, with TRUE entropy computation"""
     
-    def encode_valids(self, valids, max_length=64):
-        """ Encode a list of lists of strs """
-        return [[self.encode(act, max_length=max_length) for act in valid] for valid in valids]
-
-
-    def act(self, states, valid_acts, method, state_strs=None, eps=0.1):
-        """ Returns a string action from poss_acts. """
-        act_ids = self.encode_valids(valid_acts)
-
-        # sample actions
-        act_values, act_sizes, values = self.network.rl_forward(states, act_ids, value=True, act=True)
-        act_values = act_values.split(act_sizes)
-        if method == 'softmax':
-            act_probs = [F.softmax(vals, dim=0) for vals in act_values]
-            act_idxs = [torch.multinomial(probs, num_samples=1).item() for probs in act_probs]
-        elif method == 'greedy':
-            act_idxs = [vals.argmax(dim=0).item() for vals in act_values]
-        elif method == 'eps': # eps exploration
-            act_idxs = [vals.argmax(dim=0).item() if random.random() > eps else random.randint(0, len(vals)-1) for vals in act_values]
-        acts = [acts[idx] for acts, idx in zip(act_ids, act_idxs)]
-
-        # decode actions
-        act_strs, act_ids = [], []
-        for act, idx, valids in zip(acts, act_idxs, valid_acts):
-            if torch.is_tensor(act):
-                act = act.tolist()
-            if 102 in act:
-                act = act[:act.index(102) + 1]
-            act_ids.append(act)  # [101, ..., 102]
-            if idx is None:  # generative
-                act_str = self.decode(act)
-            else:  # int
-                act_str = valids[idx]
-            act_strs.append(act_str)
-        return act_strs, act_ids, values
+    def __init__(self, models_dict):
+        self.model = models_dict['model']
+        self.tokenizer = models_dict['tokenizer']
+        self.data_collator = models_dict['data_collator']
+        self.process = models_dict['process']
+        self.process_goal = models_dict['process_goal']
+        self.device = models_dict['device']
     
 
-    def update(self, transitions, last_values, step=None, rewards_invdy=None):
-        returns, advs = discount_reward(transitions, last_values, self.gamma)
-        stats_global = defaultdict(float)
-        for transition, adv in zip(transitions, advs):
-            stats = {}
-            log_valid, valid_sizes = self.network.rl_forward(transition.state, transition.valid_acts)
-            act_values = log_valid.split(valid_sizes)
-            log_a = torch.stack([values[acts.index(act)]
-                                        for values, acts, act in zip(act_values, transition.valid_acts, transition.act)])
 
-            stats['loss_pg'] = - (log_a * adv.detach()).mean()
-            stats['loss_td'] = adv.pow(2).mean()
-            stats['loss_il'] = - log_valid.mean()
-            stats['loss_en'] = (log_valid * log_valid.exp()).mean()
-            for k in stats:
-                stats[k] = self.w[k] * stats[k] / len(transitions)
-            stats['loss'] = sum(stats[k] for k in stats)
-            stats['returns'] = torch.stack(returns).mean() / len(transitions)
-            stats['advs'] = torch.stack(advs).mean() / len(transitions)
-            stats['loss'].backward()
+    def get_action_probs(self, obs: str, valid_acts: List[str]) -> Optional[torch.Tensor]:
+        """
+        Get action probability distribution from model.
+        
+        Returns:
+            Tensor of probabilities over valid_acts, or None if can't compute
+        """
+        if not valid_acts:
+            return None
+        
+        # Skip search states - can't compute entropy for generative actions
+        if valid_acts[0].startswith('search['):
+            return None
+        
+        # Encode state and actions
+        state_encodings = self.tokenizer(self.process(obs), max_length=512, truncation=True, padding='max_length')
+        action_encodings = self.tokenizer(list(map(self.process, valid_acts)), max_length=512, truncation=True, padding='max_length')
+        
+        batch = {
+            'state_input_ids': state_encodings['input_ids'],
+            'state_attention_mask': state_encodings['attention_mask'],
+            'action_input_ids': action_encodings['input_ids'],
+            'action_attention_mask': action_encodings['attention_mask'],
+            'sizes': len(valid_acts),
+            'images': [0.0] * 512,
+            'labels': 0
+        }
+        batch = self.data_collator([batch])
+        batch = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
+        
+        with torch.no_grad():
+            outputs = self.model(**batch)
+            logits = outputs.logits[0]
+            probs = F.softmax(logits, dim=0)
+        
+        return probs
+    
 
-            # Compute the gradient norm
-            stats['gradnorm_unclipped'] = sum(p.grad.norm(2).item() for p in self.network.parameters() if p.grad is not None)
-            nn.utils.clip_grad_norm_(self.network.parameters(), self.clip)
-            stats['gradnorm_clipped'] = sum(p.grad.norm(2).item() for p in self.network.parameters() if p.grad is not None)
-            for k, v in stats.items():
-                stats_global[k] += v.item() if torch.is_tensor(v) else v
-            del stats
-        self.optimizer.step()
-        self.optimizer.zero_grad()
-        return stats_global
-
-    def load(self):
-        try:
-            self.network = torch.load(os.path.join(self.save_path, 'model.pt'))
-        except Exception as e:
-            print("Error saving model.", e)
-
-    def save(self):
-        try:
-            torch.save(self.network, os.path.join(self.save_path, 'model.pt'))
-        except Exception as e:
-            print("Error saving model.", e)
+    def compute_true_entropy(self, obs: str, valid_acts: List[str]) -> Tuple[float, float, float]:
+        """
+        Compute TRUE policy entropy: H(π|s) = -Σ π(a|s) log π(a|s)
+        
+        This is the CORRECT way to measure model uncertainty.
+        NOT log(|valid_actions|) which just counts buttons!
+        
+        Args:
+            obs: Observation string
+            valid_acts: List of valid action strings
+            
+        Returns:
+            (entropy, normalized_entropy, max_prob)
+            - entropy: Raw entropy in nats
+            - normalized_entropy: H / log(|A|), scaled to [0,1]
+            - max_prob: Confidence in top action (1 - this = uncertainty)
+        """
+        probs = self.get_action_probs(obs, valid_acts)
+        
+        if probs is None:
+            # Search state or error - return 0
+            return 0.0, 0.0, 1.0
+        
+        # Compute entropy: H = -Σ p log p
+        probs_clamped = probs.clamp(min=1e-10)
+        entropy = -(probs_clamped * torch.log(probs_clamped)).sum().item()
+        
+        # Normalized entropy: H / H_max where H_max = log(|A|)
+        n_actions = len(valid_acts)
+        max_entropy = np.log(n_actions) if n_actions > 1 else 1.0
+        normalized_entropy = entropy / max_entropy if max_entropy > 0 else 0.0
+        
+        # Max probability (confidence)
+        max_prob = probs.max().item()
+        
+        return entropy, normalized_entropy, max_prob
+    
+    def get_action(self, obs: str, info: dict, method='softmax') -> Tuple[str, dict]:
+        """Get action from the model. Default is softmax for exploration."""
+        valid_acts = info.get('valid', [])
+        
+        if not valid_acts:
+            return 'click[back to search]', {'type': 'fallback'}
+        
+        # Handle search page - NO BART
+        if valid_acts[0].startswith('search['):
+            action = valid_acts[-1] if valid_acts else 'search[query]'
+            return action, {
+                'type': 'search', 
+                'selected': 'valid_acts[-1]',
+                'entropy': 0.0,
+                'normalized_entropy': 0.0,
+            }
+        
+        # Get probabilities
+        probs = self.get_action_probs(obs, valid_acts)
+        
+        if probs is None:
+            return valid_acts[0], {'type': 'error'}
+        
+        # Compute entropy
+        probs_clamped = probs.clamp(min=1e-10)
+        entropy = -(probs_clamped * torch.log(probs_clamped)).sum().item()
+        n_actions = len(valid_acts)
+        max_entropy = np.log(n_actions) if n_actions > 1 else 1.0
+        normalized_entropy = entropy / max_entropy if max_entropy > 0 else 0.0
+        
+        # Select action
+        if method == 'greedy':
+            idx = probs.argmax().item()
+        else:  # softmax (default)
+            idx = torch.multinomial(probs, 1)[0].item()
+        
+        action = valid_acts[idx] if idx < len(valid_acts) else valid_acts[0]
+        return action, {
+            'type': 'choice',
+            'chosen_idx': idx,
+            'num_valid': len(valid_acts),
+            'confidence': probs[idx].item(),
+            'action_probs': probs.cpu().tolist(),
+            'entropy': entropy,
+            'normalized_entropy': normalized_entropy,
+        }

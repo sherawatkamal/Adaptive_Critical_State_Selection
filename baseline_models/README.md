@@ -12,22 +12,22 @@ cd ..
 * Download the trained model checkpoints for search and choice IL from [here](https://drive.google.com/drive/folders/1liZmB1J38yY_zsokJAxRfN8xVO1B_YmD?usp=sharing).
 
 When running the scripts discussed below, by default, the code will seek out the model parameters specified in the files/folders of the trained model checkpoints as:
-* `./ckpts/web_click/epoch_9/model.pth` for `choice_il_epoch9.pth`
-* `./ckpts/web_search/checkpoint-800` for `checkpoints-800/` (from `search_il_checkpoints_800.zip`)
+* `./checkpoints/web_click/epoch_9/model.pth` for `choice_il_epoch9.pth`
+* `./checkpoints/web_search/checkpoint-800` for `checkpoints-800/` (from `search_il_checkpoints_800.zip`)
 
 We recommend creating these directories and putting the renamed files in the aforementioned, corresponding locations. If you are currently in this directory (`baseline_models`) and have the model checkpoints `.zip` file in your `Downloads` folder, these commands should do the trick.
 ```bash
-mkdir -p ckpts/web_click/epoch_9/
-mkdir -p ckpts/web_search/
+mkdir -p checkpoints/web_click/epoch_9/
+mkdir -p checkpoints/web_search/
 mv ~/Downloads/choice_il_epoch9.pth ~/Downloads/model.pth
-mv ~/Downloads/model.pth ckpts/web_click/epoch_9/
-mv ~/Downloads/search_il_checkpoints_800.zip ckpts/web_search/
-unzip ckpts/web_search_il_checkpoints_800.zip
+mv ~/Downloads/model.pth checkpoints/web_click/epoch_9/
+mv ~/Downloads/search_il_checkpoints_800.zip checkpoints/web_search/
+unzip checkpoints/web_search_il_checkpoints_800.zip
 ```
 
 Your final layout should look like this:
 <p float="left">
-    <img src="../assets/model_ckpts.png">
+    <img src="../assets/model_checkpoints.png">
 </p>
 
 
@@ -35,13 +35,13 @@ On the other hand, if you'd like to put the files in a custom location, you can 
 
 ## 🛠️ Usage
 ➤ Train the **search IL model** (BART Transformer):
-> Note: Trained values will be output to `./ckpts/web_search` based on this [line](https://github.com/princeton-nlp/WebShop/blob/master/baseline_models/train_search_il.py#L119)
+> Note: Trained values will be output to `./checkpoints/web_search` based on this [line](https://github.com/princeton-nlp/WebShop/blob/master/baseline_models/train_search_il.py#L119)
 ```bash
 python train_search.py
 ```
 
 ➤ Train the **choice IL model** (BERT Transformer):
-> Notes: Trained values will be output to `./ckpts/web_choice` based on this [line](https://github.com/princeton-nlp/WebShop/blob/master/baseline_models/train_choice_il.py#L299); List of Arguments [here](https://github.com/princeton-nlp/WebShop/blob/master/baseline_models/train_choice_il.py#L213) 
+> Notes: Trained values will be output to `./checkpoints/web_choice` based on this [line](https://github.com/princeton-nlp/WebShop/blob/master/baseline_models/train_choice_il.py#L299); List of Arguments [here](https://github.com/princeton-nlp/WebShop/blob/master/baseline_models/train_choice_il.py#L213) 
 ```bash
 python train_choice.py
 ```

@@ -18,12 +18,16 @@ class WebEnv:
     ''' A wrapper of textEnv for models. Returns valid actions at each step of the game. '''
 
     def __init__(self, args, split, server=None, id=None):
-        self.env = WebAgentTextEnv(observation_mode=args.state_format, server=server,
-                                   filter_goals=None, limit_goals=-1,
-                                   num_products=args.num, human_goals=args.human_goals,
-                                   get_image=args.get_image,
-                                   num_prev_obs=args.num_prev_obs, num_prev_actions=args.num_prev_actions,
-                                   session_prefix=id)
+        self.env = WebAgentTextEnv(
+            observation_mode=args.state_format, server=server,
+            filter_goals=None, limit_goals=-1,
+            num_products=args.num, human_goals=args.human_goals,
+            get_image=args.get_image,
+            num_prev_obs=args.num_prev_obs, num_prev_actions=args.num_prev_actions,
+            session_prefix=id
+        )
+
+
         if args.num is None:
             if split == 'test':
                 self.goal_idxs = range(500)
@@ -149,8 +153,7 @@ class WebEnv:
 
     def step(self, action):
         if self.click_item_name and action.startswith('click[item - ') and action[13:-1] in self.name2asin:
-            valid_items = [_ for _ in self.get_valid_actions()
-                           if _.startswith('click[item - ')]
+            valid_items = [_ for _ in self.get_valid_actions() if _.startswith('click[item - ')]
             if action in valid_items:
                 self.item_rank = valid_items.index(action) + 1
             else:
@@ -167,16 +170,19 @@ class WebEnv:
             self.env.step('click[< prev]')
         else:
             desc = feat = ''
+
         r_visit = 0.0
         self.cur_ob, self.prev_ob = ob, self.cur_ob
         if info is None:
             info = {}
+
         self.steps += 1
         if self.step_limit and self.steps >= self.step_limit:
             done = True
+
         if done:
-            info['verbose'] = self.session.get('verbose_info', {
-                                               'r_att': 0.0, 'r_option': 0.0, 'r_price': 0.0, 'r_type': 0.0, 'w_att': 0.0, 'w_option': 0.0, 'w_price': 0.0})
+            info['verbose'] = self.session.get('verbose_info', {'r_att': 0.0, 'r_option': 0.0, 'r_price': 0.0, 'r_type': 0.0, 'w_att': 0.0, 'w_option': 0.0, 'w_price': 0.0})
+            
             verbose = info['verbose']
             verbose['r_harsh'] = (reward == 1)
             verbose['r_exact'] = (reward == 1) and (
@@ -184,23 +190,27 @@ class WebEnv:
             verbose['r_norm'] = reward / self.steps
             verbose['r_visit'] = r_visit
             verbose['rank_item'] = self.item_rank
+
             # log reward with respect to #options
             if self.harsh_reward:
                 reward = verbose['r_harsh']
             for k, v in self.session['actions'].items():
                 self.stats[f'action_{k}'] += v
+
             cat = self.session['goal']['category']
             self.stats[f'cat_{cat}'] += 1
+
             for att in self.session['goal']['attributes']:
                 if att in info['verbose'].get('purchased_attrs', []):
                     self.attributes_success[att] += 1
                 else:
                     self.attributes_fail[att] += 1
 
-        info.update({'valid': self.get_valid_actions(), 'goal': self.env.instruction_text,
-                     'score': reward * 10, 'estimate_score': self.score(),
-                     'prev_ob': self.prev_ob, 'desc': desc, 'feat': feat
-                     })
+        info.update({
+            'valid': self.get_valid_actions(), 'goal': self.env.instruction_text,
+            'score': reward * 10, 'estimate_score': self.score(),
+            'prev_ob': self.prev_ob, 'desc': desc, 'feat': feat
+        })
 
         if self.get_image:
             image_feat = self.env.get_image()
@@ -215,11 +225,15 @@ class WebEnv:
         self.session = self.env.server.user_sessions[self.env.session]
         if info is None:
             info = {}
+
         self.cur_ob, self.prev_ob = ob, None
-        info.update({'valid': self.get_valid_actions(), 'goal': self.env.instruction_text,
-                     'score': 0, 'estimate_score': self.score(),
-                     'prev_ob': self.prev_ob, 'desc': '', 'feat': ''
-                     })
+        info.update({
+            'valid': self.get_valid_actions(), 'goal': self.env.instruction_text,
+            'score': 0, 'estimate_score': self.score(),
+            'prev_ob': self.prev_ob, 'desc': '', 'feat': ''
+        })
+
+
         self.steps = 0
         if self.go_to_search or self.go_to_item:
             name = self.session['goal']['name'].lower()

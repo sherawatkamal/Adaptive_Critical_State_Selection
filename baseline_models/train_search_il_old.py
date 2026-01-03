@@ -116,7 +116,7 @@ if __name__ == "__main__":
     model.resize_token_embeddings(len(tokenizer))
     # model = BartForConditionalGeneration.from_pretrained('./models/qdmr-high-level-base/checkpoint-10000')
     training_args = TrainingArguments(
-        output_dir='./ckpts/web_search',
+        output_dir='./checkpoints/web_search',
         num_train_epochs=10,
         per_device_train_batch_size=4,
         per_device_eval_batch_size=4,

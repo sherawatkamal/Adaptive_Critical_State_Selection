@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""
-EEF Pipeline - With Detailed Segment Saving
-
-Changes from original:
-1. Saves full success segments (reward=100) separately
-2. Saves improvement segments (reward > original) separately  
-3. Saves detailed state info for entropy analysis
-4. Includes recovery_step, final_reward, valid_actions in all outputs
-
-Default: Uses softmax exploration (use --greedy to disable)
-"""
 
 import os
 import sys
@@ -25,6 +14,14 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
+from train_rl import parse_args as webenv_args
+from env import WebEnv
+from agent import Agent
+
+from train_choice_il import tokenizer, data_collator, process, process_goal
+from models.bert import BertModelForWebshop, BertConfigForWebshop
+
+
 
 # ============================================================================
 # ENVIRONMENT AND MODEL SETUP
@@ -37,9 +34,6 @@ def setup_environment(split='test'):
     # Temporarily clear sys.argv to prevent train_rl from parsing our args
     original_argv = sys.argv
     sys.argv = [sys.argv[0]]  # Keep only script name
-    
-    from train_rl import parse_args as webenv_args
-    from env import WebEnv
     
     env_args = webenv_args()[0]
     
@@ -55,10 +49,9 @@ def setup_environment(split='test'):
     return env
 
 
-def setup_model(model_path="./ckpts/web_click/epoch_9/model.pth"):
+
+def setup_model(model_path="./checkpoints/web_click/epoch_9/model.pth"):
     """Setup the IL model - NO BART, NO IMAGES"""
-    from train_choice_il import tokenizer, data_collator, process, process_goal
-    from models.bert import BertModelForWebshop, BertConfigForWebshop
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
@@ -80,90 +73,25 @@ def setup_model(model_path="./ckpts/web_click/epoch_9/model.pth"):
     }
 
 
-class Agent:
-    """Agent wrapper - NO BART"""
-    
-    def __init__(self, models_dict):
-        self.model = models_dict['model']
-        self.tokenizer = models_dict['tokenizer']
-        self.data_collator = models_dict['data_collator']
-        self.process = models_dict['process']
-        self.process_goal = models_dict['process_goal']
-        self.device = models_dict['device']
-    
-    def get_action(self, obs: str, info: dict, method='softmax') -> Tuple[str, dict]:
-        """Get action from the model. Default is softmax for exploration."""
-        valid_acts = info.get('valid', [])
-        
-        if not valid_acts:
-            return 'click[back to search]', {'type': 'fallback'}
-        
-        # Handle search page - NO BART
-        if valid_acts[0].startswith('search['):
-            action = valid_acts[-1] if valid_acts else 'search[query]'
-            return action, {'type': 'search', 'selected': 'valid_acts[-1]'}
-        
-        # Encode state and actions
-        state_encodings = self.tokenizer(
-            self.process(obs), max_length=512, truncation=True, padding='max_length'
-        )
-        action_encodings = self.tokenizer(
-            list(map(self.process, valid_acts)), max_length=512, truncation=True, padding='max_length'
-        )
-        
-        batch = {
-            'state_input_ids': state_encodings['input_ids'],
-            'state_attention_mask': state_encodings['attention_mask'],
-            'action_input_ids': action_encodings['input_ids'],
-            'action_attention_mask': action_encodings['attention_mask'],
-            'sizes': len(valid_acts),
-            'images': [0.0] * 512,
-            'labels': 0
-        }
-        batch = self.data_collator([batch])
-        batch = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
-        
-        with torch.no_grad():
-            outputs = self.model(**batch)
-            logits = outputs.logits[0]
-            probs = F.softmax(logits, dim=0)
-            
-            if method == 'greedy':
-                idx = logits.argmax(0).item()
-            else:  # softmax (default)
-                idx = torch.multinomial(probs, 1)[0].item()
-        
-        action = valid_acts[idx] if idx < len(valid_acts) else valid_acts[0]
-        return action, {
-            'type': 'choice',
-            'chosen_idx': idx,
-            'num_valid': len(valid_acts),
-            'confidence': probs[idx].item(),
-            'action_probs': probs.cpu().tolist(),  # Store full probs for entropy analysis
-        }
+
 
 
 # ============================================================================
-# EEF SIMULATOR
+# CPT SIMULATOR
 # ============================================================================
 
-class EEFSimulator:
-    """EEF Simulator"""
+class CPTSimulator:
+    """CPT Simulator"""
     
     def __init__(self, env, agent, max_steps=50, debug=False):
         self.env = env
         self.agent = agent
         self.max_steps = max_steps
         self.debug = debug
-        self.stats = {
-            'total_simulations': 0,
-            'successful_replays': 0,
-            'replay_failures': 0,
-            'recoveries': 0,
-        }
+        self.stats = {'total_simulations': 0, 'successful_replays': 0, 'replay_failures': 0, 'recoveries': 0}
+        
     
-    def simulate_from_state(self, task_id: int, target_step: int, 
-                           trajectory: Dict, method='softmax') -> Tuple[bool, float, List[Dict]]:
+    def simulate_from_state(self, task_id: int, target_step: int, trajectory: Dict, method='softmax') -> Tuple[bool, float, List[Dict]]:
         """Simulate from a specific step in the trajectory."""
         self.stats['total_simulations'] += 1
         
@@ -198,6 +126,7 @@ class EEFSimulator:
         
         self.stats['successful_replays'] += 1
         
+
         # PHASE 2: Agent-driven simulation from target state
         for sim_step in range(self.max_steps):
             valid_acts = info.get('valid', [])
@@ -229,50 +158,118 @@ class EEFSimulator:
         return False, 0.0, simulation_traj
 
 
-# ============================================================================
-# STATE SELECTION (ACSS)
-# ============================================================================
 
-def select_critical_states_baseline(trajectory: Dict, M: int = 5) -> List[int]:
-    """Baseline: Equal-interval skip-length selection"""
+
+
+
+def select_critical_states_entropy(trajectory: Dict, M, agent: Agent) -> Tuple[List[int], List[Dict]]:
+    """
+    ACSS: TRUE policy entropy based selection (FIXED)
+    
+    Uses H(π|s) = -Σ π(a|s) log π(a|s) from model logprobs.
+    NOT log(|A|) which just counts actions!
+    
+    Args:
+        trajectory: Trajectory dict with 'steps'
+        M: Number of states to select
+        agent: Agent instance (required for true entropy)
+        
+    Returns:
+        (selected_indices, entropy_info)
+    """
     steps = trajectory.get('steps', [])
     T = len(steps)
     if T <= 1:
-        return []
-    l = max(1, T // (M + 1))
-    return [m * l for m in range(1, M + 1) if m * l < T]
-
-
-def select_critical_states_entropy(trajectory: Dict, M: int = 5) -> List[int]:
-    """ACSS: Entropy-approximation based selection"""
-    steps = trajectory.get('steps', [])
-    T = len(steps)
-    if T <= 1:
-        return []
+        return [], []
+    
+    # If no agent provided, fall back to baseline
+    if agent is None:
+        print("Error: No agent provided for entropy calculation. Using baseline.")
+        raise Exception("Error: No agent provided for entropy calculation")
     
     scores = []
-    for i, step in enumerate(steps[:-1]):
-        n_actions = len(step.get('valid_actions', []))
-        entropy_score = np.log(n_actions + 1) / np.log(100)
+    for i, step in enumerate(steps[:-1]):  # Exclude last state
+        obs = step.get('observation', '')
+        valid_acts = step.get('valid_actions', [])
+        n_actions = len(valid_acts)
+        
+        # Position score (slight preference for earlier-middle states)
         position = i / max(T - 1, 1)
         position_score = np.exp(-0.5 * ((position - 0.4) / 0.3) ** 2)
-        score = 0.6 * entropy_score + 0.4 * position_score
-        scores.append((i, score))
+        
+        # Check for search state
+        is_search = valid_acts and valid_acts[0].startswith('search[')
+        
+        if is_search or not valid_acts:
+            # For search states, use position only (can't compute entropy)
+            scores.append({
+                'state_idx': i,
+                'true_entropy': 0.0,
+                'normalized_entropy': 0.0,
+                'action_count_score': np.log(n_actions + 1) / np.log(100) if n_actions > 0 else 0,
+                'position_score': position_score,
+                'combined_score': 0.2 * position_score,  # Low score for search states
+                'n_actions': n_actions,
+                'max_prob': 1.0,
+                'is_search_state': True,
+                'method': 'true_entropy',
+            })
+            continue
+        
+        # Compute TRUE policy entropy from model
+        try:
+            entropy, normalized_entropy, max_prob = agent.compute_true_entropy(obs, valid_acts)
+        except Exception as e:
+            print(f"  Warning: Entropy computation failed for state {i}: {e}")
+            entropy, normalized_entropy, max_prob = 0.0, 0.0, 1.0
+        
+        # Also compute action count score for comparison/logging
+        action_count_score = np.log(n_actions + 1) / np.log(100)
+        
+        # Combined score: primarily entropy, with position tiebreaker
+        # Using normalized entropy so it's comparable across different action counts
+        combined_score = 0.8 * normalized_entropy + 0.2 * position_score
+        
+        scores.append({
+            'state_idx': i,
+            'true_entropy': entropy,
+            'normalized_entropy': normalized_entropy,
+            'action_count_score': action_count_score,
+            'position_score': position_score,
+            'combined_score': combined_score,
+            'n_actions': n_actions,
+            'max_prob': max_prob,
+            'is_search_state': False,
+            'method': 'true_entropy',
+        })
     
-    scores.sort(key=lambda x: x[1], reverse=True)
-    return sorted([idx for idx, _ in scores[:M]])
+    # Filter out search states, then sort by combined score
+    choice_states = [s for s in scores if not s.get('is_search_state', False)]
+    choice_states.sort(key=lambda x: x['combined_score'], reverse=True)
+    
+    # Select top M
+    selected = choice_states[:M]
+    indices = sorted([s['state_idx'] for s in selected])
+    
+    return indices, selected
+
+
+
+
 
 
 # ============================================================================
-# EEF PIPELINE WITH DETAILED SAVING
+# CPT PIPELINE WITH DETAILED SAVING
 # ============================================================================
 
-def run_eef_detailed(env, agent, failures: List[Dict], 
-                     M: int = 5, strategy: str = 'baseline',
-                     simulation_budget: int = 10000, verbose: bool = True,
-                     greedy: bool = False, num_attempts: int = 1):
+def run_cpt_detailed(
+        env, agent, failures: List[Dict], 
+        M: int = 5, strategy: str = 'baseline',
+        simulation_budget: int = 10000, verbose: bool = True,
+        greedy: bool = False, num_attempts: int = 1
+    ):
     """
-    Run EEF pipeline with detailed segment saving.
+    Run CPT pipeline with detailed segment saving.
     
     Returns:
         - full_success_segments: States that achieved reward=100
@@ -281,8 +278,10 @@ def run_eef_detailed(env, agent, failures: List[Dict],
         - training_samples: All training data
         - stats: Pipeline statistics
     """
-    simulator = EEFSimulator(env, agent, debug=verbose)
-    select_states = select_critical_states_entropy if strategy == 'entropy' else select_critical_states_baseline
+    simulator = CPTSimulator(env, agent, debug=verbose)
+    
+    # Select state selection function
+    select_states = lambda traj, m: select_critical_states_entropy(traj, m, agent)
     
     # Default is softmax, use greedy only if explicitly set
     action_method = 'greedy' if greedy else 'softmax'
@@ -291,6 +290,7 @@ def run_eef_detailed(env, agent, failures: List[Dict],
     print(f"PHASE 2: RUNNING EEF (DETAILED)")
     print(f"{'='*70}")
     print(f"  Strategy: {strategy}")
+    
     print(f"  M (states per trajectory): {M}")
     print(f"  Failures: {len(failures)}")
     print(f"  Simulation budget: {simulation_budget}")
@@ -306,17 +306,23 @@ def run_eef_detailed(env, agent, failures: List[Dict],
     simulations_run = 0
     total_states_selected = 0
     
+    # Track entropy statistics
+    all_selection_info = []
+    
     for traj_idx, trajectory in enumerate(failures):
         task_id = trajectory['task_id']
         original_reward = trajectory.get('reward', 0)
         goal = trajectory.get('goal', '')
         traj_length = len(trajectory.get('steps', []))
-        critical_states = select_states(trajectory, M)
+        
+        # Select states using chosen strategy
+        critical_states, selection_info = select_states(trajectory, M)
         
         if not critical_states:
             continue
         
         total_states_selected += len(critical_states)
+        all_selection_info.extend(selection_info)
         
         if verbose:
             print(f"\n  Task {task_id} ({traj_idx+1}/{len(failures)}):")
@@ -324,6 +330,7 @@ def run_eef_detailed(env, agent, failures: List[Dict],
             print(f"    Original reward: {original_reward:.0f}")
             print(f"    Critical states: {critical_states}")
         
+
         for state_idx in critical_states:
             if simulations_run >= simulation_budget:
                 break
@@ -332,6 +339,12 @@ def run_eef_detailed(env, agent, failures: List[Dict],
             steps = trajectory.get('steps', [])
             state_obs = steps[state_idx].get('observation', '') if state_idx < len(steps) else ''
             state_valid_actions = steps[state_idx].get('valid_actions', []) if state_idx < len(steps) else []
+            
+            # Get entropy info for this state
+            state_entropy_info = next(
+                (s for s in selection_info if s['state_idx'] == state_idx), 
+                {'true_entropy': 0.0, 'normalized_entropy': 0.0, 'action_count_score': 0.0}
+            )
             
             best_reward = -1
             best_traj = None
@@ -342,9 +355,7 @@ def run_eef_detailed(env, agent, failures: List[Dict],
                 if simulations_run >= simulation_budget:
                     break
                 
-                success, reward, sim_traj = simulator.simulate_from_state(
-                    task_id, state_idx, trajectory, method=action_method
-                )
+                success, reward, sim_traj = simulator.simulate_from_state(task_id, state_idx, trajectory, method=action_method)
                 simulations_run += 1
                 attempts_made += 1
                 
@@ -370,6 +381,10 @@ def run_eef_detailed(env, agent, failures: List[Dict],
                 'num_valid_actions': len(state_valid_actions),
                 'attempts_made': attempts_made,
                 'strategy': strategy,
+                # Entropy info
+                'true_entropy': state_entropy_info.get('true_entropy', 0.0),
+                'normalized_entropy': state_entropy_info.get('normalized_entropy', 0.0),
+                'action_count_score': state_entropy_info.get('action_count_score', 0.0),
             }
             all_simulated_states.append(simulated_state_info)
             
@@ -380,7 +395,8 @@ def run_eef_detailed(env, agent, failures: List[Dict],
             if is_full_success or is_improvement:
                 status = "SUCCESS" if is_full_success else "IMPROVED"
                 if verbose:
-                    print(f"    Step {state_idx}: ✓ {status}! {original_reward:.0f} → {best_reward:.0f}")
+                    print(f"    Step {state_idx}: ✓ {status}! {original_reward:.0f} → {best_reward:.0f} "
+                          f"(H={state_entropy_info.get('true_entropy', 0):.2f})")
                 
                 # Extract beneficial actions
                 new_actions = [s for s in best_traj if not s.get('is_replay', False)]
@@ -396,6 +412,8 @@ def run_eef_detailed(env, agent, failures: List[Dict],
                     'num_recovery_steps': len(new_actions),
                     'state_observation': state_obs[:2000],
                     'state_valid_actions': state_valid_actions,
+                    'true_entropy': state_entropy_info.get('true_entropy', 0.0),
+                    'normalized_entropy': state_entropy_info.get('normalized_entropy', 0.0),
                     'steps': new_actions,
                 }
                 
@@ -417,6 +435,9 @@ def run_eef_detailed(env, agent, failures: List[Dict],
                     'num_valid_actions': len(state_valid_actions),
                     'goal': goal[:500],
                     'strategy': strategy,
+                    'true_entropy': state_entropy_info.get('true_entropy', 0.0),
+                    'normalized_entropy': state_entropy_info.get('normalized_entropy', 0.0),
+                    'action_count_score': state_entropy_info.get('action_count_score', 0.0),
                 })
             else:
                 if verbose:
@@ -463,6 +484,10 @@ def run_eef_detailed(env, agent, failures: List[Dict],
     # Combined training samples
     all_training_samples = training_samples_success + training_samples_improvement
     
+    # Compute entropy statistics
+    all_true_entropies = [s.get('true_entropy', 0) for s in all_selection_info if not s.get('is_search_state', False)]
+    all_action_counts = [s.get('action_count_score', 0) for s in all_selection_info if not s.get('is_search_state', False)]
+    
     stats = {
         'failures_processed': len(failures),
         'total_states_selected': total_states_selected,
@@ -477,11 +502,17 @@ def run_eef_detailed(env, agent, failures: List[Dict],
         'training_samples_total': len(all_training_samples),
         'strategy': strategy,
         'action_method': action_method,
+        # Entropy statistics
+        'entropy_stats': {
+            'mean_true_entropy': float(np.mean(all_true_entropies)) if all_true_entropies else 0,
+            'max_true_entropy': float(np.max(all_true_entropies)) if all_true_entropies else 0,
+            'mean_action_count_score': float(np.mean(all_action_counts)) if all_action_counts else 0,
+        }
     }
     
     # Summary
     print(f"\n{'='*70}")
-    print(f"EEF PIPELINE STATISTICS (DETAILED)")
+    print(f"CPT PIPELINE STATISTICS (DETAILED - TRUE ENTROPY)")
     print(f"{'='*70}")
     print(f"  Strategy:                 {strategy}")
     print(f"  Action method:            {action_method}")
@@ -494,6 +525,10 @@ def run_eef_detailed(env, agent, failures: List[Dict],
     print(f"  Total Beneficial:         {stats['total_beneficial']}")
     print(f"  Recovery rate:            {stats['recovery_rate']:.2%}")
     print(f"  ---")
+    if strategy == 'entropy':
+        print(f"  Mean True Entropy:        {stats['entropy_stats']['mean_true_entropy']:.4f}")
+        print(f"  Max True Entropy:         {stats['entropy_stats']['max_true_entropy']:.4f}")
+        print(f"  ---")
     print(f"  Training samples (success):     {stats['training_samples_success']}")
     print(f"  Training samples (improvement): {stats['training_samples_improvement']}")
     print(f"  Training samples (total):       {stats['training_samples_total']}")
@@ -516,31 +551,30 @@ def run_eef_detailed(env, agent, failures: List[Dict],
 # ============================================================================
 
 def main():
-    parser = argparse.ArgumentParser(description="EEF Pipeline - Detailed Saving")
-    parser.add_argument("--failure_data", type=str, required=True,
-                       help="Path to pre-collected failure trajectories")
-    parser.add_argument("--strategy", type=str, default="baseline", 
-                       choices=['baseline', 'entropy'])
+    parser = argparse.ArgumentParser(description="CPT Pipeline - Detailed Saving (TRUE ENTROPY)")
+    parser.add_argument("--failure_data", type=str, required=True, help="Path to pre-collected failure trajectories")
+    parser.add_argument("--strategy", type=str, default="baseline", choices=['baseline', 'entropy'])
     parser.add_argument("--M", type=int, default=5)
     parser.add_argument("--simulation_budget", type=int, default=10000)
-    parser.add_argument("--greedy", action='store_true', default=False,
-                       help="Use greedy instead of softmax (default: softmax)")
+    parser.add_argument("--greedy", action='store_true', default=False, help="Use greedy instead of softmax (default: softmax)")
     parser.add_argument("--num_attempts", type=int, default=1)
-    parser.add_argument("--num_trajectories", type=int, default=None,
-                       help="Limit number of trajectories to process (default: all)")
-    parser.add_argument("--model_path", type=str, 
-                       default="./ckpts/web_click/epoch_9/model.pth")
-    parser.add_argument("--output_dir", type=str, default="./eef_output_detailed")
+    parser.add_argument("--num_trajectories", type=int, default=None, help="Limit number of trajectories to process (default: all)")
+    parser.add_argument("--model_path", type=str, default="./checkpoints/web_click/epoch_9/model.pth")
+    parser.add_argument("--output_dir", type=str, default="./cpt_output_detailed")
     parser.add_argument("--verbose", action='store_true', default=True)
     args = parser.parse_args()
     
+    
     action_method = 'greedy' if args.greedy else 'softmax'
     
+
     print("="*70)
-    print("EEF PIPELINE - DETAILED SAVING")
+    print("CPT PIPELINE - DETAILED SAVING (TRUE ENTROPY)")
     print("="*70)
     print(f"  Model: {args.model_path}")
     print(f"  Strategy: {args.strategy}")
+    if args.strategy == 'entropy':
+        print(f"  Selection: H(π|s) = -Σ π(a|s) log π(a|s)  [TRUE POLICY ENTROPY]")
     print(f"  M: {args.M}")
     print(f"  Budget: {args.simulation_budget}")
     print(f"  Action method: {action_method} (attempts: {args.num_attempts})")
@@ -557,6 +591,7 @@ def main():
     print(f"\nLoading failures from {args.failure_data}...")
     with open(args.failure_data, 'r') as f:
         failures = json.load(f)
+
     print(f"  Loaded {len(failures)} failures")
     
     # Limit trajectories if specified
@@ -564,9 +599,9 @@ def main():
         failures = failures[:args.num_trajectories]
         print(f"  Limited to {len(failures)} trajectories")
     
-    # Run EEF
+    # Run CPT
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    results = run_eef_detailed(
+    results = run_cpt_detailed(
         env, agent, failures,
         M=args.M, strategy=args.strategy,
         simulation_budget=args.simulation_budget,
@@ -627,7 +662,7 @@ def main():
     print(f"✓ Saved statistics to {path}")
     
     print("\n" + "="*70)
-    print("✓ EEF pipeline completed successfully!")
+    print("✓ CPT pipeline completed successfully!")
     print("="*70)
     print(f"\nOutput files in {args.output_dir}/:")
     print(f"  - full_success_segments_{prefix}.json  (reward=100)")
