@@ -4,11 +4,14 @@ Local LLM Trajectory Collection for WebShop
 Uses local models (Qwen3-8B, Llama, etc.) to generate expert trajectories.
 
 Usage:
-    # Test with Qwen3-8B
+    # Test with Qwen3-8B (with no_think)
     python collect_trajectories_local.py --model Qwen/Qwen3-8B --num_tasks 10 --output ./test_qwen3.json
     
-    # Full collection
-    python collect_trajectories_local.py --model Qwen/Qwen3-8B --num_tasks 11000 --output ./trajectories_qwen3_11k.json
+    # Full collection with multiple workers
+    python collect_trajectories_local.py --model Qwen/Qwen3-8B --num_tasks 7000 --workers 4 --output ./trajectories_7k.json
+    
+    # Collect until N failures
+    python collect_trajectories_local.py --model Qwen/Qwen3-8B --target_failures 5000 --output ./failures_5k.json
 
 Requirements:
     pip install transformers accelerate torch
@@ -19,11 +22,13 @@ import sys
 import json
 import argparse
 import torch
+import torch.multiprocessing as mp
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from datetime import datetime
 from tqdm import tqdm
 import time
 import re
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 # Import WebShop environment
 from train_rl import parse_args as webenv_args
@@ -48,7 +53,7 @@ Rules:
 - Use click[Back to Search] to try a different search
 - Use click[< Prev] to go back to previous page
 
-Think step by step about which action best matches the user's requirements, then respond with ONLY the action in the exact format: action[argument]
+Respond with ONLY the action in the exact format: action[argument]
 
 Examples of valid actions:
 - search[red running shoes size 10]
@@ -89,9 +94,12 @@ def parse_action(response_text, valid_actions):
     return valid_actions[0] if valid_actions else text
 
 
-def format_prompt(obs, goal, valid_actions, tokenizer):
+def format_prompt(obs, goal, valid_actions, tokenizer, no_think=True):
     """Format prompt for the model."""
-    user_content = f"""SHOPPING GOAL: {goal}
+    # Add /no_think for Qwen3 to disable thinking mode
+    no_think_prefix = "/no_think\n" if no_think else ""
+    
+    user_content = f"""{no_think_prefix}SHOPPING GOAL: {goal}
 
 CURRENT PAGE:
 {obs[:2000]}
@@ -117,11 +125,13 @@ Select the best action to complete the shopping goal. Respond with ONLY the acti
 
 
 class LocalModelCollector:
-    def __init__(self, model_name="Qwen/Qwen3-8B", device="cuda", dtype=torch.bfloat16):
+    def __init__(self, model_name="Qwen/Qwen3-8B", device="cuda", dtype=torch.bfloat16, 
+                 gpu_id=0, no_think=True):
         self.model_name = model_name
-        self.device = device
+        self.device = f"cuda:{gpu_id}" if torch.cuda.is_available() else "cpu"
+        self.no_think = no_think
         
-        print(f"Loading model: {model_name}")
+        print(f"Loading model: {model_name} on {self.device}")
         start = time.time()
         
         self.tokenizer = AutoTokenizer.from_pretrained(
@@ -136,13 +146,12 @@ class LocalModelCollector:
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype=dtype,
-            device_map="auto",
+            device_map={"": self.device},
             trust_remote_code=True,
         )
         self.model.eval()
         
-        print(f"Model loaded in {time.time() - start:.1f}s")
-        print(f"Device: {self.model.device}")
+        print(f"Model loaded in {time.time() - start:.1f}s on {self.device}")
         
         # Track token usage
         self.total_input_tokens = 0
@@ -151,7 +160,7 @@ class LocalModelCollector:
     @torch.no_grad()
     def get_action(self, obs, goal, valid_actions, max_new_tokens=100, temperature=0.1):
         """Get action from local model."""
-        prompt = format_prompt(obs, goal, valid_actions, self.tokenizer)
+        prompt = format_prompt(obs, goal, valid_actions, self.tokenizer, no_think=self.no_think)
         
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         input_len = inputs['input_ids'].shape[1]
@@ -178,7 +187,7 @@ class LocalModelCollector:
         action = parse_action(response, valid_actions)
         return action, response
 
-    def collect_episode(self, env, idx, max_steps=15, verbose=False):
+    def collect_episode(self, env, idx, max_steps=15, temperature=0.1, verbose=False):
         """Collect one trajectory using local model."""
         obs, info = env.reset(idx)
         goal = info['goal']
@@ -201,7 +210,7 @@ class LocalModelCollector:
             valid_actions = info['valid']
             
             # Get action from model
-            action, raw_response = self.get_action(obs, goal, valid_actions)
+            action, raw_response = self.get_action(obs, goal, valid_actions, temperature=temperature)
             
             # Store step
             step_data = {
@@ -240,9 +249,89 @@ class LocalModelCollector:
         }
 
 
-def collect_trajectories(model_name, task_indices, split='train', max_steps=15, 
-                         verbose=False, temperature=0.1):
-    """Collect trajectories using local model."""
+def worker_process(worker_id, task_indices, model_name, split, max_steps, temperature, 
+                   no_think, gpu_id, return_dict):
+    """Worker process for parallel collection."""
+    try:
+        # Setup environment
+        env_args = webenv_args()[0]
+        env = WebEnv(env_args, split=split)
+        env.env.num_prev_obs = 0
+        env.env.num_prev_actions = 0
+        
+        # Setup model on specific GPU
+        collector = LocalModelCollector(
+            model_name=model_name, 
+            gpu_id=gpu_id,
+            no_think=no_think
+        )
+        
+        trajectories = []
+        for idx in tqdm(task_indices, desc=f"Worker {worker_id} (GPU {gpu_id})", position=worker_id):
+            try:
+                traj = collector.collect_episode(env, idx, max_steps=max_steps, temperature=temperature)
+                trajectories.append(traj)
+            except Exception as e:
+                print(f"Worker {worker_id} error on task {idx}: {e}")
+        
+        return_dict[worker_id] = {
+            'trajectories': trajectories,
+            'stats': collector.get_stats()
+        }
+        
+    except Exception as e:
+        print(f"Worker {worker_id} fatal error: {e}")
+        return_dict[worker_id] = {'trajectories': [], 'stats': {}}
+
+
+def collect_parallel(model_name, task_indices, num_workers, split='train', max_steps=15, 
+                     temperature=0.1, no_think=True):
+    """Collect trajectories in parallel using multiple GPUs."""
+    
+    num_gpus = torch.cuda.device_count()
+    print(f"Found {num_gpus} GPUs, using {num_workers} workers")
+    
+    # Split tasks among workers
+    chunks = [[] for _ in range(num_workers)]
+    for i, idx in enumerate(task_indices):
+        chunks[i % num_workers].append(idx)
+    
+    # Use multiprocessing
+    mp.set_start_method('spawn', force=True)
+    manager = mp.Manager()
+    return_dict = manager.dict()
+    
+    processes = []
+    for worker_id in range(num_workers):
+        gpu_id = worker_id % num_gpus  # Round-robin GPU assignment
+        p = mp.Process(
+            target=worker_process,
+            args=(worker_id, chunks[worker_id], model_name, split, max_steps, 
+                  temperature, no_think, gpu_id, return_dict)
+        )
+        processes.append(p)
+        p.start()
+    
+    # Wait for all processes
+    for p in processes:
+        p.join()
+    
+    # Aggregate results
+    all_trajectories = []
+    total_stats = {'input_tokens': 0, 'output_tokens': 0, 'total_tokens': 0}
+    
+    for worker_id in range(num_workers):
+        result = return_dict.get(worker_id, {'trajectories': [], 'stats': {}})
+        all_trajectories.extend(result['trajectories'])
+        for key in total_stats:
+            total_stats[key] += result.get('stats', {}).get(key, 0)
+    
+    return all_trajectories, total_stats
+
+
+def collect_sequential(model_name, task_indices, split='train', max_steps=15, 
+                       temperature=0.1, verbose=False, no_think=True):
+    """Collect trajectories sequentially (single GPU)."""
     
     # Setup environment
     env_args = webenv_args()[0]
@@ -251,12 +340,13 @@ def collect_trajectories(model_name, task_indices, split='train', max_steps=15,
     env.env.num_prev_actions = 0
     
     # Setup model
-    collector = LocalModelCollector(model_name=model_name)
+    collector = LocalModelCollector(model_name=model_name, no_think=no_think)
     
     trajectories = []
     for idx in tqdm(task_indices, desc=f"Collecting ({model_name.split('/')[-1]})"):
         try:
-            traj = collector.collect_episode(env, idx, max_steps=max_steps, verbose=verbose)
+            traj = collector.collect_episode(env, idx, max_steps=max_steps, 
+                                            temperature=temperature, verbose=verbose)
             trajectories.append(traj)
         except Exception as e:
             print(f"Error on task {idx}: {e}")
@@ -264,22 +354,79 @@ def collect_trajectories(model_name, task_indices, split='train', max_steps=15,
     return trajectories, collector.get_stats()
 
 
+def collect_until_failures(model_name, target_failures, split='train', max_steps=15,
+                           temperature=0.1, verbose=False, no_think=True, max_tasks=20000):
+    """Collect trajectories until we have target_failures failed trajectories."""
+    
+    # Setup environment
+    env_args = webenv_args()[0]
+    env = WebEnv(env_args, split=split)
+    env.env.num_prev_obs = 0
+    env.env.num_prev_actions = 0
+    
+    # Setup model
+    collector = LocalModelCollector(model_name=model_name, no_think=no_think)
+    
+    trajectories = []
+    failures = []
+    successes = []
+    
+    pbar = tqdm(total=target_failures, desc="Collecting failures")
+    idx = 0
+    
+    while len(failures) < target_failures and idx < max_tasks:
+        try:
+            traj = collector.collect_episode(env, idx, max_steps=max_steps, 
+                                            temperature=temperature, verbose=verbose)
+            trajectories.append(traj)
+            
+            if traj['success']:
+                successes.append(traj)
+            else:
+                failures.append(traj)
+                pbar.update(1)
+            
+            pbar.set_postfix({
+                'total': len(trajectories),
+                'fail': len(failures),
+                'success': len(successes),
+                'rate': f"{len(failures)/len(trajectories)*100:.1f}%"
+            })
+            
+        except Exception as e:
+            print(f"Error on task {idx}: {e}")
+        
+        idx += 1
+    
+    pbar.close()
+    
+    return trajectories, successes, failures, collector.get_stats()
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Local LLM trajectory collection")
     parser.add_argument("--model", type=str, default="Qwen/Qwen3-8B",
                         help="HuggingFace model name")
-    parser.add_argument("--num_tasks", type=int, default=10,
-                        help="Number of tasks to collect")
+    parser.add_argument("--num_tasks", type=int, default=None,
+                        help="Number of tasks to collect (use this OR --target_failures)")
+    parser.add_argument("--target_failures", type=int, default=None,
+                        help="Collect until this many failures (use this OR --num_tasks)")
     parser.add_argument("--start_idx", type=int, default=0,
                         help="Starting task index")
     parser.add_argument("--max_steps", type=int, default=15,
                         help="Maximum steps per episode")
-    parser.add_argument("--temperature", type=float, default=0.1,
+    parser.add_argument("--temperature", type=float, default=0.2,
                         help="Sampling temperature")
     parser.add_argument("--split", type=str, default="train",
                         choices=["train", "test"])
     parser.add_argument("--output", type=str, default="./trajectories_local.json",
                         help="Output file path")
+    parser.add_argument("--workers", type=int, default=0,
+                        help="Number of parallel workers (0 for sequential)")
+    parser.add_argument("--no_think", action="store_true", default=True,
+                        help="Disable thinking mode for Qwen3 (default: True)")
+    parser.add_argument("--enable_think", action="store_true",
+                        help="Enable thinking mode for Qwen3")
     parser.add_argument("--verbose", action="store_true",
                         help="Print episode details")
     return parser.parse_args()
@@ -288,35 +435,68 @@ def parse_args():
 def main():
     args = parse_args()
     
+    # Handle think mode
+    no_think = not args.enable_think
+    
+    # Validate arguments
+    if args.num_tasks is None and args.target_failures is None:
+        args.num_tasks = 10  # Default
+    
     print(f"=" * 60)
     print(f"LOCAL MODEL TRAJECTORY COLLECTION")
     print(f"=" * 60)
     print(f"Model: {args.model}")
-    print(f"Tasks: {args.num_tasks}")
+    print(f"Mode: {'Collect N tasks' if args.num_tasks else f'Collect until {args.target_failures} failures'}")
+    print(f"Workers: {args.workers if args.workers > 0 else 'Sequential'}")
     print(f"Temperature: {args.temperature}")
+    print(f"No-think mode: {no_think}")
     print(f"Split: {args.split}")
     print(f"=" * 60)
     
-    # Task indices
-    task_indices = list(range(args.start_idx, args.start_idx + args.num_tasks))
-    
-    # Collect
     start_time = time.time()
     
-    trajectories, stats = collect_trajectories(
-        model_name=args.model,
-        task_indices=task_indices,
-        split=args.split,
-        max_steps=args.max_steps,
-        verbose=args.verbose,
-        temperature=args.temperature
-    )
+    if args.target_failures:
+        # Collect until N failures (sequential only for now)
+        trajectories, successes, failures, stats = collect_until_failures(
+            model_name=args.model,
+            target_failures=args.target_failures,
+            split=args.split,
+            max_steps=args.max_steps,
+            temperature=args.temperature,
+            verbose=args.verbose,
+            no_think=no_think
+        )
+    else:
+        # Collect N tasks
+        task_indices = list(range(args.start_idx, args.start_idx + args.num_tasks))
+        
+        if args.workers > 0:
+            trajectories, stats = collect_parallel(
+                model_name=args.model,
+                task_indices=task_indices,
+                num_workers=args.workers,
+                split=args.split,
+                max_steps=args.max_steps,
+                temperature=args.temperature,
+                no_think=no_think
+            )
+        else:
+            trajectories, stats = collect_sequential(
+                model_name=args.model,
+                task_indices=task_indices,
+                split=args.split,
+                max_steps=args.max_steps,
+                temperature=args.temperature,
+                verbose=args.verbose,
+                no_think=no_think
+            )
+        
+        successes = [t for t in trajectories if t['success']]
+        failures = [t for t in trajectories if not t['success']]
     
     elapsed = time.time() - start_time
     
     # Compute statistics
-    successes = [t for t in trajectories if t['success']]
-    failures = [t for t in trajectories if not t['success']]
     rewards = [t['final_reward'] for t in trajectories]
     
     # Check for navigation skills
@@ -335,9 +515,9 @@ def main():
     print(f"Uses Back (in successes): {uses_back}")
     print(f"Time: {elapsed:.1f}s ({elapsed/len(trajectories):.2f}s per trajectory)")
     print(f"\n--- Token Usage ---")
-    print(f"Input tokens: {stats['input_tokens']:,}")
-    print(f"Output tokens: {stats['output_tokens']:,}")
-    print(f"Total tokens: {stats['total_tokens']:,}")
+    print(f"Input tokens: {stats.get('input_tokens', 0):,}")
+    print(f"Output tokens: {stats.get('output_tokens', 0):,}")
+    print(f"Total tokens: {stats.get('total_tokens', 0):,}")
     print(f"=" * 60)
     
     # Save results
@@ -349,6 +529,7 @@ def main():
             'split': args.split,
             'elapsed_seconds': elapsed,
             'temperature': args.temperature,
+            'no_think': no_think,
         },
         'summary': {
             'total': len(trajectories),
