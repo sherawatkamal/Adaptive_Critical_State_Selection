@@ -1,10 +1,10 @@
 """
 Trajectory Collection Script for ACSS Pipeline
 Collects trajectories with logits for entropy computation using OpenAI API
+Multi-threaded version for parallel collection
 """
 
 import os
-import sys
 import json
 import argparse
 import textwrap
@@ -12,6 +12,9 @@ import numpy as np
 from datetime import datetime
 from tqdm import tqdm
 from openai import OpenAI
+import threading
+from queue import Queue
+import re
 
 # Import WebShop environment
 from utils import webenv_args
@@ -19,34 +22,37 @@ from env import WebEnv
 
 
 class TokenTracker:
-    """Track token usage across API calls."""
+    """Thread-safe token usage tracker."""
     def __init__(self):
         self.total_input_tokens = 0
         self.total_output_tokens = 0
         self.total_cached_tokens = 0
         self.num_calls = 0
+        self.lock = threading.Lock()
     
     def add_usage(self, usage):
-        """Add usage from an API response."""
+        """Add usage from an API response (thread-safe)."""
         if usage:
-            self.total_input_tokens += getattr(usage, 'prompt_tokens', 0)
-            self.total_output_tokens += getattr(usage, 'completion_tokens', 0)
-            # OpenAI may provide cached tokens in prompt_tokens_details
-            if hasattr(usage, 'prompt_tokens_details') and usage.prompt_tokens_details:
-                self.total_cached_tokens += getattr(usage.prompt_tokens_details, 'cached_tokens', 0)
-            self.num_calls += 1
+            with self.lock:
+                self.total_input_tokens += getattr(usage, 'prompt_tokens', 0)
+                self.total_output_tokens += getattr(usage, 'completion_tokens', 0)
+                # OpenAI may provide cached tokens in prompt_tokens_details
+                if hasattr(usage, 'prompt_tokens_details') and usage.prompt_tokens_details:
+                    self.total_cached_tokens += getattr(usage.prompt_tokens_details, 'cached_tokens', 0)
+                self.num_calls += 1
     
     def get_summary(self):
         """Get summary statistics."""
-        return {
-            'num_api_calls': self.num_calls,
-            'total_input_tokens': self.total_input_tokens,
-            'total_output_tokens': self.total_output_tokens,
-            'total_cached_tokens': self.total_cached_tokens,
-            'total_tokens': self.total_input_tokens + self.total_output_tokens,
-            'avg_input_per_call': self.total_input_tokens / self.num_calls if self.num_calls > 0 else 0,
-            'avg_output_per_call': self.total_output_tokens / self.num_calls if self.num_calls > 0 else 0
-        }
+        with self.lock:
+            return {
+                'num_api_calls': self.num_calls,
+                'total_input_tokens': self.total_input_tokens,
+                'total_output_tokens': self.total_output_tokens,
+                'total_cached_tokens': self.total_cached_tokens,
+                'total_tokens': self.total_input_tokens + self.total_output_tokens,
+                'avg_input_per_call': self.total_input_tokens / self.num_calls if self.num_calls > 0 else 0,
+                'avg_output_per_call': self.total_output_tokens / self.num_calls if self.num_calls > 0 else 0
+            }
     
     def print_summary(self):
         """Print formatted summary."""
@@ -105,13 +111,9 @@ def openai_predict(obs, available_actions, goal, client, model="gpt-4", temperat
         probs: Probability distribution
         is_search: Whether this was a search action
     """
-    import re
     
     has_search = available_actions.get('has_search_bar', False)
     clickables = available_actions.get('clickables', [])
-    
-    # Truncate observation to avoid token limits
-    # obs_truncated = obs[:2000] if len(obs) > 2000 else obs
     
     # Build action options description
     action_options = []
@@ -120,7 +122,6 @@ def openai_predict(obs, available_actions, goal, client, model="gpt-4", temperat
         
     for i, clickable in enumerate(clickables):
         action_options.append(f"- click[{clickable}]: Click on '{clickable}'")
-    
     
     actions_text = "\n".join(action_options)
     
@@ -143,14 +144,13 @@ def openai_predict(obs, available_actions, goal, client, model="gpt-4", temperat
         Return only your action choice, nothing else.\
     """)
     
-    # print(f"prompt: {prompt}")
     response = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=temperature,
         max_tokens=100,
         logprobs=True,
-        top_logprobs=5
+        top_logprobs=20
     )
     
     # Track token usage
@@ -182,7 +182,6 @@ def openai_predict(obs, available_actions, goal, client, model="gpt-4", temperat
             action = f'click[{clickable_element}]'
             is_search = False
     
-    
     # If we still don't have a valid action, return None tuple
     if action is None:
         print(f"Warning: Invalid action format from model: '{response_text}'. Performing no-op.")
@@ -194,32 +193,37 @@ def openai_predict(obs, available_actions, goal, client, model="gpt-4", temperat
     if hasattr(response.choices[0], 'logprobs') and response.choices[0].logprobs:
         logprobs_data = {'token_logprobs': [token.logprob for token in response.choices[0].logprobs.content]}
     
-    
     entropy, probs = compute_entropy(logprobs_data) if logprobs_data else (None, None)
     
-    return action, logprobs_data, entropy, probs, is_search        
-    
-        
-        
+    return action, logprobs_data, entropy, probs, is_search
 
 
-def collect_episode(client, env, idx, model="gpt-4", temperature=0.0, verbose=False, max_steps=200, token_tracker=None):
+def collect_episode(client, env, task_idx, model="gpt-4", temperature=0.0, verbose=False, max_steps=200, token_tracker=None):
     """
     Run one episode and collect full trajectory data.
+    
+    Args:
+        client: OpenAI client
+        env: WebEnv instance (specific to this thread)
+        task_idx: Task index to run
+        model: Model name
+        temperature: Sampling temperature
+        verbose: Print details
+        max_steps: Maximum steps per episode
+        token_tracker: Shared token tracker
     
     Returns:
         trajectory: dict with all trajectory information
     """
-    obs, info = env.reset(idx)
+    obs, info = env.reset(task_idx)
     goal = info['goal']
     
     if verbose:
-        print(f"\n=== Episode {idx} ===")
+        print(f"\n=== Episode {task_idx} ===")
         print(f"Goal: {goal}")
     
-    
     trajectory = {
-        'idx': idx,
+        'idx': task_idx,
         'goal': goal,
         'steps': [],
         'final_reward': 0,
@@ -227,17 +231,16 @@ def collect_episode(client, env, idx, model="gpt-4", temperature=0.0, verbose=Fa
         'num_steps': 0
     }
     
-    
     for step in range(max_steps):
         # Get available actions from environment
         available_actions = env.get_available_actions()
         
-        action, logprobs_data, entropy, probs, is_search = openai_predict(
-            obs, available_actions, goal, client, 
-            model=model, temperature=temperature, token_tracker=token_tracker
-        )
+        print(f"start openai predict: {task_idx}")
+        action, logprobs_data, entropy, probs, is_search = openai_predict(obs, available_actions, goal, client, model=model, temperature=temperature, token_tracker=token_tracker)
+        print(f"end openai predict: {task_idx}, action: {action}")
         
-        if action == None: 
+        
+        if action is None: 
             continue
             
         # Store step data
@@ -257,15 +260,18 @@ def collect_episode(client, env, idx, model="gpt-4", temperature=0.0, verbose=Fa
             entropy_str = f"{entropy:.3f}" if entropy is not None else "N/A"
             print(f"  Step {step}: {action[:50]}... | Entropy: {entropy_str}")
         
-        
         # Take action
+        print(f"start environment step: {task_idx}")
         obs, reward, done, info = env.step(action)
+        print(f"end environment step: {task_idx}")
+        
         
         if done:
             trajectory['final_reward'] = reward * 10  # Scale 0-10 → 0-100
             trajectory['success'] = (reward == 10.0)  # Perfect score
             trajectory['num_steps'] = step + 1
             break
+    
     
     if verbose:
         print(f"  Result: {'SUCCESS' if trajectory['success'] else 'FAILURE'} | Reward: {trajectory['final_reward']}")
@@ -274,21 +280,134 @@ def collect_episode(client, env, idx, model="gpt-4", temperature=0.0, verbose=Fa
 
 
 
-def collect_until_n_failures(client, env, target_failures, model="gpt-4", temperature=0.0, split='train', start_idx=0, max_episodes=5000, verbose=False):
-    """Collect trajectories until we have target_failures failed trajectories."""
+
+
+def worker_thread(thread_id, task_queue, results_list, client, env_args, split, model, temperature, verbose, token_tracker, progress_lock):
+    """
+    Worker thread that processes tasks from the queue.
+    
+    Args:
+        thread_id: Thread identifier (used for env port selection)
+        task_queue: Queue of task indices to process
+        results_list: Shared list to store results
+        client: OpenAI client
+        env_args: Environment arguments
+        split: Dataset split
+        model: Model name
+        temperature: Sampling temperature
+        verbose: Print details
+        token_tracker: Shared token tracker
+        progress_lock: Lock for updating progress
+    """
+    # Create environment for this thread (uses thread_id for port)
+    print(f"starting webshop environment")
+    env = WebEnv(env_args, split=split, index=thread_id)
+    print(f"finished starting webshop environment")
+    
+    
+    while True:
+        try:
+            task_idx = task_queue.get_nowait()
+        except:
+            break  # Queue is empty
+        
+        traj = collect_episode(client, env, task_idx, model=model, temperature=temperature, verbose=verbose, token_tracker=token_tracker)
+            
+        with progress_lock:
+            results_list.append(traj)
+        
+        task_queue.task_done()
+
+
+
+def collect_until_n_failures(client, env_args, target_failures, model="gpt-4", temperature=0.0, split='train', start_idx=0, max_episodes=5000, verbose=False, num_threads=4):
+    """
+    Collect trajectories until we have target_failures failed trajectories.
+    Uses multiple threads for parallel collection.
+    
+    Args:
+        client: OpenAI client
+        env_args: Environment arguments
+        target_failures: Number of failed trajectories to collect
+        model: Model name
+        temperature: Sampling temperature
+        split: Dataset split
+        start_idx: Starting task index
+        max_episodes: Maximum episodes to run
+        verbose: Print details
+        num_threads: Number of parallel threads
+    """
     
     failed_trajectories = []
     success_trajectories = []
     all_entropies = []
     token_tracker = TokenTracker()
     
-    idx = start_idx
-    pbar = tqdm(total=target_failures, desc="Collecting failures")
+    # Create task queue
+    task_queue = Queue()
+    for idx in range(start_idx, start_idx + max_episodes):
+        task_queue.put(idx)
     
-    while len(failed_trajectories) < target_failures and (idx - start_idx) < max_episodes:
-        traj = collect_episode(client, env, idx, model=model, temperature=temperature, verbose=verbose, token_tracker=token_tracker)
+    # Shared results list and lock
+    results_list = []
+    progress_lock = threading.Lock()
+    
+    # Start worker threads
+    print(f"Starting {num_threads} worker threads...")
+    threads = []
+    for thread_id in range(num_threads):
+        thread = threading.Thread(
+            target=worker_thread,
+            args=(thread_id, task_queue, results_list, client, env_args, split, model, temperature, verbose, token_tracker, progress_lock)
+        )
+        thread.start()
+        threads.append(thread)
+    
+    # Monitor progress
+    pbar = tqdm(total=target_failures, desc="Collecting failures")
+    last_fail_count = 0
+    
+    while any(t.is_alive() for t in threads):
+        with progress_lock:
+            # Count current failures
+            current_fail_count = sum(1 for traj in results_list if not traj['success'])
+            
+            # Update progress bar
+            if current_fail_count > last_fail_count:
+                pbar.update(current_fail_count - last_fail_count)
+                last_fail_count = current_fail_count
+            
+            # Check if we have enough failures
+            if current_fail_count >= target_failures:
+                # Stop all threads by clearing the queue
+                while not task_queue.empty():
+                    try:
+                        task_queue.get_nowait()
+                    except:
+                        break
+                break
+            
+            # Update progress info
+            total_processed = len(results_list)
+            success_count = sum(1 for traj in results_list if traj['success'])
+            pbar.set_postfix({
+                'total': total_processed,
+                'fail': current_fail_count,
+                'success': success_count
+            })
         
-        # Collect entropies from all states
+        # Sleep briefly before checking again
+        threading.Event().wait(0.5)
+    
+    # Wait for all threads to finish
+    for thread in threads:
+        thread.join()
+    
+    pbar.close()
+    
+    # Process results
+    for traj in results_list:
+        # Collect entropies
         for step in traj['steps']:
             if step['entropy'] is not None:
                 all_entropies.append(step['entropy'])
@@ -297,20 +416,12 @@ def collect_until_n_failures(client, env, target_failures, model="gpt-4", temper
             success_trajectories.append(traj)
         else:
             failed_trajectories.append(traj)
-            pbar.update(1)
         
-        idx += 1
-        
-        if idx % 10 == 0:
-            pbar.set_postfix({
-                'total': idx - start_idx, 
-                'fail': len(failed_trajectories), 
-                'success': len(success_trajectories)
-            })
+        # Stop if we have enough failures
+        if len(failed_trajectories) >= target_failures:
+            break
     
-    pbar.close()
-    
-    total_episodes = idx - start_idx
+    total_episodes = len(results_list)
     
     return {
         'metadata': {
@@ -320,9 +431,10 @@ def collect_until_n_failures(client, env, target_failures, model="gpt-4", temper
             'temperature': temperature,
             'target_failures': target_failures,
             'total_episodes': total_episodes,
-            'start_idx': start_idx
+            'start_idx': start_idx,
+            'num_threads': num_threads
         },
-        'failed_trajectories': failed_trajectories,
+        'failed_trajectories': failed_trajectories[:target_failures],
         'success_trajectories': success_trajectories,
         'token_usage': token_tracker.get_summary(),
         'summary': {
@@ -336,6 +448,8 @@ def collect_until_n_failures(client, env, target_failures, model="gpt-4", temper
     }, token_tracker
 
 
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Collect trajectories using OpenAI API")
     parser.add_argument("--api_key", type=str, default=None, help="OpenAI API key (or set OPENAI_API_KEY env var)")
@@ -346,6 +460,7 @@ def parse_args():
     parser.add_argument("--start_idx", type=int, default=0, help="Starting task index")
     parser.add_argument("--split", type=str, default="train", choices=["train", "test"], help="Dataset split to use")
     parser.add_argument("--temperature", type=float, default=0.4, help="Sampling temperature (0 for greedy)")
+    parser.add_argument("--num_threads", type=int, default=20, help="Number of threads to use for multithreading")
     parser.add_argument("--verbose", action="store_true", help="Print episode details")
     return parser.parse_args()
 
@@ -365,20 +480,21 @@ def main():
     
     # Setup environment
     env_args = webenv_args()[0]
-    env = WebEnv(env_args, split=args.split)
+    # env = WebEnv(env_args, split=args.split)
     print(f"Environment loaded (split={args.split})")
     
     # Collect trajectories until we have enough failures
     print(f"\nCollecting until {args.target_failures} failures...")
     results, token_tracker = collect_until_n_failures(
-        client, env,
+        client, env_args,
         target_failures=args.target_failures,
         model=args.model,
         temperature=args.temperature,
         split=args.split,
         start_idx=args.start_idx,
         max_episodes=args.max_episodes,
-        verbose=args.verbose
+        verbose=args.verbose,
+        num_threads=args.num_threads
     )
     
     # Print summary
@@ -402,12 +518,15 @@ def main():
         args.output_dir, 
         f"trajectories_{args.split}_failed_{args.target_failures}_{args.model.replace('/', '_')}.json"
     )
+    
     failed_data = {
         'metadata': results['metadata'],
         'trajectories': results['failed_trajectories'],
         'token_usage': results['token_usage'],
         'summary': results['summary']
     }
+    
+    
     with open(failed_file, 'w') as f:
         json.dump(failed_data, f, indent=2)
     print(f"\nSaved {len(results['failed_trajectories'])} failed trajectories to: {failed_file}")
@@ -417,15 +536,20 @@ def main():
         args.output_dir,
         f"trajectories_{args.split}_success_{len(results['success_trajectories'])}_{args.model.replace('/', '_')}.json"
     )
+    
     success_data = {
         'metadata': results['metadata'],
         'trajectories': results['success_trajectories'],
         'token_usage': results['token_usage'],
         'summary': results['summary']
     }
+    
     with open(success_file, 'w') as f:
         json.dump(success_data, f, indent=2)
+    
     print(f"Saved {len(results['success_trajectories'])} successful trajectories to: {success_file}")
+
+
 
 
 if __name__ == "__main__":

@@ -17,14 +17,25 @@ from web_agent_site.engine.goal import get_reward
 class WebEnv:
     ''' A wrapper of textEnv for models. Returns valid actions at each step of the game. '''
 
-    def __init__(self, args, split, server=None, id=None):
+    def __init__(self, args, split, server=None, id=None, index=0):
+        """
+        Args:
+            args (_type_):
+            split (_type_): 
+            server (_type_, optional): Defaults to None.
+            id (_type_, optional): Defaults to None.
+            index (int, optional): when you have multiple web envs on the same computer, which one to use. This index is used to manage multithreaded webenvs. Defaults to 0.
+        """
+        base_url = f'http://127.0.0.1:{3000 + index}'
+        
         self.env = WebAgentTextEnv(
             observation_mode=args.state_format, server=server,
             filter_goals=None, limit_goals=-1,
             num_products=args.num, human_goals=args.human_goals,
             get_image=args.get_image,
             num_prev_obs=args.num_prev_obs, num_prev_actions=args.num_prev_actions,
-            session_prefix=id
+            session_prefix=id,
+            base_url=base_url
         )
 
 

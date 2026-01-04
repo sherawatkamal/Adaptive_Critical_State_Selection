@@ -37,6 +37,7 @@ class WebAgentTextEnv(gym.Env):
             observation_mode='html',
             file_path=DEFAULT_FILE_PATH,
             server=None,
+            base_url='http://127.0.0.1:3000',
             **kwargs
         ):
         """
@@ -59,7 +60,7 @@ class WebAgentTextEnv(gym.Env):
 
         self.file_path = file_path
 
-        self.base_url = 'http://127.0.0.1:3000'
+        self.base_url = base_url
         self.server = SimServer(
             self.base_url,
             self.file_path,
@@ -296,8 +297,7 @@ class SimServer:
         """
         # Load all products, goals, and search engine
         self.base_url = base_url
-        self.all_products, self.product_item_dict, self.product_prices, _ = \
-            load_products(filepath=file_path, num_products=num_products, human_goals=human_goals)
+        self.all_products, self.product_item_dict, self.product_prices, _ = load_products(filepath=file_path, num_products=num_products, human_goals=human_goals)
         self.search_engine = init_search_engine(num_products=num_products)
         self.goals = get_goals(self.all_products, self.product_prices, human_goals)
         self.show_attrs = show_attrs
