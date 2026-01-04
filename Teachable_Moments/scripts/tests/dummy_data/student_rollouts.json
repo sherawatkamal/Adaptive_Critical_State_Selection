@@ -1,0 +1,16 @@
+{
+    "results": [
+        {
+            "task_id": "task_101",
+            "success": true
+        },
+        {
+            "task_id": "task_102",
+            "success": false
+        },
+        {
+            "task_id": "task_103",
+            "success": true
+        }
+    ]
+}

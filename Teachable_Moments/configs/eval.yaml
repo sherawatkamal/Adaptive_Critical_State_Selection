@@ -1,0 +1,153 @@
+# Evaluation configuration for teachable moments
+
+# End-to-end evaluation
+end2end:
+  n_episodes: 100
+  max_steps: 64
+  
+  # Metrics
+  metrics:
+    - success_rate
+    - average_reward
+    - average_steps
+    - completion_time
+    
+  # Environment settings
+  env_name: "BabyAI-GoToLocal-v0"
+  deterministic: false
+  
+  # Aggregation
+  aggregate_by:
+    - model
+    - quadrant
+    - supervision_type
+
+# Mechanistic evaluation
+mechanistic:
+  # Skill-specific tests
+  skills:
+    action_accuracy:
+      enabled: true
+      n_samples: 500
+      
+    state_understanding:
+      enabled: true
+      probe_type: "linear"
+      
+    goal_tracking:
+      enabled: true
+      distractor_levels: [0, 1, 2, 3]
+      
+  # Stratified sampling
+  n_per_quadrant: 25
+  
+# Stuckness evaluation
+stuckness:
+  # Detection thresholds
+  loop_detection:
+    window_size: 5
+    similarity_threshold: 0.9
+    
+  action_repetition:
+    max_repeats: 3
+    
+  progress_stall:
+    window_size: 10
+    min_progress: 0.1
+    
+  # Recovery metrics
+  metrics:
+    - recovery_rate
+    - steps_to_recovery
+    - final_success_rate
+    
+  # Stuck scenarios
+  scenarios_path: "data/stuck_scenarios.json"
+  
+# Transfer evaluation
+transfer:
+  # 4x4 transfer matrix
+  train_quadrants: ["Q1", "Q2", "Q3", "Q4"]
+  eval_quadrants: ["Q1", "Q2", "Q3", "Q4"]
+  
+  n_episodes_per_cell: 50
+  
+  # Analysis
+  compute_diagonal_ratio: true
+  compute_best_source: true
+  
+# Retention evaluation
+retention:
+  # Checkpoints to evaluate
+  checkpoint_pattern: "checkpoint-*"
+  
+  # Fixed evaluation panel
+  panel_size: 100
+  stratified: true
+  
+  # Forgetting detection
+  forgetting_threshold: 0.1  # 10% relative drop
+  
+  # Metrics per checkpoint
+  metrics:
+    - success_rate
+    - average_reward
+    
+# Drift evaluation
+drift:
+  # Multiple evaluation runs
+  n_runs: 5
+  
+  # Fixed panel
+  use_fixed_panel: true
+  
+  # Drift detection
+  baseline_runs: 3
+  drift_threshold: 2.0  # Standard deviations
+  
+  # Metrics
+  metrics:
+    - success_rate
+    - reward_std
+    - action_entropy
+
+# Predictor evaluation
+predictor:
+  # Regression tasks
+  regression_metrics:
+    - mse
+    - rmse
+    - mae
+    - r2
+    - pearson_r
+    - spearman_r
+    
+  # Classification tasks
+  classification_metrics:
+    - accuracy
+    - f1_macro
+    - confusion_matrix
+    - per_class_accuracy
+    
+  # Cross-validation
+  cv_folds: 5
+  
+  # Error analysis
+  error_analysis:
+    worst_n: 20
+    by_quadrant: true
+
+# General settings
+general:
+  seed: 42
+  device: "cuda"
+  batch_size: 64
+  num_workers: 4
+  
+  # Output
+  save_predictions: true
+  save_per_episode: false
+  
+  # Logging
+  verbose: true
+  progress_bar: true

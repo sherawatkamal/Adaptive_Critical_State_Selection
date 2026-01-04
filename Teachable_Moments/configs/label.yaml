@@ -1,0 +1,126 @@
+# Labeling configuration for teachable moments
+
+uncertainty:
+  # Method: mc_dropout, ensemble, evidential
+  method: "mc_dropout"
+  
+  # MC Dropout settings
+  mc_dropout:
+    n_samples: 20
+    dropout_rate: 0.1
+    
+  # Ensemble settings (if using ensemble method)
+  ensemble:
+    n_models: 5
+    diversity_weight: 0.1
+    
+  # Score computation
+  aggregation: "entropy"  # entropy, variance, predictive_entropy
+  normalize: true
+  
+  # Thresholds for high/low classification
+  threshold:
+    method: "median"  # median, percentile, fixed
+    percentile: 50
+    fixed_value: 0.5
+
+leverage:
+  # Method: reward_delta, value_delta, trajectory_impact
+  method: "reward_delta"
+  
+  # Reward delta settings
+  reward_delta:
+    horizon: 5  # Steps to look ahead
+    discount: 0.99
+    
+  # Value delta settings
+  value_delta:
+    value_network_path: null  # Train from scratch if null
+    
+  # Trajectory impact settings
+  trajectory_impact:
+    n_rollouts: 10
+    
+  # Score computation
+  normalize: true
+  
+  # Thresholds
+  threshold:
+    method: "median"
+    percentile: 50
+    fixed_value: 0.5
+
+cpt:
+  # Counterfactual Policy Transfer estimation
+  n_counterfactual_policies: 5
+  policy_diversity: "action_entropy"
+  
+  # Performance measurement
+  eval_episodes: 10
+  max_steps: 64
+  
+  # Aggregation
+  aggregation: "mean_improvement"
+
+depth:
+  # Trajectory depth computation
+  method: "step_normalized"  # step_normalized, success_weighted
+  
+  success_weight: 2.0
+  failure_weight: 0.5
+
+quadrants:
+  # Quadrant assignment
+  uncertainty_threshold: 0.5
+  leverage_threshold: 0.5
+  
+  # Use adaptive thresholds based on distribution
+  adaptive_thresholds: true
+  
+  # Minimum samples per quadrant
+  min_samples_per_quadrant: 50
+  
+  # Quadrant definitions
+  definitions:
+    Q1:
+      uncertainty: "high"
+      leverage: "high"
+      description: "Novel and impactful - prioritize demonstrations"
+    Q2:
+      uncertainty: "low"
+      leverage: "high"
+      description: "Known but impactful - use contrastive"
+    Q3:
+      uncertainty: "low"
+      leverage: "low"
+      description: "Well understood - hints or skip"
+    Q4:
+      uncertainty: "high"
+      leverage: "low"
+      description: "Uncertain but low impact - mixed approach"
+
+hints:
+  # Teacher hint generation
+  teacher_model: "gpt-4o"
+  
+  # Prompt templates
+  prompt_template: |
+    Given the following game state and agent situation, provide a brief hint
+    to help the agent make progress. The agent is trying to: {mission}
+    
+    Current observation: {observation}
+    Recent actions: {recent_actions}
+    
+    Provide a concise, actionable hint (1-2 sentences).
+    
+  # Generation settings
+  max_tokens: 100
+  temperature: 0.7
+  
+  # Rate limiting
+  requests_per_minute: 50
+  retry_attempts: 3
+  
+  # Caching
+  cache_hints: true
+  cache_path: ".cache/hints"

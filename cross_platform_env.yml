@@ -1,0 +1,11 @@
+name: base
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - conda[version='>=24.11.3']
+  - mamba[version='>=1.5.12']
+  - pip
+  - matplotlib
+  - numpy
+prefix: /apps/common/software/Miniforge3/24.11.3-0

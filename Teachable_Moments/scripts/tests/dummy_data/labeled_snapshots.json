@@ -1,0 +1,387 @@
+[
+    {
+        "id": "snap_001",
+        "snapshot": {
+            "id": "snap_001",
+            "task_id": "task_200",
+            "env_state_b64": "ZHVtbXlfc3RhYXRl",
+            "observation": "Product page",
+            "valid_actions": [
+                "click[buy]"
+            ]
+        },
+        "quadrant": "Q1_highU_highL",
+        "cpt": {
+            "ELP_net": 0.8,
+            "route_net": "demo"
+        },
+        "teacher_hint": {
+            "suggested_action": "click[buy]",
+            "rationale": "It's correct",
+            "error_type": "affordance_miss",
+            "confidence": "high"
+        },
+        "instruction_text": "Buy item",
+        "uncertainty": {
+            "entropy": 0.5,
+            "margin": 0.1,
+            "top_action_prob": 0.6,
+            "n_actions": 3
+        },
+        "structural_features": {
+            "trajectory_length": 5,
+            "n_available_actions": 3,
+            "step_index": 2
+        }
+    },
+    {
+        "id": "snap_002",
+        "snapshot": {
+            "id": "snap_002",
+            "task_id": "task_201",
+            "env_state_b64": "ZHVtbXlfc3RhYXRl",
+            "observation": "Page",
+            "valid_actions": [
+                "click[buy]"
+            ]
+        },
+        "quadrant": "Q1_highU_highL",
+        "cpt": {
+            "ELP_net": 0.8,
+            "route_net": "demo"
+        },
+        "teacher_hint": {
+            "suggested_action": "click[buy]",
+            "rationale": "Right",
+            "error_type": "affordance_miss",
+            "confidence": "high"
+        },
+        "instruction_text": "Buy",
+        "uncertainty": {
+            "entropy": 0.5,
+            "margin": 0.1,
+            "top_action_prob": 0.6,
+            "n_actions": 3
+        },
+        "structural_features": {
+            "trajectory_length": 5,
+            "n_available_actions": 3,
+            "step_index": 2
+        }
+    },
+    {
+        "id": "snap_003",
+        "snapshot": {
+            "id": "snap_003",
+            "task_id": "task_202",
+            "env_state_b64": "ZHVtbXlfc3RhYXRl",
+            "observation": "Page",
+            "valid_actions": [
+                "click[buy]"
+            ]
+        },
+        "quadrant": "Q1_highU_highL",
+        "cpt": {
+            "ELP_net": 0.8,
+            "route_net": "demo"
+        },
+        "teacher_hint": {
+            "suggested_action": "click[buy]",
+            "rationale": "Right",
+            "error_type": "affordance_miss",
+            "confidence": "high"
+        },
+        "instruction_text": "Buy",
+        "uncertainty": {
+            "entropy": 0.5,
+            "margin": 0.1,
+            "top_action_prob": 0.6,
+            "n_actions": 3
+        },
+        "structural_features": {
+            "trajectory_length": 5,
+            "n_available_actions": 3,
+            "step_index": 2
+        }
+    },
+    {
+        "id": "snap_004",
+        "snapshot": {
+            "id": "snap_004",
+            "task_id": "task_203",
+            "env_state_b64": "ZHVtbXlfc3RhYXRl",
+            "observation": "Page",
+            "valid_actions": [
+                "click[buy]"
+            ]
+        },
+        "quadrant": "Q1_highU_highL",
+        "cpt": {
+            "ELP_net": 0.8,
+            "route_net": "demo"
+        },
+        "teacher_hint": {
+            "suggested_action": "click[buy]",
+            "rationale": "Right",
+            "error_type": "affordance_miss",
+            "confidence": "high"
+        },
+        "instruction_text": "Buy",
+        "uncertainty": {
+            "entropy": 0.5,
+            "margin": 0.1,
+            "top_action_prob": 0.6,
+            "n_actions": 3
+        },
+        "structural_features": {
+            "trajectory_length": 5,
+            "n_available_actions": 3,
+            "step_index": 2
+        }
+    },
+    {
+        "id": "snap_005",
+        "snapshot": {
+            "id": "snap_005",
+            "task_id": "task_204",
+            "env_state_b64": "ZHVtbXlfc3RhYXRl",
+            "observation": "Page",
+            "valid_actions": [
+                "click[buy]"
+            ]
+        },
+        "quadrant": "Q1_highU_highL",
+        "cpt": {
+            "ELP_net": 0.8,
+            "route_net": "demo"
+        },
+        "teacher_hint": {
+            "suggested_action": "click[buy]",
+            "rationale": "Right",
+            "error_type": "affordance_miss",
+            "confidence": "high"
+        },
+        "instruction_text": "Buy",
+        "uncertainty": {
+            "entropy": 0.5,
+            "margin": 0.1,
+            "top_action_prob": 0.6,
+            "n_actions": 3
+        },
+        "structural_features": {
+            "trajectory_length": 5,
+            "n_available_actions": 3,
+            "step_index": 2
+        }
+    },
+    {
+        "id": "snap_006",
+        "snapshot": {
+            "id": "snap_006",
+            "task_id": "task_205",
+            "env_state_b64": "ZHVtbXlfc3RhYXRl",
+            "observation": "Page",
+            "valid_actions": [
+                "click[buy]"
+            ]
+        },
+        "quadrant": "Q1_highU_highL",
+        "cpt": {
+            "ELP_net": 0.8,
+            "route_net": "demo"
+        },
+        "teacher_hint": {
+            "suggested_action": "click[buy]",
+            "rationale": "Right",
+            "error_type": "affordance_miss",
+            "confidence": "high"
+        },
+        "instruction_text": "Buy",
+        "uncertainty": {
+            "entropy": 0.5,
+            "margin": 0.1,
+            "top_action_prob": 0.6,
+            "n_actions": 3
+        },
+        "structural_features": {
+            "trajectory_length": 5,
+            "n_available_actions": 3,
+            "step_index": 2
+        }
+    },
+    {
+        "id": "snap_007",
+        "snapshot": {
+            "id": "snap_007",
+            "task_id": "task_206",
+            "env_state_b64": "ZHVtbXlfc3RhYXRl",
+            "observation": "Page",
+            "valid_actions": [
+                "click[buy]"
+            ]
+        },
+        "quadrant": "Q1_highU_highL",
+        "cpt": {
+            "ELP_net": 0.8,
+            "route_net": "demo"
+        },
+        "teacher_hint": {
+            "suggested_action": "click[buy]",
+            "rationale": "Right",
+            "error_type": "affordance_miss",
+            "confidence": "high"
+        },
+        "instruction_text": "Buy",
+        "uncertainty": {
+            "entropy": 0.5,
+            "margin": 0.1,
+            "top_action_prob": 0.6,
+            "n_actions": 3
+        },
+        "structural_features": {
+            "trajectory_length": 5,
+            "n_available_actions": 3,
+            "step_index": 2
+        }
+    },
+    {
+        "id": "snap_008",
+        "snapshot": {
+            "id": "snap_008",
+            "task_id": "task_207",
+            "env_state_b64": "ZHVtbXlfc3RhYXRl",
+            "observation": "Page",
+            "valid_actions": [
+                "click[buy]"
+            ]
+        },
+        "quadrant": "Q1_highU_highL",
+        "cpt": {
+            "ELP_net": 0.8,
+            "route_net": "demo"
+        },
+        "teacher_hint": {
+            "suggested_action": "click[buy]",
+            "rationale": "Right",
+            "error_type": "affordance_miss",
+            "confidence": "high"
+        },
+        "instruction_text": "Buy",
+        "uncertainty": {
+            "entropy": 0.5,
+            "margin": 0.1,
+            "top_action_prob": 0.6,
+            "n_actions": 3
+        },
+        "structural_features": {
+            "trajectory_length": 5,
+            "n_available_actions": 3,
+            "step_index": 2
+        }
+    },
+    {
+        "id": "snap_009",
+        "snapshot": {
+            "id": "snap_009",
+            "task_id": "task_208",
+            "env_state_b64": "ZHVtbXlfc3RhYXRl",
+            "observation": "Page",
+            "valid_actions": [
+                "click[buy]"
+            ]
+        },
+        "quadrant": "Q1_highU_highL",
+        "cpt": {
+            "ELP_net": 0.8,
+            "route_net": "demo"
+        },
+        "teacher_hint": {
+            "suggested_action": "click[buy]",
+            "rationale": "Right",
+            "error_type": "affordance_miss",
+            "confidence": "high"
+        },
+        "instruction_text": "Buy",
+        "uncertainty": {
+            "entropy": 0.5,
+            "margin": 0.1,
+            "top_action_prob": 0.6,
+            "n_actions": 3
+        },
+        "structural_features": {
+            "trajectory_length": 5,
+            "n_available_actions": 3,
+            "step_index": 2
+        }
+    },
+    {
+        "id": "snap_010",
+        "snapshot": {
+            "id": "snap_010",
+            "task_id": "task_209",
+            "env_state_b64": "ZHVtbXlfc3RhYXRl",
+            "observation": "Page",
+            "valid_actions": [
+                "click[buy]"
+            ]
+        },
+        "quadrant": "Q1_highU_highL",
+        "cpt": {
+            "ELP_net": 0.8,
+            "route_net": "demo"
+        },
+        "teacher_hint": {
+            "suggested_action": "click[buy]",
+            "rationale": "Right",
+            "error_type": "affordance_miss",
+            "confidence": "high"
+        },
+        "instruction_text": "Buy",
+        "uncertainty": {
+            "entropy": 0.5,
+            "margin": 0.1,
+            "top_action_prob": 0.6,
+            "n_actions": 3
+        },
+        "structural_features": {
+            "trajectory_length": 5,
+            "n_available_actions": 3,
+            "step_index": 2
+        }
+    },
+    {
+        "id": "snap_011",
+        "snapshot": {
+            "id": "snap_011",
+            "task_id": "task_210",
+            "env_state_b64": "ZHVtbXlfc3RhYXRl",
+            "observation": "Page",
+            "valid_actions": [
+                "click[buy]"
+            ]
+        },
+        "quadrant": "Q1_highU_highL",
+        "cpt": {
+            "ELP_net": 0.8,
+            "route_net": "demo"
+        },
+        "teacher_hint": {
+            "suggested_action": "click[buy]",
+            "rationale": "Right",
+            "error_type": "affordance_miss",
+            "confidence": "high"
+        },
+        "instruction_text": "Buy",
+        "uncertainty": {
+            "entropy": 0.5,
+            "margin": 0.1,
+            "top_action_prob": 0.6,
+            "n_actions": 3
+        },
+        "structural_features": {
+            "trajectory_length": 5,
+            "n_available_actions": 3,
+            "step_index": 2
+        }
+    }
+]

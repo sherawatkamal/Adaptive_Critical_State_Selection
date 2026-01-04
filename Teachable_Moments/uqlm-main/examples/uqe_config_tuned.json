@@ -1,0 +1,45 @@
+{
+  "weights": [
+    0.0025387213438219183,
+    0.8341461711896818,
+    0.040041378980108795,
+    0.12327372848638753
+  ],
+  "thresh": 0.74,
+  "components": [
+    "exact_match",
+    "noncontradiction",
+    "normalized_probability",
+    "judge_1"
+  ],
+  "llm_config": {
+    "class_name": "AzureChatOpenAI",
+    "module": "langchain_openai.chat_models.azure",
+    "deployment_name": "gpt-4o-mini",
+    "logprobs": true,
+    "model_version": "",
+    "n": 5,
+    "openai_api_type": "azure",
+    "openai_api_version": "2024-02-15-preview",
+    "profile": {},
+    "streaming": false,
+    "use_previous_response_id": false,
+    "verbose": false
+  },
+  "llm_scorers": {
+    "judge_1": {
+      "class_name": "AzureChatOpenAI",
+      "module": "langchain_openai.chat_models.azure",
+      "deployment_name": "gpt-4o-mini",
+      "logprobs": true,
+      "model_version": "",
+      "n": 5,
+      "openai_api_type": "azure",
+      "openai_api_version": "2024-02-15-preview",
+      "profile": {},
+      "streaming": false,
+      "use_previous_response_id": false,
+      "verbose": false
+    }
+  }
+}

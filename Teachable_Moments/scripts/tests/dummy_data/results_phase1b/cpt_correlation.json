@@ -1,0 +1,14 @@
+{
+  "pearson_r": 0.0,
+  "pearson_p": 1.0,
+  "n": 1,
+  "data_points": [
+    {
+      "snapshot_id": "snap_001",
+      "quadrant": "Q1_highU_highL",
+      "cpt": 0.8,
+      "elp": 0.0,
+      "route_net": "demo"
+    }
+  ]
+}

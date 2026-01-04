@@ -1,26 +1,3 @@
-"""
-Parallel Trajectory Collection Script for ACSS Pipeline
-========================================================
-Collects trajectories with logits for entropy computation using multiple GPUs.
-
-Supports:
-- Multi-GPU parallelization (8x A6000)
-- Multiple workers per GPU
-- Automatic task distribution
-- Progress tracking and ETA
-- Fault tolerance with checkpointing
-
-Usage:
-    # Use all 8 GPUs with 4 workers each (32 total)
-    python collect_trajectories_parallel.py --target_failures 5000 --num_workers 32
-    
-    # Use specific GPUs
-    python collect_trajectories_parallel.py --target_failures 5000 --gpus 0,1,2,3 --workers_per_gpu 4
-    
-    # Quick test
-    python collect_trajectories_parallel.py --target_failures 100 --num_workers 8
-"""
-
 import os
 import sys
 import json

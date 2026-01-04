@@ -1,330 +1,436 @@
 """
-Trajectory Collection Script for ACSS Pipeline
-Collects trajectories with logits for entropy computation
+GPT-based Trajectory Collection for WebShop
+============================================
+Uses OpenAI API (GPT-4.1-mini, GPT-5.1-mini, etc.) to generate expert trajectories.
+
+Usage:
+    # Test with 30 tasks
+    python collect_trajectories_gpt.py --model gpt-4.1-mini --num_tasks 30 --output ./test_4.1.json
+    
+    # Full collection with parallel workers
+    python collect_trajectories_gpt.py --model gpt-4.1-mini --num_tasks 11000 --workers 32 --output ./trajectories_11k.json
+    
+    # Compare models
+    python collect_trajectories_gpt.py --model gpt-4.1-mini --num_tasks 30 --output ./test_4.1.json
+    python collect_trajectories_gpt.py --model gpt-5.1-mini --num_tasks 30 --output ./test_5.1.json
 """
 
 import os
 import sys
 import json
 import argparse
-import torch
-import torch.nn.functional as F
-import numpy as np
+import asyncio
+import aiohttp
+from openai import OpenAI, AsyncOpenAI
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 from datetime import datetime
 from tqdm import tqdm
+import time
+import re
 
 # Import WebShop environment
 from train_rl import parse_args as webenv_args
 from env import WebEnv
 
-# Import model components
-from train_choice_il import (
-    tokenizer, process, process_goal, data_collator,
-    BertConfigForWebshop, BertModelForWebshop
-)
-from transformers import BartForConditionalGeneration, BartTokenizer
 
-bart_tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
+# System prompt for GPT
+SYSTEM_PROMPT = """You are an expert online shopping assistant. You help users find and purchase products that match their requirements.
 
+You are interacting with a WebShop environment. At each step, you'll see:
+1. The user's shopping goal/instruction
+2. The current webpage observation
+3. Available actions you can take
 
-def compute_entropy(logits):
-    """Compute Shannon entropy from logits."""
-    probs = F.softmax(logits, dim=0)
-    log_probs = F.log_softmax(logits, dim=0)
-    entropy = -torch.sum(probs * log_probs).item()
-    return entropy, probs.cpu().numpy().tolist()
+Your task is to select the BEST action to help complete the shopping task.
 
+Rules:
+- For search pages: Use search[query] to search for products
+- For product listings: Click on a product ID (e.g., click[B07XYZ123]) to view details
+- For product pages: Click on options (size, color) or click[Buy Now] to purchase
+- Use click[Next] to see more products if current ones don't match
+- Use click[Back to Search] to try a different search
+- Use click[< Prev] to go back to previous page
 
-def bart_predict(input_text, model, skip_special_tokens=True, **kwargs):
-    """Generate search query using BART model."""
-    input_ids = bart_tokenizer(input_text)['input_ids']
-    input_ids = torch.tensor(input_ids).unsqueeze(0).cuda()
-    output = model.generate(input_ids, max_length=512, **kwargs)
-    return bart_tokenizer.batch_decode(output.tolist(), skip_special_tokens=skip_special_tokens)
+Think step by step about which action best matches the user's requirements, then respond with ONLY the action in the exact format: action[argument]
 
-
-def predict_with_logits(obs, info, model, bart_model=None, softmax=False):
-    """
-    Predict action and return logits for entropy computation.
-    
-    Returns:
-        action: selected action string
-        logits: raw logits (None for search states)
-        entropy: entropy value (None for search states)
-        probs: probability distribution (None for search states)
-        is_search: whether this was a search state
-    """
-    valid_acts = info['valid']
-    
-    # Search state - use BART, no entropy computation
-    if valid_acts[0].startswith('search['):
-        if bart_model is None:
-            action = valid_acts[-1]
-        else:
-            goal = process_goal(obs)
-            query = bart_predict(goal, bart_model, num_return_sequences=5, num_beams=5)
-            query = query[0]  # Use top-1
-            action = f'search[{query}]'
-        return action, None, None, None, True
-    
-    # Choice state - use BERT, compute entropy
-    state_encodings = tokenizer(
-        process(obs), max_length=512, truncation=True, padding='max_length'
-    )
-    action_encodings = tokenizer(
-        list(map(process, valid_acts)), max_length=512, truncation=True, padding='max_length'
-    )
-    
-    batch = {
-        'state_input_ids': state_encodings['input_ids'],
-        'state_attention_mask': state_encodings['attention_mask'],
-        'action_input_ids': action_encodings['input_ids'],
-        'action_attention_mask': action_encodings['attention_mask'],
-        'sizes': len(valid_acts),
-        'images': info['image_feat'].tolist(),
-        'labels': 0
-    }
-    batch = data_collator([batch])
-    batch = {k: v.cuda() for k, v in batch.items()}
-    
-    with torch.no_grad():
-        outputs = model(**batch)
-    
-    logits = outputs.logits[0]  # Shape: (num_actions,)
-    entropy, probs = compute_entropy(logits)
-    
-    # Select action
-    if softmax:
-        idx = torch.multinomial(F.softmax(logits, dim=0), 1)[0].item()
-    else:
-        idx = logits.argmax(0).item()
-    
-    action = valid_acts[idx]
-    
-    return action, logits.cpu().numpy().tolist(), entropy, probs, False
+Examples of valid actions:
+- search[red running shoes size 10]
+- click[B07ABC123]
+- click[Buy Now]
+- click[Next]
+- click[large]
+- click[Back to Search]
+"""
 
 
-def collect_episode(model, env, idx, bart_model=None, softmax=False, verbose=False):
-    """
-    Run one episode and collect full trajectory data.
+def parse_action(response_text, valid_actions):
+    """Extract action from GPT response."""
+    text = response_text.strip()
     
-    Returns:
-        trajectory: dict with all trajectory information
-    """
-    obs, info = env.reset(idx)
-    goal = info['goal']
+    # Try to find action pattern
+    patterns = [
+        r'(search\[.+?\])',
+        r'(click\[.+?\])',
+    ]
     
-    if verbose:
-        print(f"\n=== Episode {idx} ===")
-        print(f"Goal: {goal}")
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            action = match.group(1)
+            # Normalize click to lowercase
+            if action.lower().startswith('click'):
+                action = 'click' + action[5:]
+            return action
     
-    trajectory = {
-        'idx': idx,
-        'goal': goal,
-        'steps': [],
-        'final_reward': 0,
-        'success': False,
-        'num_steps': 0
-    }
+    # If no pattern found, try to match with valid actions
+    text_lower = text.lower()
+    for valid in valid_actions:
+        if valid.lower() in text_lower:
+            return valid
     
-    for step in range(100):
-        action, logits, entropy, probs, is_search = predict_with_logits(
-            obs, info, model, bart_model=bart_model, softmax=softmax
-        )
+    # Default: return first valid action or the raw text
+    return valid_actions[0] if valid_actions else text
+
+
+def format_observation(obs, goal, valid_actions):
+    """Format observation for GPT prompt."""
+    prompt = f"""SHOPPING GOAL: {goal}
+
+CURRENT PAGE:
+{obs[:2000]}
+
+AVAILABLE ACTIONS:
+{chr(10).join(f'- {a}' for a in valid_actions[:20])}
+
+Select the best action to complete the shopping goal. Respond with ONLY the action."""
+    
+    return prompt
+
+
+class GPTTrajectoryCollector:
+    def __init__(self, model="gpt-4.1-mini", max_retries=3):
+        self.model = model
+        self.max_retries = max_retries
+        self.client = OpenAI()
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
+        self.lock = threading.Lock()
         
-        # Store step data
-        step_data = {
-            'step': step,
-            'observation': obs[:500],  # Truncate for storage
-            'valid_actions': info['valid'],
-            'action': action,
-            'is_search': is_search,
-            'logits': logits,
-            'entropy': entropy,
-            'probs': probs
-        }
-        trajectory['steps'].append(step_data)
+    def get_action(self, obs, goal, valid_actions):
+        """Get action from GPT model."""
+        prompt = format_observation(obs, goal, valid_actions)
+        
+        for attempt in range(self.max_retries):
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=100,
+                    temperature=0.1,
+                )
+                
+                # Track tokens
+                with self.lock:
+                    self.total_input_tokens += response.usage.prompt_tokens
+                    self.total_output_tokens += response.usage.completion_tokens
+                
+                action_text = response.choices[0].message.content
+                action = parse_action(action_text, valid_actions)
+                return action, action_text
+                
+            except Exception as e:
+                if attempt < self.max_retries - 1:
+                    time.sleep(2 ** attempt)  # Exponential backoff
+                else:
+                    print(f"API error after {self.max_retries} attempts: {e}")
+                    return valid_actions[0], f"ERROR: {e}"
+        
+        return valid_actions[0], "ERROR: max retries"
+
+    def collect_episode(self, env, idx, max_steps=15, verbose=False):
+        """Collect one trajectory using GPT."""
+        obs, info = env.reset(idx)
+        goal = info['goal']
         
         if verbose:
-            entropy_str = f"{entropy:.3f}" if entropy is not None else "N/A (search)"
-            print(f"  Step {step}: {action[:50]}... | Entropy: {entropy_str}")
+            print(f"\n=== Task {idx} ===")
+            print(f"Goal: {goal}")
         
-        # Take action
-        obs, reward, done, info = env.step(action)
-        
-        if done:
-            trajectory['final_reward'] = reward * 10  # Scale 0-10 → 0-100 (paper scale)
-            trajectory['success'] = (reward == 10.0)  # Perfect score in env's 0-10 scale
-            trajectory['num_steps'] = step + 1
-            break
-    
-    if verbose:
-        print(f"  Result: {'SUCCESS' if trajectory['success'] else 'FAILURE'} | Reward: {trajectory['final_reward']}")
-    
-    return trajectory
-
-
-def collect_until_n_failures(model, env, bart_model, target_failures, softmax=False, 
-                             split='train', start_idx=0, max_episodes=5000, verbose=False):
-    """Collect trajectories until we have target_failures failed trajectories."""
-    
-    failed_trajectories = []
-    success_trajectories = []
-    all_entropies = []
-    
-    idx = start_idx
-    pbar = tqdm(total=target_failures, desc="Collecting failures")
-    
-    while len(failed_trajectories) < target_failures and idx < start_idx + max_episodes:
-        traj = collect_episode(
-            model, env, idx, bart_model=bart_model, 
-            softmax=softmax, verbose=verbose
-        )
-        
-        # Collect entropies from choice states
-        for step in traj['steps']:
-            if step['entropy'] is not None:
-                all_entropies.append(step['entropy'])
-        
-        if traj['success']:
-            success_trajectories.append(traj)
-        else:
-            failed_trajectories.append(traj)
-            pbar.update(1)
-        
-        idx += 1
-        
-        if idx % 100 == 0:
-            pbar.set_postfix({
-                'total': idx - start_idx,
-                'fail': len(failed_trajectories),
-                'success': len(success_trajectories)
-            })
-    
-    pbar.close()
-    
-    total_episodes = idx - start_idx
-    
-    return {
-        'metadata': {
-            'collection_date': datetime.now().isoformat(),
-            'split': split,
-            'target_failures': target_failures,
-            'total_episodes': total_episodes,
-            'softmax': softmax,
-            'start_idx': start_idx
-        },
-        'failed_trajectories': failed_trajectories,
-        'success_trajectories': success_trajectories,
-        'summary': {
-            'total_episodes': total_episodes,
-            'num_failures': len(failed_trajectories),
-            'num_successes': len(success_trajectories),
-            'failure_rate': len(failed_trajectories) / total_episodes * 100,
-            'success_rate': len(success_trajectories) / total_episodes * 100,
-            'avg_entropy': np.mean(all_entropies) if all_entropies else 0
+        trajectory = {
+            'idx': idx,
+            'goal': goal,
+            'steps': [],
+            'final_reward': 0,
+            'success': False,
+            'num_steps': 0,
+            'model': self.model
         }
-    }
+        
+        for step in range(max_steps):
+            valid_actions = info['valid']
+            
+            # Get action from GPT
+            action, raw_response = self.get_action(obs, goal, valid_actions)
+            
+            # Store step
+            step_data = {
+                'step': step,
+                'observation': obs[:1000],  # Truncate for storage
+                'valid_actions': valid_actions,
+                'action': action,
+                'raw_response': raw_response
+            }
+            trajectory['steps'].append(step_data)
+            
+            if verbose:
+                print(f"  Step {step}: {action[:60]}")
+            
+            # Take action
+            obs, reward, done, info = env.step(action)
+            
+            if done:
+                trajectory['final_reward'] = reward * 10  # Scale to 0-100
+                trajectory['success'] = (reward == 1.0)
+                trajectory['num_steps'] = step + 1
+                break
+        
+        if verbose:
+            status = 'SUCCESS' if trajectory['success'] else 'FAILURE'
+            print(f"  Result: {status} | Reward: {trajectory['final_reward']:.1f}")
+        
+        return trajectory
+    
+    def get_cost_estimate(self):
+        """Estimate cost based on tokens used."""
+        # Pricing per 1M tokens (approximate)
+        pricing = {
+            'gpt-4.1-nano': {'input': 0.10, 'output': 0.40},
+            'gpt-4.1-mini': {'input': 0.40, 'output': 1.60},
+            'gpt-4o-mini': {'input': 0.15, 'output': 0.60},
+            'gpt-5.1-mini': {'input': 0.50, 'output': 2.00},  # Estimated
+            'gpt-5-mini': {'input': 0.50, 'output': 2.00},    # Estimated
+        }
+        
+        model_pricing = pricing.get(self.model, {'input': 1.0, 'output': 2.0})
+        
+        input_cost = (self.total_input_tokens / 1_000_000) * model_pricing['input']
+        output_cost = (self.total_output_tokens / 1_000_000) * model_pricing['output']
+        
+        return {
+            'input_tokens': self.total_input_tokens,
+            'output_tokens': self.total_output_tokens,
+            'input_cost': input_cost,
+            'output_cost': output_cost,
+            'total_cost': input_cost + output_cost
+        }
+
+
+def collect_worker(args):
+    """Worker function for parallel collection."""
+    worker_id, task_indices, model, split, max_steps, verbose = args
+    
+    # Each worker creates its own environment and collector
+    env_args = webenv_args()[0]
+    env = WebEnv(env_args, split=split)
+    env.env.num_prev_obs = 0
+    env.env.num_prev_actions = 0
+    
+    collector = GPTTrajectoryCollector(model=model)
+    
+    trajectories = []
+    for idx in task_indices:
+        try:
+            traj = collector.collect_episode(env, idx, max_steps=max_steps, verbose=verbose)
+            trajectories.append(traj)
+        except Exception as e:
+            print(f"Worker {worker_id} error on task {idx}: {e}")
+    
+    return trajectories, collector.get_cost_estimate()
+
+
+def collect_parallel(model, task_indices, num_workers, split='train', max_steps=15, verbose=False):
+    """Collect trajectories in parallel."""
+    
+    # Split tasks among workers
+    chunks = [[] for _ in range(num_workers)]
+    for i, idx in enumerate(task_indices):
+        chunks[i % num_workers].append(idx)
+    
+    # Prepare worker arguments
+    worker_args = [
+        (worker_id, chunks[worker_id], model, split, max_steps, verbose)
+        for worker_id in range(num_workers)
+    ]
+    
+    all_trajectories = []
+    total_cost = {'input_tokens': 0, 'output_tokens': 0, 'input_cost': 0, 'output_cost': 0, 'total_cost': 0}
+    
+    print(f"\nStarting {num_workers} workers for {len(task_indices)} tasks...")
+    
+    with ThreadPoolExecutor(max_workers=num_workers) as executor:
+        futures = {executor.submit(collect_worker, args): args[0] for args in worker_args}
+        
+        with tqdm(total=len(task_indices), desc=f"Collecting ({model})") as pbar:
+            completed = 0
+            for future in as_completed(futures):
+                worker_id = futures[future]
+                try:
+                    trajectories, cost = future.result()
+                    all_trajectories.extend(trajectories)
+                    
+                    # Aggregate cost
+                    for key in total_cost:
+                        total_cost[key] += cost[key]
+                    
+                    pbar.update(len(trajectories))
+                    completed += len(trajectories)
+                    
+                except Exception as e:
+                    print(f"Worker {worker_id} failed: {e}")
+    
+    return all_trajectories, total_cost
+
+
+def collect_sequential(model, task_indices, split='train', max_steps=15, verbose=False):
+    """Collect trajectories sequentially (for testing/debugging)."""
+    
+    env_args = webenv_args()[0]
+    env = WebEnv(env_args, split=split)
+    env.env.num_prev_obs = 0
+    env.env.num_prev_actions = 0
+    
+    collector = GPTTrajectoryCollector(model=model)
+    
+    trajectories = []
+    for idx in tqdm(task_indices, desc=f"Collecting ({model})"):
+        try:
+            traj = collector.collect_episode(env, idx, max_steps=max_steps, verbose=verbose)
+            trajectories.append(traj)
+        except Exception as e:
+            print(f"Error on task {idx}: {e}")
+    
+    return trajectories, collector.get_cost_estimate()
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Collect trajectories for ACSS pipeline")
-    parser.add_argument("--model_path", type=str, 
-                        default="./ckpts/web_click/epoch_9/model.pth",
-                        help="Path to BERT choice model")
-    parser.add_argument("--bart_path", type=str,
-                        default='./ckpts/web_search/checkpoint-800',
-                        help="Path to BART search model")
-    parser.add_argument("--output_dir", type=str, default="./trajectories",
-                        help="Directory to save trajectories")
-    parser.add_argument("--target_failures", type=int, default=5000,
-                        help="Number of failed trajectories to collect")
-    parser.add_argument("--max_episodes", type=int, default=50000,
-                        help="Maximum episodes to run (safety limit)")
+    parser = argparse.ArgumentParser(description="GPT-based trajectory collection")
+    parser.add_argument("--model", type=str, default="gpt-4.1-mini",
+                        help="OpenAI model to use")
+    parser.add_argument("--num_tasks", type=int, default=100,
+                        help="Number of tasks to collect")
     parser.add_argument("--start_idx", type=int, default=0,
                         help="Starting task index")
+    parser.add_argument("--workers", type=int, default=8,
+                        help="Number of parallel workers (0 for sequential)")
+    parser.add_argument("--max_steps", type=int, default=15,
+                        help="Maximum steps per episode")
     parser.add_argument("--split", type=str, default="train",
-                        choices=["train", "test"],
-                        help="Dataset split to use")
-    parser.add_argument("--softmax", action="store_true",
-                        help="Use softmax sampling instead of argmax")
+                        choices=["train", "test"])
+    parser.add_argument("--output", type=str, default="./trajectories_gpt.json",
+                        help="Output file path")
     parser.add_argument("--verbose", action="store_true",
                         help="Print episode details")
-    parser.add_argument("--mem", type=int, default=0,
-                        help="Use memory (previous observations)")
-    parser.add_argument("--image", action="store_true", default=True,
-                        help="Use image features")
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    print(f"Arguments: {args}")
-    print(f"\nTarget: Collect {args.target_failures} failed trajectories")
     
-    # Setup environment
-    env_args = webenv_args()[0]
-    env = WebEnv(env_args, split=args.split)
-    print(f"Environment loaded (split={args.split})")
+    print(f"=" * 60)
+    print(f"GPT TRAJECTORY COLLECTION")
+    print(f"=" * 60)
+    print(f"Model: {args.model}")
+    print(f"Tasks: {args.num_tasks}")
+    print(f"Workers: {args.workers}")
+    print(f"Split: {args.split}")
+    print(f"=" * 60)
     
-    # Memory settings
-    if args.mem:
-        env.env.num_prev_obs = 1
-        env.env.num_prev_actions = 5
-        print("Memory enabled")
+    # Task indices
+    task_indices = list(range(args.start_idx, args.start_idx + args.num_tasks))
+    
+    # Collect
+    start_time = time.time()
+    
+    if args.workers > 0:
+        trajectories, cost = collect_parallel(
+            model=args.model,
+            task_indices=task_indices,
+            num_workers=args.workers,
+            split=args.split,
+            max_steps=args.max_steps,
+            verbose=args.verbose
+        )
     else:
-        env.env.num_prev_obs = 0
-        env.env.num_prev_actions = 0
+        trajectories, cost = collect_sequential(
+            model=args.model,
+            task_indices=task_indices,
+            split=args.split,
+            max_steps=args.max_steps,
+            verbose=args.verbose
+        )
     
-    # Load BART model
-    bart_model = BartForConditionalGeneration.from_pretrained(args.bart_path)
-    bart_model.cuda()
-    bart_model.eval()
-    print(f"BART model loaded: {args.bart_path}")
+    elapsed = time.time() - start_time
     
-    # Load BERT model
-    config = BertConfigForWebshop(image=args.image)
-    model = BertModelForWebshop(config)
-    model.cuda()
-    model.load_state_dict(torch.load(args.model_path), strict=False)
-    model.eval()
-    print(f"BERT model loaded: {args.model_path}")
+    # Compute statistics
+    successes = [t for t in trajectories if t['success']]
+    failures = [t for t in trajectories if not t['success']]
+    rewards = [t['final_reward'] for t in trajectories]
     
-    # Collect trajectories until we have enough failures
-    print(f"\nCollecting until {args.target_failures} failures...")
-    results = collect_until_n_failures(
-        model, env, bart_model,
-        target_failures=args.target_failures,
-        softmax=args.softmax,
-        split=args.split,
-        start_idx=args.start_idx,
-        max_episodes=args.max_episodes,
-        verbose=args.verbose
-    )
+    # Check for navigation skills
+    uses_next = sum(1 for t in successes if any('Next' in s['action'] for s in t['steps']))
+    uses_back = sum(1 for t in successes if any('Back' in s['action'] for s in t['steps']))
     
     # Print summary
-    print("\n" + "="*50)
-    print("COLLECTION SUMMARY")
-    print("="*50)
-    print(f"Total episodes run: {results['summary']['total_episodes']}")
-    print(f"Failed trajectories: {results['summary']['num_failures']}")
-    print(f"Successful trajectories: {results['summary']['num_successes']}")
-    print(f"Failure rate: {results['summary']['failure_rate']:.1f}%")
-    print(f"Avg entropy (choice states): {results['summary']['avg_entropy']:.3f}")
+    print(f"\n" + "=" * 60)
+    print(f"COLLECTION SUMMARY")
+    print(f"=" * 60)
+    print(f"Total trajectories: {len(trajectories)}")
+    print(f"Successes: {len(successes)} ({len(successes)/len(trajectories)*100:.1f}%)")
+    print(f"Failures: {len(failures)} ({len(failures)/len(trajectories)*100:.1f}%)")
+    print(f"Average reward: {sum(rewards)/len(rewards):.2f}")
+    print(f"Uses Next (in successes): {uses_next}")
+    print(f"Uses Back (in successes): {uses_back}")
+    print(f"Time: {elapsed:.1f}s ({elapsed/len(trajectories):.2f}s per trajectory)")
+    print(f"\n--- Cost ---")
+    print(f"Input tokens: {cost['input_tokens']:,}")
+    print(f"Output tokens: {cost['output_tokens']:,}")
+    print(f"Estimated cost: ${cost['total_cost']:.4f}")
+    print(f"Projected cost for 11K: ${cost['total_cost'] * 11000 / len(trajectories):.2f}")
+    print(f"=" * 60)
     
-    # Save trajectories
-    os.makedirs(args.output_dir, exist_ok=True)
-    
-    # Save failed trajectories (main output for ACSS)
-    failed_file = os.path.join(args.output_dir, f"trajectories_{args.split}_failed_{args.target_failures}.json")
-    failed_data = {
-        'metadata': results['metadata'],
-        'trajectories': results['failed_trajectories'],
-        'summary': results['summary']
+    # Save results
+    output_data = {
+        'metadata': {
+            'model': args.model,
+            'collection_date': datetime.now().isoformat(),
+            'num_tasks': len(trajectories),
+            'split': args.split,
+            'elapsed_seconds': elapsed,
+        },
+        'summary': {
+            'total': len(trajectories),
+            'successes': len(successes),
+            'failures': len(failures),
+            'success_rate': len(successes) / len(trajectories) * 100,
+            'avg_reward': sum(rewards) / len(rewards),
+            'uses_next': uses_next,
+            'uses_back': uses_back,
+        },
+        'cost': cost,
+        'trajectories': trajectories,
+        'success_trajectories': successes,
+        'failed_trajectories': failures,
     }
-    with open(failed_file, 'w') as f:
-        json.dump(failed_data, f, indent=2)
-    print(f"\nSaved {len(results['failed_trajectories'])} failed trajectories to: {failed_file}")
+    
+    os.makedirs(os.path.dirname(args.output) or '.', exist_ok=True)
+    with open(args.output, 'w') as f:
+        json.dump(output_data, f, indent=2)
+    
+    print(f"\nSaved to: {args.output}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,149 @@
+# Training configuration for teachable moments
+
+# Base model
+model:
+  architecture: "decision_transformer"
+  pretrained_path: null  # Path to pretrained weights or null
+  
+  # Model dimensions
+  hidden_dim: 256
+  n_layers: 4
+  n_heads: 4
+  dropout: 0.1
+  
+  # Context
+  max_context_length: 20
+  
+  # Action space
+  action_dim: 7
+  
+# Training settings
+training:
+  # Optimizer
+  optimizer: "adamw"
+  learning_rate: 1e-4
+  weight_decay: 0.01
+  betas: [0.9, 0.999]
+  
+  # Schedule
+  scheduler: "cosine"
+  warmup_steps: 100
+  
+  # Batch settings
+  batch_size: 32
+  gradient_accumulation_steps: 1
+  max_grad_norm: 1.0
+  
+  # Training duration
+  max_steps: 5000
+  eval_every: 500
+  save_every: 1000
+  
+  # Early stopping
+  early_stopping:
+    enabled: true
+    patience: 5
+    metric: "val_success_rate"
+    mode: "max"
+    min_delta: 0.01
+    
+  # Checkpointing
+  save_best_only: true
+  checkpoint_dir: "checkpoints"
+  
+  # Mixed precision
+  fp16: true
+  
+  # Reproducibility
+  seed: 42
+
+# LoRA settings (for fine-tuning)
+lora:
+  enabled: true
+  r: 8
+  alpha: 16
+  dropout: 0.1
+  target_modules: ["q_proj", "v_proj", "k_proj", "out_proj"]
+  bias: "none"
+
+# Supervision-specific settings
+supervision:
+  demonstration:
+    # Full action sequences from expert
+    loss_weight: 1.0
+    teacher_forcing: true
+    label_smoothing: 0.1
+    
+  contrastive:
+    # Good vs bad action pairs
+    loss_weight: 1.0
+    margin: 0.5
+    hard_negative_mining: true
+    temperature: 0.07
+    
+  hint:
+    # Natural language hints
+    loss_weight: 1.0
+    hint_embedding_dim: 128
+    cross_attention: true
+
+# Per-quadrant settings
+per_quadrant:
+  Q1:
+    primary_supervision: "demonstration"
+    learning_rate_multiplier: 1.0
+    epochs_multiplier: 1.2
+    
+  Q2:
+    primary_supervision: "contrastive"
+    learning_rate_multiplier: 0.8
+    epochs_multiplier: 1.0
+    
+  Q3:
+    primary_supervision: "hint"
+    learning_rate_multiplier: 0.5
+    epochs_multiplier: 0.8
+    
+  Q4:
+    primary_supervision: "demonstration"
+    secondary_supervision: "contrastive"
+    learning_rate_multiplier: 0.9
+    epochs_multiplier: 1.0
+
+# Micro-training (for CPT validation)
+micro_training:
+  steps: 50
+  batch_size: 16
+  learning_rate: 5e-4
+  no_scheduler: true
+  eval_steps: 10
+
+# Baseline configurations
+baselines:
+  random_sampling:
+    n_samples: 500
+    stratified: false
+    
+  all_data:
+    use_quadrant_supervision: true
+    
+# Hardware
+hardware:
+  device: "cuda"
+  num_workers: 4
+  pin_memory: true
+  
+# Logging
+logging:
+  wandb:
+    enabled: true
+    project: "teachable-moments"
+    entity: null
+    tags: ["training"]
+    
+  tensorboard:
+    enabled: true
+    log_dir: "runs"
+    
+  console:
+    log_every: 100

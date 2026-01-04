@@ -1,0 +1,15 @@
+{
+  "hidden_dims": [
+    256,
+    128
+  ],
+  "dropout": 0.1,
+  "predict_uncertainty": false,
+  "predict_leverage": true,
+  "predict_quadrant": true,
+  "predict_elp": true,
+  "use_structural": true,
+  "use_embeddings": true,
+  "embedding_dim": 384,
+  "structural_dim": 16
+}
