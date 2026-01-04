@@ -237,9 +237,9 @@ def parse_args():
                         help="Path to BART search model")
     parser.add_argument("--output_dir", type=str, default="./trajectories",
                         help="Directory to save trajectories")
-    parser.add_argument("--target_failures", type=int, default=1000,
+    parser.add_argument("--target_failures", type=int, default=5000,
                         help="Number of failed trajectories to collect")
-    parser.add_argument("--max_episodes", type=int, default=5000,
+    parser.add_argument("--max_episodes", type=int, default=50000,
                         help="Maximum episodes to run (safety limit)")
     parser.add_argument("--start_idx", type=int, default=0,
                         help="Starting task index")
