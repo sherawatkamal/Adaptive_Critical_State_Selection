@@ -21,25 +21,16 @@ from web_agent_site.engine.engine import (
     ACTION_TO_TEMPLATE,
     END_BUTTON, NEXT_PAGE, PREV_PAGE, BACK_TO_SEARCH,
 )
+
 from web_agent_site.engine.goal import get_reward, get_goals
-from web_agent_site.utils import (
-    DEFAULT_FILE_PATH,
-    FEAT_CONV,
-    FEAT_IDS,
-    random_idx
-)
+from web_agent_site.utils import DEFAULT_FILE_PATH, FEAT_CONV, FEAT_IDS, random_idx
+
+
 
 app = Flask(__name__)
 class WebAgentTextEnv(gym.Env):
     """Gym environment for Text mode of WebShop environment"""
-    def __init__(
-            self,
-            observation_mode='html',
-            file_path=DEFAULT_FILE_PATH,
-            server=None,
-            base_url='http://127.0.0.1:3000',
-            **kwargs
-        ):
+    def __init__(self, observation_mode='html', file_path=DEFAULT_FILE_PATH, server=None, base_url='http://127.0.0.1:3000', **kwargs):
         """
         Constructor for text environment
 
@@ -55,22 +46,32 @@ class WebAgentTextEnv(gym.Env):
         show_attrs
         """
         super(WebAgentTextEnv, self).__init__()
+        print(f"finished super init")
         self.observation_mode = observation_mode
         self.kwargs = kwargs
 
         self.file_path = file_path
 
         self.base_url = base_url
-        self.server = SimServer(
-            self.base_url,
-            self.file_path,
-            self.kwargs.get('filter_goals'),
-            self.kwargs.get('limit_goals', -1),
-            self.kwargs.get('num_products'),
-            self.kwargs.get('human_goals'),
-            self.kwargs.get('show_attrs', False),
-        ) if server is None else server
+        
+        if server == None:
+            self.server = SimServer(
+                self.base_url,
+                self.file_path,
+                self.kwargs.get('filter_goals'),
+                self.kwargs.get('limit_goals', -1),
+                self.kwargs.get('num_products'),
+                self.kwargs.get('human_goals'),
+                self.kwargs.get('show_attrs', False),
+            )
+        
+        else:
+            self.server = server
+        
+        print(f"finished initializing sim server")
+        
         self.browser = SimBrowser(self.server)
+        print(f"finished initializing browser")
 
         self.session = self.kwargs.get('session')
         self.session_prefix = self.kwargs.get('session_prefix')
@@ -78,11 +79,15 @@ class WebAgentTextEnv(gym.Env):
             self.feats = torch.load(FEAT_CONV)
             self.ids = torch.load(FEAT_IDS)
             self.ids = {url: idx for idx, url in enumerate(self.ids)}
+            
         self.prev_obs = []
         self.prev_actions = []
         self.num_prev_obs = self.kwargs.get('num_prev_obs', 0)
         self.num_prev_actions = self.kwargs.get('num_prev_actions', 0)
         self.reset()
+        print(f"finished self.reset()")
+
+
 
     def step(self, action):
         """
@@ -101,14 +106,17 @@ class WebAgentTextEnv(gym.Env):
         action_name, action_arg = parse_action(action)
         if action_arg is not None:
             action_arg = action_arg.lower()
+            
         if (action_name == 'search' and 
             action_arg is not None and 
             action_arg != ''):
             status = self.browser.search(action_arg)
+            
         elif (action_name == 'click' and 
               action_arg in self.text_to_clickable.keys() and 
               action_arg != 'search'):
             status = self.browser.click(action_arg, self.text_to_clickable)
+            
         else:
             status = dict(reward=0, done=False)
 
@@ -116,11 +124,14 @@ class WebAgentTextEnv(gym.Env):
         ob = self.observation
         text_list = [ob]
         self.prev_actions.append(action)
+        
         for i in range(1, 1 + max(self.num_prev_obs, self.num_prev_actions)):
             if len(self.prev_actions) >= i and self.num_prev_actions >= i:
                 text_list.append(self.prev_actions[-i])
+                
             if len(self.prev_obs) >= i and self.num_prev_obs >= i:
                 text_list.append(self.prev_obs[-i])
+                
         state = ' [SEP] '.join(text_list[::-1])
         self.prev_obs.append(ob)
         return state, status['reward'], status['done'], info
@@ -136,17 +147,15 @@ class WebAgentTextEnv(gym.Env):
         product_links  = html_obj.find_all(class_='product-link')
         buying_options = html_obj.select('input[type="radio"]')
 
-        self.text_to_clickable = {
-            f'{b.get_text()}'.lower(): b
-            for b in buttons + product_links
-        }
+        self.text_to_clickable = {f'{b.get_text()}'.lower(): b for b in buttons + product_links}
+        
         for opt in buying_options:
             opt_value = opt.get('value')
             self.text_to_clickable[f'{opt_value}'] = opt
-        return dict(
-            has_search_bar=has_search_bar,
-            clickables=list(self.text_to_clickable.keys()),
-        )
+            
+        return dict(has_search_bar=has_search_bar, clickables=list(self.text_to_clickable.keys()))
+    
+    
     
     def get_image(self):
         """Scrape image from page HTML and return as a list of pixel values"""
@@ -179,6 +188,7 @@ class WebAgentTextEnv(gym.Env):
         html_obj = BeautifulSoup(html, 'html.parser')
         return html_obj
     
+    
     @property
     def observation(self):
         """Compiles state into either the `html` or `text` observation mode"""
@@ -202,11 +212,7 @@ class WebAgentTextEnv(gym.Env):
         State that includes all information. The actual observation are
         likely to be a subset or reduced form of the state.
         """
-        return dict(
-            url=self.browser.current_url,
-            html=self.browser.page_source,
-            instruction_text=self.instruction_text,
-        )
+        return dict(url=self.browser.current_url, html=self.browser.page_source, instruction_text=self.instruction_text)
     
     def convert_html_to_text(self, html, simple=False):
         """Strip HTML of tags and add separators to convert observation into simple mode"""
@@ -247,6 +253,7 @@ class WebAgentTextEnv(gym.Env):
                 session_int = session
         else:
             self.session = ''.join(random.choices(string.ascii_lowercase, k=10))
+            print(f"generated session id: {self.session}")
         if self.session_prefix is not None:
             self.session = self.session_prefix + self.session
 
@@ -269,9 +276,7 @@ class WebAgentTextEnv(gym.Env):
 
 def tag_visible(element):
     ignore = {'style', 'script', 'head', 'title', 'meta', '[document]'}
-    return (
-        element.parent.name not in ignore and not isinstance(element, Comment)
-    )
+    return element.parent.name not in ignore and not isinstance(element, Comment)
 
 
 class SimServer:
@@ -308,10 +313,7 @@ class SimServer:
 
         # Apply `filter_goals` parameter if exists to select speific goal(s)
         if filter_goals is not None:
-            self.goals = [
-                goal for (i, goal) in enumerate(self.goals)
-                if filter_goals(i, goal)
-            ]
+            self.goals = [goal for (i, goal) in enumerate(self.goals) if filter_goals(i, goal)]
         
         # Imposes `limit` on goals via random selection
         if limit_goals != -1 and limit_goals < len(self.goals):
@@ -323,6 +325,7 @@ class SimServer:
                 if idx not in idxs:
                     idxs.append(idx)
             self.goals = [self.goals[i] for i in idxs]
+            
         print(f'Loaded {len(self.goals)} goals.')
 
         # Set extraneous housekeeping variables
@@ -334,16 +337,14 @@ class SimServer:
         self.sample_time = 0
         self.assigned_instruction_text = None  # TODO: very hacky, should remove
         
+        
     @app.route('/', methods=['GET', 'POST'])
     def index(self, session_id, **kwargs):
         """Redirect to the search page with the given session ID"""
-        html = map_action_to_html(
-            'start',
-            session_id=session_id,
-            instruction_text=kwargs['instruction_text'],
-        )
+        html = map_action_to_html('start', session_id=session_id, instruction_text=kwargs['instruction_text'])
         url = f'{self.base_url}/{session_id}'
         return html, url
+    
     
     @app.route('/', methods=['GET', 'POST'])
     def search_results(self, session_id, **kwargs):
@@ -360,22 +361,14 @@ class SimServer:
 
         # Perform search on keywords from items and record amount of time it takes
         old_time = time.time()
-        top_n_products = get_top_n_product_from_keywords(
-            keywords,
-            self.search_engine,
-            self.all_products,
-            self.product_item_dict,
-        )
+        top_n_products = get_top_n_product_from_keywords(keywords, self.search_engine, self.all_products, self.product_item_dict)
         self.search_time += time.time() - old_time
         
         # Get product list from search result asins and get list of corresponding URLs
         products = get_product_per_page(top_n_products, page)
 
         keywords_url_string = '+'.join(keywords)
-        url = (
-            f'{self.base_url}/search_results/{session_id}/'
-            f'{keywords_url_string}/{page}'
-        )
+        url = f'{self.base_url}/search_results/{session_id}/{keywords_url_string}/{page}'
 
         # Render HTML search page and record amount of time taken
         old_time = time.time()
@@ -415,11 +408,7 @@ class SimServer:
         keywords_url_string = '+'.join(session["keywords"])
         option_string = json.dumps(session['options'])
 
-        url = (
-            f'{self.base_url}/item_page/{session_id}/'
-            f'{session["asin"]}/{keywords_url_string}/'
-            f'{session["page"]}/{option_string}'
-        )
+        url = f'{self.base_url}/item_page/{session_id}/{session["asin"]}/{keywords_url_string}/{session["page"]}/{option_string}'
 
         html = map_action_to_html(
             'click',
@@ -448,11 +437,8 @@ class SimServer:
         product_info = self.product_item_dict[session["asin"]]
         session["actions"][clickable_name] += 1
         keywords_url_string = '+'.join(session["keywords"])
-        url = (
-            f'{self.base_url}/item_sub_page/{session_id}/'
-            f'{session["asin"]}/{keywords_url_string}/{session["page"]}/'
-            f'{clickable_name}/{session["options"]}'
-        )
+        url = f'{self.base_url}/item_sub_page/{session_id}/{session["asin"]}/{keywords_url_string}/{session["page"]}/{clickable_name}/{session["options"]}'
+
         html = map_action_to_html(
             f'click[{clickable_name}]',
             session_id=session_id,
@@ -465,9 +451,11 @@ class SimServer:
         )
         return html, url
 
+
     @app.route('/', methods=['GET', 'POST'])
     def done(self, session_id, **kwargs):
         """Render and return HTML for done page"""
+        
         session = self.user_sessions[session_id]
         goal = self.user_sessions[session_id]['goal']
         purchased_product = self.product_item_dict[session["asin"]]
@@ -475,22 +463,14 @@ class SimServer:
         price = self.product_prices.get(session["asin"])
 
         # Calculate reward for selected product and set variables for page details
-        reward, info = get_reward(
-            purchased_product,
-            goal,
-            price=price,
-            options=session["options"],
-            verbose=True
-        )
+        reward, info = get_reward(purchased_product, goal, price=price, options=session["options"], verbose=True)
 
         self.user_sessions[session_id]['verbose_info'] = info
         self.user_sessions[session_id]['done'] = True
         self.user_sessions[session_id]['reward'] = reward
 
-        url = (
-            f'{self.base_url}/done/{session_id}/'
-            f'{session["asin"]}/{session["options"]}'
-        )
+        url = f'{self.base_url}/done/{session_id}/{session["asin"]}/{session["options"]}'
+
         html = map_action_to_html(
             f'click[{END_BUTTON}]',
             session_id=session_id,
@@ -499,7 +479,9 @@ class SimServer:
             options=session["options"],
             instruction_text=session["goal"]["instruction_text"],
         )
+    
         return html, url, reward
+    
     
     def receive(self, session_id, current_url, session_int=None, **kwargs):
         """Map action to the corresponding page"""
@@ -512,13 +494,17 @@ class SimServer:
                 goal = self.goals[idx]
                 instruction_text = goal['instruction_text']
                 self.user_sessions[session_id] = {'goal': goal, 'done': False}
+                
             else:
-                instruction_text = \
-                    self.user_sessions[session_id]['goal']['instruction_text']
+                instruction_text = self.user_sessions[session_id]['goal']['instruction_text']
+                
             if self.assigned_instruction_text is not None:
                 instruction_text = self.assigned_instruction_text  # TODO: very hacky, should remove
                 self.user_sessions[session_id]['goal']['instruction_text'] = instruction_text
+                
             session = self.user_sessions[session_id]
+
+
 
             if not kwargs:
                 # If no action, reset the session variables
@@ -534,71 +520,63 @@ class SimServer:
                         'actions': defaultdict(int)
                     }
                 )
+                
             elif 'keywords' in kwargs:
                 # If search keywords are available, run a search
                 html, url = self.search_results(session_id, **kwargs)
+                
             elif 'clickable_name' in kwargs:
                 clickable_name = kwargs['clickable_name'].lower()
+                
                 if clickable_name == END_BUTTON.lower():
                     # If "buy now" clicked, calculate reward and flag session as terminated
                     html, url, reward = self.done(session_id, **kwargs)
                     status['reward'] = reward
                     status['done'] = True
+                    
                 elif clickable_name == BACK_TO_SEARCH.lower():
                     # If "back to search" clicked, recursively reset the session back to search page
                     html, url, status = self.receive(session_id, current_url)
-                elif (clickable_name == NEXT_PAGE.lower() and 
-                      self.get_page_name(current_url) == 'search_results'):
+                    
+                elif (clickable_name == NEXT_PAGE.lower() and self.get_page_name(current_url) == 'search_results'):
                     # If "next page" clicked from search results, re-render with `page` enumerated
-                    html, url, status = self.receive(
-                        session_id,
-                        current_url,
-                        keywords=session["keywords"],
-                        page=session["page"] + 1,
-                    )
-                elif (clickable_name == PREV_PAGE.lower() and 
-                      self.get_page_name(current_url) == 'search_results'):
+                    html, url, status = self.receive(session_id, current_url, keywords=session["keywords"], page=session["page"] + 1)
+                    
+                elif (clickable_name == PREV_PAGE.lower() and self.get_page_name(current_url) == 'search_results'):
                     # If "prev page" clicked from search results, re-render with `page` denumerated
-                    html, url, status = self.receive(
-                        session_id,
-                        current_url,
-                        keywords=session["keywords"],
-                        page=session["page"] - 1,
-                    )
-                elif (clickable_name == PREV_PAGE.lower() and 
-                      self.get_page_name(current_url) == 'item_sub_page'):
+                    html, url, status = self.receive(session_id, current_url, keywords=session["keywords"], page=session["page"] - 1)
+                    
+                elif (clickable_name == PREV_PAGE.lower() and self.get_page_name(current_url) == 'item_sub_page'):
                     # If "prev page" clicked from sub page, return to corresponding item page
                     html, url = self.item_page(session_id, **kwargs)
-                elif (clickable_name == PREV_PAGE.lower() and 
-                      self.get_page_name(current_url) == 'item_page'):
+                    
+                elif (clickable_name == PREV_PAGE.lower() and self.get_page_name(current_url) == 'item_page'):
                     # If "prev page" clicked from item page, return to search results page
-                    html, url = self.search_results(
-                        session_id,
-                        keywords=session["keywords"],
-                        page=session["page"],
-                        **kwargs
-                    )
+                    html, url = self.search_results(session_id, keywords=session["keywords"], page=session["page"], **kwargs)
+                
                 elif clickable_name in [k.lower() for k in ACTION_TO_TEMPLATE]:
                     # Render item_sub_page if clickable is description, features, or reviews
                     html, url = self.item_sub_page(session_id, **kwargs)
+                
                 else:
                     # Otherwise, render current item page
                     html, url = self.item_page(session_id, **kwargs)
+            
             return html, url, status
+    
+    
     
     def get_page_name(self, url):
         """Determine which page (i.e. item_page, search_results) the given URL is pointing at"""
         if url is None:
             return None
-        page_names = [
-            'search_results',
-            'item_page',
-            'item_sub_page',
-            'done'
-        ]
+        
+        page_names = ['search_results', 'item_page', 'item_sub_page', 'done']
+        
         for page_name in page_names:
             if page_name in url:
                 return page_name
+            
         return ''  # index page
 
 
@@ -613,29 +591,17 @@ class SimBrowser:
     def get(self, url, session_id=None, session_int=None):
         """Set browser variables to corresponding link, page HTML for URL"""
         self.session_id = url.split('/')[-1] if session_id is None else session_id
-        self.page_source, _, _ = \
-            self.server.receive(self.session_id, self.current_url, session_int=session_int)
+        self.page_source, _, _ = self.server.receive(self.session_id, self.current_url, session_int=session_int)
         self.current_url = url
     
     def click(self, clickable_name, text_to_clickable):
         """Wrapper for `receive` handler for performing click action on current page"""
-        self.page_source, self.current_url, status = \
-            self.server.receive(
-                self.session_id,
-                current_url=self.current_url,
-                clickable_name=clickable_name,
-                text_to_clickable=text_to_clickable,
-            )
+        self.page_source, self.current_url, status = self.server.receive(self.session_id, current_url=self.current_url, clickable_name=clickable_name, text_to_clickable=text_to_clickable)
         return status
     
     def search(self, keywords):
         """Wrapper for `receive` handler for performing search action on current page"""
         if isinstance(keywords, str):
             keywords = keywords.split(' ')
-        self.page_source, self.current_url, status = \
-            self.server.receive(
-                self.session_id,
-                current_url=self.current_url,
-                keywords=keywords,
-        )
+        self.page_source, self.current_url, status = self.server.receive(self.session_id, current_url=self.current_url, keywords=keywords)
         return status

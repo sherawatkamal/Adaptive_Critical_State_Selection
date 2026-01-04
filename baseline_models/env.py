@@ -17,7 +17,7 @@ from web_agent_site.engine.goal import get_reward
 class WebEnv:
     ''' A wrapper of textEnv for models. Returns valid actions at each step of the game. '''
 
-    def __init__(self, args, split, server=None, id=None, index=0):
+    def __init__(self, args, split, server=None, id=None):
         """
         Args:
             args (_type_):
@@ -26,7 +26,7 @@ class WebEnv:
             id (_type_, optional): Defaults to None.
             index (int, optional): when you have multiple web envs on the same computer, which one to use. This index is used to manage multithreaded webenvs. Defaults to 0.
         """
-        base_url = f'http://127.0.0.1:{3000 + index}'
+        base_url = f'http://127.0.0.1:3000'
         
         self.env = WebAgentTextEnv(
             observation_mode=args.state_format, server=server,
@@ -46,6 +46,7 @@ class WebEnv:
                 self.goal_idxs = range(500, 1500)
             elif split == 'train':
                 self.goal_idxs = range(1500, len(self.env.server.goals))
+                
         else:
             self.goal_idxs = range(len(self.env.server.goals))
             
@@ -56,8 +57,7 @@ class WebEnv:
         self.stats = defaultdict(int)  # kept across episodes
         self.session = None
         self.click_item_name = args.click_item_name
-        self.asin2name = {k.lower(): v['Title'].lower(
-        ) for k, v in self.env.server.product_item_dict.items()}
+        self.asin2name = {k.lower(): v['Title'].lower() for k, v in self.env.server.product_item_dict.items()}
         self.name2asin = {v: k for k, v in self.asin2name.items()}
         self.attributes_fail = defaultdict(int)
         self.attributes_success = defaultdict(int)
@@ -77,6 +77,10 @@ class WebEnv:
                 k.strip("."): v for k, v in self.extra_search.items()}
         else:
             self.extra_search = None
+            
+        
+
+
 
     def get_search_texts(self, atts, query, inst):
         # TODO: make it more complicated, or replace it with free-form generation

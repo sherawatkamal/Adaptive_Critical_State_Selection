@@ -12,9 +12,9 @@ import numpy as np
 from datetime import datetime
 from tqdm import tqdm
 from openai import OpenAI
-import threading
-from queue import Queue
+import multiprocessing as mp
 import re
+import time
 
 # Import WebShop environment
 from utils import webenv_args
@@ -22,40 +22,42 @@ from env import WebEnv
 
 
 class TokenTracker:
-    """Thread-safe token usage tracker."""
-    def __init__(self):
-        self.total_input_tokens = 0
-        self.total_output_tokens = 0
-        self.total_cached_tokens = 0
-        self.num_calls = 0
-        self.lock = threading.Lock()
+    """Process-safe token usage tracker."""
+    def __init__(self, manager):
+        self.total_input_tokens = manager.Value('i', 0)
+        self.total_output_tokens = manager.Value('i', 0)
+        self.total_cached_tokens = manager.Value('i', 0)
+        self.num_calls = manager.Value('i', 0)
+        self.lock = manager.Lock()
     
     def add_usage(self, usage):
-        """Add usage from an API response (thread-safe)."""
         if usage:
             with self.lock:
-                self.total_input_tokens += getattr(usage, 'prompt_tokens', 0)
-                self.total_output_tokens += getattr(usage, 'completion_tokens', 0)
-                # OpenAI may provide cached tokens in prompt_tokens_details
+                self.total_input_tokens.value += getattr(usage, 'prompt_tokens', 0)
+                self.total_output_tokens.value += getattr(usage, 'completion_tokens', 0)
                 if hasattr(usage, 'prompt_tokens_details') and usage.prompt_tokens_details:
-                    self.total_cached_tokens += getattr(usage.prompt_tokens_details, 'cached_tokens', 0)
-                self.num_calls += 1
+                    self.total_cached_tokens.value += getattr(
+                        usage.prompt_tokens_details, 'cached_tokens', 0
+                    )
+                self.num_calls.value += 1
     
     def get_summary(self):
-        """Get summary statistics."""
         with self.lock:
             return {
-                'num_api_calls': self.num_calls,
-                'total_input_tokens': self.total_input_tokens,
-                'total_output_tokens': self.total_output_tokens,
-                'total_cached_tokens': self.total_cached_tokens,
-                'total_tokens': self.total_input_tokens + self.total_output_tokens,
-                'avg_input_per_call': self.total_input_tokens / self.num_calls if self.num_calls > 0 else 0,
-                'avg_output_per_call': self.total_output_tokens / self.num_calls if self.num_calls > 0 else 0
+                'num_api_calls': self.num_calls.value,
+                'total_input_tokens': self.total_input_tokens.value,
+                'total_output_tokens': self.total_output_tokens.value,
+                'total_cached_tokens': self.total_cached_tokens.value,
+                'total_tokens': self.total_input_tokens.value + self.total_output_tokens.value,
+                'avg_input_per_call':
+                    self.total_input_tokens.value / self.num_calls.value
+                    if self.num_calls.value > 0 else 0,
+                'avg_output_per_call':
+                    self.total_output_tokens.value / self.num_calls.value
+                    if self.num_calls.value > 0 else 0
             }
     
     def print_summary(self):
-        """Print formatted summary."""
         summary = self.get_summary()
         print("\n" + "="*50)
         print("TOKEN USAGE SUMMARY")
@@ -67,6 +69,9 @@ class TokenTracker:
         print(f"Total tokens: {summary['total_tokens']:,}")
         print(f"Avg input/call: {summary['avg_input_per_call']:.1f}")
         print(f"Avg output/call: {summary['avg_output_per_call']:.1f}")
+
+
+
 
 
 def compute_entropy(logprobs_dict):
@@ -282,7 +287,7 @@ def collect_episode(client, env, task_idx, model="gpt-4", temperature=0.0, verbo
 
 
 
-def worker_thread(thread_id, task_queue, results_list, client, env_args, split, model, temperature, verbose, token_tracker, progress_lock):
+def worker_process(task_queue, results_list, env_args, split, model, temperature, verbose, api_key, token_tracker, progress_lock):
     """
     Worker thread that processes tasks from the queue.
     
@@ -301,21 +306,22 @@ def worker_thread(thread_id, task_queue, results_list, client, env_args, split, 
     """
     # Create environment for this thread (uses thread_id for port)
     print(f"starting webshop environment")
-    env = WebEnv(env_args, split=split, index=thread_id)
+    env = WebEnv(env_args, split=split)
     print(f"finished starting webshop environment")
-    
-    
+
+    client = OpenAI(api_key=api_key)
+
     while True:
         try:
             task_idx = task_queue.get_nowait()
         except:
-            break  # Queue is empty
-        
+            break
+
         traj = collect_episode(client, env, task_idx, model=model, temperature=temperature, verbose=verbose, token_tracker=token_tracker)
-            
+
         with progress_lock:
             results_list.append(traj)
-        
+
         task_queue.task_done()
 
 
@@ -337,92 +343,81 @@ def collect_until_n_failures(client, env_args, target_failures, model="gpt-4", t
         verbose: Print details
         num_threads: Number of parallel threads
     """
-    
+
+    manager = mp.Manager()
+
     failed_trajectories = []
     success_trajectories = []
     all_entropies = []
-    token_tracker = TokenTracker()
-    
-    # Create task queue
-    task_queue = Queue()
+
+    token_tracker = TokenTracker(manager)
+
+    task_queue = mp.JoinableQueue()
     for idx in range(start_idx, start_idx + max_episodes):
         task_queue.put(idx)
-    
-    # Shared results list and lock
-    results_list = []
-    progress_lock = threading.Lock()
-    
-    # Start worker threads
-    print(f"Starting {num_threads} worker threads...")
-    threads = []
-    for thread_id in range(num_threads):
-        thread = threading.Thread(
-            target=worker_thread,
-            args=(thread_id, task_queue, results_list, client, env_args, split, model, temperature, verbose, token_tracker, progress_lock)
+
+    results_list = manager.list()
+    progress_lock = manager.Lock()
+
+    print(f"Starting {num_threads} worker processes...")
+    processes = []
+
+    api_key = client.api_key
+
+    for _ in range(num_threads):
+        p = mp.Process(
+            target=worker_process,
+            args=(task_queue, results_list, env_args, split, model, temperature, verbose, api_key, token_tracker, progress_lock)
         )
-        thread.start()
-        threads.append(thread)
-    
-    # Monitor progress
+        p.start()
+        processes.append(p)
+
     pbar = tqdm(total=target_failures, desc="Collecting failures")
     last_fail_count = 0
-    
-    while any(t.is_alive() for t in threads):
+
+    while any(p.is_alive() for p in processes):
         with progress_lock:
-            # Count current failures
             current_fail_count = sum(1 for traj in results_list if not traj['success'])
-            
-            # Update progress bar
+
             if current_fail_count > last_fail_count:
                 pbar.update(current_fail_count - last_fail_count)
                 last_fail_count = current_fail_count
-            
-            # Check if we have enough failures
+
             if current_fail_count >= target_failures:
-                # Stop all threads by clearing the queue
                 while not task_queue.empty():
                     try:
                         task_queue.get_nowait()
                     except:
                         break
                 break
-            
-            # Update progress info
+
             total_processed = len(results_list)
             success_count = sum(1 for traj in results_list if traj['success'])
-            pbar.set_postfix({
-                'total': total_processed,
-                'fail': current_fail_count,
-                'success': success_count
-            })
-        
-        # Sleep briefly before checking again
-        threading.Event().wait(0.5)
-    
-    # Wait for all threads to finish
-    for thread in threads:
-        thread.join()
-    
+            pbar.set_postfix({'total': total_processed, 'fail': current_fail_count, 'success': success_count})
+
+        time.sleep(0.5)
+
+    for p in processes:
+        p.terminate()
+        p.join()
+
     pbar.close()
-    
-    # Process results
+
     for traj in results_list:
-        # Collect entropies
         for step in traj['steps']:
             if step['entropy'] is not None:
                 all_entropies.append(step['entropy'])
-        
+
         if traj['success']:
             success_trajectories.append(traj)
         else:
             failed_trajectories.append(traj)
-        
-        # Stop if we have enough failures
+
         if len(failed_trajectories) >= target_failures:
             break
-    
+
     total_episodes = len(results_list)
-    
+
     return {
         'metadata': {
             'collection_date': datetime.now().isoformat(),
@@ -441,9 +436,14 @@ def collect_until_n_failures(client, env_args, target_failures, model="gpt-4", t
             'total_episodes': total_episodes,
             'num_failures': len(failed_trajectories),
             'num_successes': len(success_trajectories),
-            'failure_rate': len(failed_trajectories) / total_episodes * 100 if total_episodes > 0 else 0,
-            'success_rate': len(success_trajectories) / total_episodes * 100 if total_episodes > 0 else 0,
-            'avg_entropy': np.mean(all_entropies) if all_entropies else 0
+            'failure_rate':
+                len(failed_trajectories) / total_episodes * 100
+                if total_episodes > 0 else 0,
+            'success_rate':
+                len(success_trajectories) / total_episodes * 100
+                if total_episodes > 0 else 0,
+            'avg_entropy':
+                np.mean(all_entropies) if all_entropies else 0
         }
     }, token_tracker
 
@@ -460,7 +460,7 @@ def parse_args():
     parser.add_argument("--start_idx", type=int, default=0, help="Starting task index")
     parser.add_argument("--split", type=str, default="train", choices=["train", "test"], help="Dataset split to use")
     parser.add_argument("--temperature", type=float, default=0.4, help="Sampling temperature (0 for greedy)")
-    parser.add_argument("--num_threads", type=int, default=20, help="Number of threads to use for multithreading")
+    parser.add_argument("--num_threads", type=int, default=8, help="Number of threads to use for multithreading")
     parser.add_argument("--verbose", action="store_true", help="Print episode details")
     return parser.parse_args()
 

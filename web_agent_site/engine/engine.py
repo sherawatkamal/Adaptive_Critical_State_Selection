@@ -359,4 +359,6 @@ def load_products(filepath, num_products=None, human_goals=True):
 
     product_item_dict = {p['asin']: p for p in all_products}
     product_prices = generate_product_prices(all_products)
+    
+    print(f"finished load products")
     return all_products, product_item_dict, product_prices, attribute_to_asins

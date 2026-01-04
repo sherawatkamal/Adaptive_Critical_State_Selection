@@ -14,6 +14,7 @@ pip install datasets
 pip install evaluate
 pip install accelerate
 pip install wandb
+pip install python-Levenshtein
 
 install tokenizers-0.20.3 transformers-4.46.3
 
