@@ -1,0 +1,11 @@
+{
+  "n_runs": 5,
+  "n_completed": 5,
+  "model_paths": {
+    "Q1_highU_highL_demo": "scripts/tests/dummy_data/results_phase2/Q1_highU_highL_demo",
+    "Q1_highU_highL_contrast": "scripts/tests/dummy_data/results_phase2/Q1_highU_highL_contrast",
+    "Q1_highU_highL_hint": "scripts/tests/dummy_data/results_phase2/Q1_highU_highL_hint",
+    "B1_uniform": "scripts/tests/dummy_data/results_phase2/B1_uniform",
+    "B2_all": "scripts/tests/dummy_data/results_phase2/B2_all"
+  }
+}

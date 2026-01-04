@@ -1,0 +1,10 @@
+{
+  "run_config": {
+    "run_id": "B1_uniform",
+    "quadrant": "all",
+    "supervision": "demo",
+    "selection": "uniform_random"
+  },
+  "n_examples": 11,
+  "model_path": "scripts/tests/dummy_data/results_phase2/B1_uniform"
+}

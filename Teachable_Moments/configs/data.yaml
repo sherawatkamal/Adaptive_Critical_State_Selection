@@ -1,0 +1,46 @@
+# Data configuration for teachable moments experiments
+
+data:
+  # Source paths
+  trajectories_path: "data/trajectories.json"
+  test_trajectories_path: "data/test_trajectories.json"
+  
+  # Data format
+  format: "json"  # json, jsonl, parquet
+  
+  # Trajectory fields
+  fields:
+    trajectory_id: "id"
+    observations: "observations"
+    actions: "actions"
+    rewards: "rewards"
+    mission: "mission"
+    success: "success"
+  
+  # Preprocessing
+  preprocessing:
+    normalize_observations: true
+    max_trajectory_length: 128
+    min_trajectory_length: 5
+    filter_incomplete: true
+  
+  # Train/val/test splits
+  splits:
+    train: 0.8
+    val: 0.1
+    test: 0.1
+    stratify_by: "quadrant"  # Maintain quadrant distribution
+    random_seed: 42
+  
+  # Environment
+  environment:
+    name: "BabyAI-GoToLocal-v0"
+    observation_space: "image"  # image, symbolic
+    action_space: 7
+    max_steps: 64
+
+# Caching
+cache:
+  enabled: true
+  directory: ".cache/data"
+  compression: "gzip"

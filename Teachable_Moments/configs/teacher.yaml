@@ -1,0 +1,142 @@
+# Teacher model configuration for teachable moments
+
+# Teacher model settings
+teacher:
+  # Model selection
+  model: "gpt-4o"
+  provider: "openai"
+  
+  # API settings
+  api_key_env: "OPENAI_API_KEY"
+  base_url: null  # Use default
+  
+  # Generation parameters
+  generation:
+    temperature: 0.0
+    max_tokens: 150
+    top_p: 0.95
+    frequency_penalty: 0.0
+    presence_penalty: 0.0
+    
+  # Rate limiting
+  rate_limiting:
+    requests_per_minute: 60
+    tokens_per_minute: 90000
+    retry_attempts: 3
+    retry_delay: 1.0
+    exponential_backoff: true
+    
+  # Caching
+  cache:
+    enabled: true
+    directory: ".cache/teacher"
+    ttl_days: 30
+
+# Prompt templates
+prompts:
+  # Hint generation
+  hint:
+    system: |
+      You are an expert game assistant helping an AI agent learn to navigate 
+      grid-world environments. Provide concise, actionable hints without giving 
+      away the complete solution. Focus on the immediate next step or strategy.
+      
+    user: |
+      The agent is playing a grid-world game with the mission: {mission}
+      
+      Current situation:
+      - Position: {position}
+      - Facing: {direction}
+      - Nearby objects: {nearby_objects}
+      - Recent actions: {recent_actions}
+      - Steps taken: {steps}/{max_steps}
+      
+      Provide a brief hint (1-2 sentences) to help the agent make progress.
+      
+  # Demonstration generation
+  demonstration:
+    system: |
+      You are an expert game player. Given a game state and mission, provide
+      the optimal sequence of actions to complete the mission efficiently.
+      
+    user: |
+      Mission: {mission}
+      
+      Current state:
+      {state_description}
+      
+      Available actions: {available_actions}
+      
+      Provide the sequence of actions (one per line) to complete the mission.
+      
+  # Contrastive pair generation
+  contrastive:
+    system: |
+      You are analyzing agent behavior in a grid-world game. Given a state,
+      identify both good and bad action choices with explanations.
+      
+    user: |
+      Mission: {mission}
+      
+      Current state:
+      {state_description}
+      
+      The agent chose action: {chosen_action}
+      
+      Evaluate this choice and provide:
+      1. Whether this was a good or bad choice
+      2. What would have been a better alternative (if bad)
+      3. Brief explanation
+
+# Supervision generation settings
+supervision:
+  demonstration:
+    # How to generate demonstrations
+    method: "teacher_rollout"  # teacher_rollout, optimal_path, human
+    
+    # Quality filtering
+    min_success_rate: 0.9
+    max_steps_ratio: 1.5  # Max steps relative to optimal
+    
+  contrastive:
+    # Pair generation
+    method: "teacher_evaluation"
+    
+    # Margin requirements
+    min_reward_gap: 0.2
+    
+    # Hard negatives
+    hard_negative_ratio: 0.5
+    
+  hint:
+    # Hint generation
+    method: "teacher_hint"
+    
+    # Quality
+    max_hint_length: 100
+    min_hint_relevance: 0.7
+
+# Fallback settings
+fallback:
+  # If teacher fails
+  use_rule_based: true
+  
+  rule_based:
+    hint_templates:
+      navigation: "Try moving {direction} to get closer to the {target}."
+      pickup: "The {object} is nearby. Consider picking it up."
+      unlock: "You need a {color} key to open the {color} door."
+      
+# Cost tracking
+cost_tracking:
+  enabled: true
+  log_file: "logs/teacher_costs.jsonl"
+  
+  # Pricing (per 1M tokens)
+  pricing:
+    gpt-4o:
+      input: 2.50
+      output: 10.00
+    gpt-4o-mini:
+      input: 0.15
+      output: 0.60

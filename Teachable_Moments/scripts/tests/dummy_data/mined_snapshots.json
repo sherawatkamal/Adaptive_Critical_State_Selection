@@ -1,0 +1,36 @@
+[
+  {
+    "id": "traj_001_step0",
+    "task_id": "task_100",
+    "step_idx": 0,
+    "trajectory_id": "traj_001",
+    "env_state_b64": "ZHVtbXlfc3RhYXRl",
+    "observation": "Home page",
+    "valid_actions": [
+      "search"
+    ],
+    "agent_prefix": null,
+    "last_action": null,
+    "action_type": null,
+    "teacher_hint": null,
+    "trajectory_outcome": "failure",
+    "timestamp": null
+  },
+  {
+    "id": "traj_001_step1",
+    "task_id": "task_100",
+    "step_idx": 1,
+    "trajectory_id": "traj_001",
+    "env_state_b64": "ZHVtbXlfc3RhYXRlXzI=",
+    "observation": "Search results",
+    "valid_actions": [
+      "click[item]"
+    ],
+    "agent_prefix": null,
+    "last_action": null,
+    "action_type": null,
+    "teacher_hint": null,
+    "trajectory_outcome": "failure",
+    "timestamp": null
+  }
+]

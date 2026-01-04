@@ -1,0 +1,10 @@
+{
+  "run_config": {
+    "run_id": "Q1_highU_highL_demo",
+    "quadrant": "Q1_highU_highL",
+    "supervision": "demo",
+    "selection": "quadrant_specific"
+  },
+  "n_examples": 11,
+  "model_path": "scripts/tests/dummy_data/results_phase2/Q1_highU_highL_demo"
+}

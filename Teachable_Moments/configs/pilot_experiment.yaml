@@ -1,0 +1,67 @@
+# A tiny, deadline-friendly config used by `scripts/pilots/run_all_pilots_v8.py`.
+#
+# The goal is *plumbing verification*:
+# - env + state restore works
+# - snapshot mining + labeling runs end-to-end
+# - SFT + LoRA checkpoints save/load
+# - evaluation + predictor training produce artifacts
+
+experiment:
+  name: pilot_v8
+  seed: 42
+
+model:
+  # Overridden by pilot scripts CLI flags if desired
+  model_path: sshleifer/tiny-gpt2
+  use_4bit: false
+  use_8bit: false
+
+environment:
+  max_steps: 10
+  reward_threshold: 0.8
+
+labeling:
+  uncertainty:
+    n_mc_samples: 1
+    temperature: 1.0
+
+  leverage:
+    # Very small A/B rollout budgets for pilots
+    n_rollouts_A: 1
+    n_rollouts_B: 1
+    max_steps: 10
+
+  cpt:
+    n_per_condition: 1
+    max_train_steps: 1
+    micro_train_steps: 1
+    rollout_max_steps: 10
+
+  quadrant:
+    adaptive_thresholds: false
+    u_threshold: 0.5
+    l_threshold: 0.3
+
+training:
+  sft:
+    epochs: 1
+    batch_size: 1
+    gradient_accumulation_steps: 1
+    lr: 5e-5
+    max_length: 128
+    warmup_ratio: 0.0
+    fp16: false
+    bf16: false
+
+  lora:
+    r: 4
+    alpha: 8
+    dropout: 0.05
+    # Defaults for GPT-2 style blocks. Override for Llama/Mistral with q_proj/k_proj/v_proj/o_proj.
+    target_modules: ["c_attn", "c_proj"]
+
+evaluation:
+  max_steps: 10
+  n_rollouts: 1
+  n_tasks: 2
+  n_snapshots_per_quadrant: 2

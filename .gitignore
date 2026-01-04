@@ -184,3 +184,4 @@ htmlcov/
 # - Documentation images
 # =============================================================================data/items_ins_v2.json
 data/
+.env

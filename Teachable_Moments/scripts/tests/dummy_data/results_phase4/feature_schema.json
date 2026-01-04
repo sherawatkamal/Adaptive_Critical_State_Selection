@@ -1,0 +1,33 @@
+{
+  "structural_dim": 16,
+  "embedding_dim": 384,
+  "total_dim": 400,
+  "structural_layout": [
+    "step_index",
+    "trajectory_length",
+    "relative_position",
+    "n_available_actions",
+    "action_space_entropy",
+    "state_length",
+    "n_numeric_tokens",
+    "n_product_mentions",
+    "task_complexity",
+    "n_constraints",
+    "n_prior_failures",
+    "steps_since_last_success",
+    "U_entropy",
+    "margin",
+    "top_action_prob",
+    "n_actions"
+  ],
+  "embedder": {
+    "type": "mock",
+    "dim": 256,
+    "model": null
+  },
+  "labels": [
+    "leverage(L_local)",
+    "elp(ELP_net)",
+    "quadrant"
+  ]
+}

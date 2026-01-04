@@ -1,0 +1,10 @@
+{
+  "run_config": {
+    "run_id": "B2_all",
+    "quadrant": "all",
+    "supervision": "demo",
+    "selection": "all_quadrants"
+  },
+  "n_examples": 11,
+  "model_path": "scripts/tests/dummy_data/results_phase2/B2_all"
+}

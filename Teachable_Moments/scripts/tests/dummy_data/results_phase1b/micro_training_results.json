@@ -1,0 +1,47 @@
+{
+  "timestamp": "20260103_202151",
+  "config": {
+    "labeled": "scripts/tests/dummy_data/labeled_snapshots.json",
+    "panel": "scripts/tests/dummy_data/panel.json",
+    "base_model": "gpt2",
+    "micro": {
+      "n_steps": 1,
+      "learning_rate": 0.0001,
+      "max_seq_length": 1024,
+      "lora_rank": 8,
+      "lora_alpha": 16,
+      "lora_dropout": 0.0,
+      "target_modules": [
+        "q_proj",
+        "v_proj"
+      ],
+      "n_validation_rollouts": 1,
+      "rollout_max_steps": 2,
+      "n_validation_tasks": 10
+    },
+    "seed": 42,
+    "n_selected": 1,
+    "retention_tasks": null
+  },
+  "results": [
+    {
+      "snapshot_id": "snap_001",
+      "quadrant": "Q1_highU_highL",
+      "task_id": "task_200",
+      "route_net": "demo",
+      "cpt_elp_net": 0.8,
+      "base_success_rate": 0.0,
+      "base_reward_mean": 0.0,
+      "base_steps_mean": 0.0,
+      "base_retention": null,
+      "train_loss": 7.638507843017578,
+      "tuned_success_rate": 0.0,
+      "tuned_reward_mean": 0.0,
+      "tuned_steps_mean": 0.0,
+      "delta_success_rate": 0.0,
+      "delta_reward_mean": 0.0,
+      "delta_steps_mean": 0.0,
+      "tuned_retention": null
+    }
+  ]
+}

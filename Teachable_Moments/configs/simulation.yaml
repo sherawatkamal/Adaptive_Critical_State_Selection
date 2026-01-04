@@ -1,0 +1,94 @@
+# Simulation Configuration
+# Settings for student/teacher rollouts and failure collection
+
+# Student rollout settings
+student_rollout:
+  model_name: "student_base"
+  model_path: "checkpoints/student_base"
+  
+  # Rollout settings
+  max_steps: 30
+  n_tasks: 500
+  
+  # Failure detection
+  loop_detection_window: 6
+  loop_threshold: 2                    # Repeat pattern N times = stuck
+  confidence_threshold: 0.3            # Below this = confusion
+  suboptimal_factor: 1.5               # >1.5x optimal steps = suboptimal
+  
+  # Collection
+  collect_all: false                   # Only collect failures by default
+  save_model_outputs: true             # Save action distributions
+
+# Teacher rollout settings  
+teacher_rollout:
+  model_name: "gpt-4o"
+  api_key_env: "OPENAI_API_KEY"
+  
+  # Generation settings
+  temperature: 0.0                     # Deterministic for demonstrations
+  max_tokens: 100
+  
+  # Rollout settings
+  max_steps: 30
+  n_tasks: 100
+  
+  # System prompt for teacher
+  system_prompt: |
+    You are an expert web shopping agent. Given a task and current page state,
+    select the best action to complete the shopping task efficiently.
+    
+    Output only the action in the format: action[parameter]
+    Examples: search[laptop], click[Add to Cart], click[Buy Now]
+    
+    Think step by step:
+    1. What is the goal?
+    2. What state am I in?
+    3. What action moves me closer to the goal?
+
+# Failure detection settings
+failure_detector:
+  min_pattern_count: 3                 # Min occurrences to form pattern
+  state_similarity_threshold: 0.7
+  
+  # Teachability scoring weights
+  weight_teacher_success: 0.4          # Teacher succeeds → more teachable
+  weight_low_steps: 0.3                # Few steps to fix → more teachable
+  weight_common_failure: 0.3           # Common failure → higher priority
+  
+  # Intervention mapping (failure_type -> supervision_type)
+  intervention_rules:
+    stuck_loop: "contrast"             # Show good vs bad to break loop
+    wrong_action: "demo"               # Show correct action
+    timeout: "hint"                    # Guide toward goal
+    confusion: "hint"                  # Reduce uncertainty
+    suboptimal: "contrast"             # Show efficient alternative
+    early_term: "demo"                 # Show continuation
+
+# Environment settings
+environment:
+  type: "webshop"
+  reward_threshold: 0.8                # Reward >= this = success
+  headless: true
+  render: false
+  
+  # Mock environment for testing
+  mock:
+    enabled: false
+    success_rate: 0.7
+    avg_steps: 15
+
+# Data collection targets
+collection_targets:
+  # Minimum failures to collect per type
+  min_stuck_loop: 50
+  min_wrong_action: 100
+  min_timeout: 30
+  min_confusion: 50
+  
+  # Target teachable gap count
+  min_teachable_gaps: 200
+  
+  # Teacher demo targets
+  min_teacher_demos: 100
+  min_teacher_success_rate: 0.8

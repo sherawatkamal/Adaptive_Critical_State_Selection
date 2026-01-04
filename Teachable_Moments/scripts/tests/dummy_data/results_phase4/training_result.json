@@ -1,0 +1,25 @@
+{
+  "best_epoch": 0,
+  "best_val_loss": 1.5658998489379883,
+  "train_losses": [
+    1.3459643721580505
+  ],
+  "val_losses": [
+    1.5658998489379883
+  ],
+  "task_metrics": {
+    "leverage": {
+      "mse": 1.7312377532108236e-06,
+      "mae": 0.0013157650828361511,
+      "correlation": 0.0
+    },
+    "elp": {
+      "mse": 0.3474209143146334,
+      "mae": 0.5894242227077484,
+      "correlation": 0.0
+    },
+    "quadrant": {
+      "accuracy": 1.0
+    }
+  }
+}

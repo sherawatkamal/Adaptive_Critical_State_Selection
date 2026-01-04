@@ -1,0 +1,120 @@
+# Main experiment configuration for teachable moments
+# Experiment: Per-quadrant agent training
+
+experiment:
+  name: teachable_moments_v8
+  seed: 42
+  output_dir: results
+
+# Environment configuration
+environment:
+  name: webshop
+  max_steps: 15
+  n_rollouts: 3
+
+# Model configuration
+model:
+  base_model: meta-llama/Llama-3.2-3B-Instruct
+  tokenizer: meta-llama/Llama-3.2-3B-Instruct
+  device: auto
+  dtype: bfloat16
+
+# Data configuration
+data:
+  n_trajectories: 2000
+  train_split: 0.8
+  val_split: 0.1
+  test_split: 0.1
+  
+# Labeling configuration
+labeling:
+  # Uncertainty
+  uncertainty:
+    top_k: 5
+    warm_start_threshold: 0.9
+  
+  # Leverage
+  leverage:
+    n_rollouts_A: 7  # L_local (single-step forcing)
+    n_rollouts_B: 2  # L_upper (expert control)
+    max_steps: 15
+  
+  # CPT
+  cpt:
+    n_per_condition: 2
+    conditions:
+      - placebo
+      - demo
+      - contrast
+      - hint
+    max_steps: 15
+  
+  # Quadrant thresholds
+  quadrants:
+    method: median  # or percentile_75
+    uncertainty_metric: entropy
+    leverage_metric: L_local
+
+# Training configuration
+training:
+  # SFT
+  sft:
+    epochs: 3
+    batch_size: 8
+    learning_rate: 2.0e-4
+    weight_decay: 0.01
+    warmup_ratio: 0.1
+    max_length: 1024
+    gradient_accumulation_steps: 4
+  
+  # LoRA
+  lora:
+    rank: 16
+    alpha: 32
+    dropout: 0.05
+    target_modules:
+      - q_proj
+      - k_proj
+      - v_proj
+      - o_proj
+  
+  # Training matrix
+  matrix:
+    quadrants:
+      - Q1_highU_highL
+      - Q2_highU_lowL
+      - Q3_lowU_lowL
+      - Q4_lowU_highL
+    supervision_types:
+      - demo
+      - contrast
+      - hint
+    baselines:
+      - B1_uniform
+      - B2_all
+
+# Evaluation configuration
+evaluation:
+  n_rollouts: 5
+  max_steps: 15
+  metrics:
+    - success_rate
+    - per_quadrant_improvement
+    - stuckness_reduction
+    - transfer_matrix
+    - retention
+
+# Teacher configuration
+teacher:
+  model: gpt-4o
+  temperature: 0.7
+  max_tokens: 512
+  cache_dir: .teacher_cache
+
+# Compute budget estimates
+compute:
+  gpu_hours_phase1: 0
+  gpu_hours_phase1b: 3
+  gpu_hours_phase2: 28
+  gpu_hours_phase3: 0
+  llm_cost_usd: 30

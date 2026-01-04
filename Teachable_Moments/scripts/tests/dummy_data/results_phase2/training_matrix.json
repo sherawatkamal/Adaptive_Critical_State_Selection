@@ -1,0 +1,86 @@
+[
+  {
+    "run_id": "Q1_highU_highL_demo",
+    "quadrant": "Q1_highU_highL",
+    "supervision": "demo",
+    "selection": "quadrant_specific"
+  },
+  {
+    "run_id": "Q1_highU_highL_contrast",
+    "quadrant": "Q1_highU_highL",
+    "supervision": "contrast",
+    "selection": "quadrant_specific"
+  },
+  {
+    "run_id": "Q1_highU_highL_hint",
+    "quadrant": "Q1_highU_highL",
+    "supervision": "hint",
+    "selection": "quadrant_specific"
+  },
+  {
+    "run_id": "Q2_highU_lowL_demo",
+    "quadrant": "Q2_highU_lowL",
+    "supervision": "demo",
+    "selection": "quadrant_specific"
+  },
+  {
+    "run_id": "Q2_highU_lowL_contrast",
+    "quadrant": "Q2_highU_lowL",
+    "supervision": "contrast",
+    "selection": "quadrant_specific"
+  },
+  {
+    "run_id": "Q2_highU_lowL_hint",
+    "quadrant": "Q2_highU_lowL",
+    "supervision": "hint",
+    "selection": "quadrant_specific"
+  },
+  {
+    "run_id": "Q3_lowU_lowL_demo",
+    "quadrant": "Q3_lowU_lowL",
+    "supervision": "demo",
+    "selection": "quadrant_specific"
+  },
+  {
+    "run_id": "Q3_lowU_lowL_contrast",
+    "quadrant": "Q3_lowU_lowL",
+    "supervision": "contrast",
+    "selection": "quadrant_specific"
+  },
+  {
+    "run_id": "Q3_lowU_lowL_hint",
+    "quadrant": "Q3_lowU_lowL",
+    "supervision": "hint",
+    "selection": "quadrant_specific"
+  },
+  {
+    "run_id": "Q4_lowU_highL_demo",
+    "quadrant": "Q4_lowU_highL",
+    "supervision": "demo",
+    "selection": "quadrant_specific"
+  },
+  {
+    "run_id": "Q4_lowU_highL_contrast",
+    "quadrant": "Q4_lowU_highL",
+    "supervision": "contrast",
+    "selection": "quadrant_specific"
+  },
+  {
+    "run_id": "Q4_lowU_highL_hint",
+    "quadrant": "Q4_lowU_highL",
+    "supervision": "hint",
+    "selection": "quadrant_specific"
+  },
+  {
+    "run_id": "B1_uniform",
+    "quadrant": "all",
+    "supervision": "demo",
+    "selection": "uniform_random"
+  },
+  {
+    "run_id": "B2_all",
+    "quadrant": "all",
+    "supervision": "demo",
+    "selection": "all_quadrants"
+  }
+]
