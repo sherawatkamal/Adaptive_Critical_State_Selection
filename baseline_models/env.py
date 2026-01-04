@@ -27,7 +27,8 @@ class WebEnv:
             index (int, optional): when you have multiple web envs on the same computer, which one to use. This index is used to manage multithreaded webenvs. Defaults to 0.
         """
         base_url = f'http://127.0.0.1:3000'
-        
+
+
         self.env = WebAgentTextEnv(
             observation_mode=args.state_format, server=server,
             filter_goals=None, limit_goals=-1,

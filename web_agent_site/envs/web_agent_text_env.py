@@ -281,16 +281,7 @@ def tag_visible(element):
 
 class SimServer:
     """Lightweight simulator of WebShop Flask application for generating HTML observations"""
-    def __init__(
-        self,
-        base_url,
-        file_path,
-        filter_goals=None,
-        limit_goals=-1,
-        num_products=None,
-        human_goals=0,
-        show_attrs=False,
-    ):
+    def __init__(self, base_url='http://127.0.0.1:3000', file_path=DEFAULT_FILE_PATH, filter_goals=None, limit_goals=-1, num_products=None, human_goals=0, show_attrs=False):
         """
         Constructor for simulated server serving WebShop application
         
