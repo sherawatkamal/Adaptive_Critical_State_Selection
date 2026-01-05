@@ -109,7 +109,7 @@ def compute_entropy(logprobs_dict):
     return entropy, probs.tolist()
 
 
-def openai_predict(obs, available_actions, goal, client, model="gpt-4", temperature=0.0, token_tracker=None):
+def openai_predict(obs, available_actions, goal, client, model="gpt-4", temperature=0.0, token_tracker=None, max_retries=30):
     """
     Use OpenAI API to predict action given observation and available actions.
     
@@ -128,6 +128,7 @@ def openai_predict(obs, available_actions, goal, client, model="gpt-4", temperat
         entropy: Entropy value
         probs: Probability distribution
         is_search: Whether this was a search action
+        response_text: The raw response from the LLM
     """
     
     has_search = available_actions.get('has_search_bar', False)
@@ -162,20 +163,33 @@ def openai_predict(obs, available_actions, goal, client, model="gpt-4", temperat
         Return only your action choice, nothing else.\
     """)
     
-    try: 
-        response = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=temperature,
-            max_tokens=100,
-            logprobs=True,
-            top_logprobs=20
-        )
-    except RateLimitError as e:
-        print(f"we got ratelimited: {e}")
-        time.sleep(1)
-        return openai_predict(obs, available_actions, goal, client, model, temperature, token_tracker)
-        
+    for attempt in range(max_retries):
+        try: 
+            response = client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=temperature,
+                max_tokens=100,
+                logprobs=True,
+                top_logprobs=20
+            )
+            break
+            
+        except RateLimitError as e:
+            if attempt < max_retries - 1:
+                # Exponential backoff: 2^attempt seconds
+                wait_time = 0.1 * 2 ** attempt
+                print(f"Rate limit hit, waiting {wait_time}s (attempt {attempt + 1}/{max_retries})")
+                time.sleep(wait_time)
+            else:
+                print(f"Max retries reached for rate limit")
+                raise 
+                
+        except Exception as e:
+            print(f"API error: {e}")
+            raise
+
+
     # Track token usage
     if token_tracker and hasattr(response, 'usage'):
         token_tracker.add_usage(response.usage)
@@ -207,8 +221,8 @@ def openai_predict(obs, available_actions, goal, client, model="gpt-4", temperat
     
     # If we still don't have a valid action, return None tuple
     if action is None:
-        print(f"Warning: Invalid action format from model: '{response_text}'. Performing no-op.")
-        return None, None, None, None, None
+        print(f"Warning: Invalid action format from model: '{response_text}'. Available action format: {available_actions}, Performing no-op.")
+        return None, None, None, None, None, response_text
     
     
     # Extract logprobs for entropy
@@ -218,7 +232,7 @@ def openai_predict(obs, available_actions, goal, client, model="gpt-4", temperat
     
     entropy, probs = compute_entropy(logprobs_data) if logprobs_data else (None, None)
     
-    return action, logprobs_data, entropy, probs, is_search
+    return action, logprobs_data, entropy, probs, is_search, response_text
 
 
 def collect_episode(client, env, task_idx, model="gpt-4", temperature=0.0, verbose=False, max_steps=200, token_tracker=None):
@@ -258,13 +272,16 @@ def collect_episode(client, env, task_idx, model="gpt-4", temperature=0.0, verbo
         # Get available actions from environment
         available_actions = env.get_available_actions()
         
-        print(f"start openai predict: {task_idx}")
+        # print(f"start openai predict: {task_idx}")
         
-        action, logprobs_data, entropy, probs, is_search = openai_predict(obs, available_actions, goal, client, model=model, temperature=temperature, token_tracker=token_tracker)
-        print(f"end openai predict: {task_idx}, action: {action}")
+        action, logprobs_data, entropy, probs, is_search, raw_llm_response = openai_predict(obs, available_actions, goal, client, model=model, temperature=temperature, token_tracker=token_tracker)
+        # print(f"end openai predict: {task_idx}, action: {action}")
         
         
         if action is None: 
+            print(f"obs: {obs}")
+            obs += f"\n The action that you just tried was unsuccessful: {raw_llm_response}. Please try something different"
+            print(f"new obs: {obs}")
             continue
             
         # Store step data
@@ -285,9 +302,9 @@ def collect_episode(client, env, task_idx, model="gpt-4", temperature=0.0, verbo
             print(f"  Step {step}: {action[:50]}... | Entropy: {entropy_str}")
         
         # Take action
-        print(f"start environment step: {task_idx}")
+        # print(f"start environment step: {task_idx}")
         obs, reward, done, info = env.step(action)
-        print(f"end environment step: {task_idx}")
+        # print(f"end environment step: {task_idx}")
         
         
         if done:
@@ -325,9 +342,9 @@ def worker_thread(task_queue, results_list, env_args, split, server, model, temp
         progress_lock: Lock for updating progress
     """
 
-    print("starting env")
+    # print("starting env")
     env = WebEnv(env_args, split, server=server)
-    print("finished starting env")
+    # print("finished starting env")
     
     client = OpenAI(api_key=api_key)
 
@@ -337,7 +354,7 @@ def worker_thread(task_queue, results_list, env_args, split, server, model, temp
         except:
             break
         
-        print(f"collecting episodes. task index: {task_idx}")
+        # print(f"collecting episodes. task index: {task_idx}")
         traj = collect_episode(client, env, task_idx, model=model, temperature=temperature, verbose=verbose, token_tracker=token_tracker)
 
         with progress_lock:
@@ -347,7 +364,7 @@ def worker_thread(task_queue, results_list, env_args, split, server, model, temp
 
 
 
-def collect_until_n_failures(env_args, server, target_failures, api_key, model="gpt-4", temperature=0.0, split='train', start_idx=0, max_episodes=5000, verbose=False, num_threads=4):
+def collect_until_n_failures(env_args, server, target_failures, api_key, model, temperature=0.0, split='train', start_idx=0, max_episodes=5000, verbose=False, num_threads=4):
     """
     Collect trajectories until we have target_failures failed trajectories.
     Uses multiple threads for parallel collection.
@@ -483,7 +500,7 @@ def collect_until_n_failures(env_args, server, target_failures, api_key, model="
 def parse_args():
     parser = argparse.ArgumentParser(description="Collect trajectories using OpenAI API")
     parser.add_argument("--api_key", type=str, default=None, help="OpenAI API key (or set OPENAI_API_KEY env var)")
-    parser.add_argument("--model", type=str, default="gpt-4o-mini", help="OpenAI model name (e.g., gpt-4, gpt-3.5-turbo)")
+    parser.add_argument("--model", type=str, default="gpt-4.1-nano", help="OpenAI model name (e.g., gpt-4, gpt-3.5-turbo)")
     parser.add_argument("--output_dir", type=str, default="./trajectories", help="Directory to save trajectories")
     parser.add_argument("--target_failures", type=int, default=100, help="Number of failed trajectories to collect")
     parser.add_argument("--max_episodes", type=int, default=5000, help="Maximum episodes to run (safety limit)")
