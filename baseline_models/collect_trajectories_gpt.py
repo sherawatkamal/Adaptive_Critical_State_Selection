@@ -1,18 +1,17 @@
 """
 GPT-based Trajectory Collection for WebShop
 ============================================
-Uses OpenAI API (GPT-4.1-mini, GPT-5.1-mini, etc.) to generate expert trajectories.
+Uses OpenAI API (GPT-4o, GPT-4o-mini, etc.) to generate expert trajectories.
 
 Usage:
-    # Test with 30 tasks
-    python collect_trajectories_gpt.py --model gpt-4.1-mini --num_tasks 30 --output ./test_4.1.json
+    # Test with GPT-4o (30 tasks to validate performance)
+    python collect_trajectories_gpt.py --model gpt-4o --num_tasks 30 --output ./test_gpt4o.json
     
-    # Full collection with parallel workers
-    python collect_trajectories_gpt.py --model gpt-4.1-mini --num_tasks 11000 --workers 32 --output ./trajectories_11k.json
+    # Full collection with GPT-4o
+    python collect_trajectories_gpt.py --model gpt-4o --num_tasks 1000 --workers 16 --output ./trajectories_gpt4o.json
     
-    # Compare models
-    python collect_trajectories_gpt.py --model gpt-4.1-mini --num_tasks 30 --output ./test_4.1.json
-    python collect_trajectories_gpt.py --model gpt-5.1-mini --num_tasks 30 --output ./test_5.1.json
+    # Budget-friendly: GPT-4o-mini for comparison
+    python collect_trajectories_gpt.py --model gpt-4o-mini --num_tasks 30 --output ./test_gpt4o_mini.json
 
 Setup:
     1. Create a .env file in the same directory with: OPENAI_API_KEY=sk-your-key-here
@@ -103,6 +102,12 @@ def parse_action(response_text, valid_actions):
     """Extract action from GPT response."""
     text = response_text.strip()
     
+    # Try exact match first (case-insensitive)
+    text_lower = text.lower()
+    for valid in valid_actions:
+        if valid.lower() == text_lower:
+            return valid
+    
     # Try to find action pattern
     patterns = [
         r'(search\[.+?\])',
@@ -113,18 +118,18 @@ def parse_action(response_text, valid_actions):
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             action = match.group(1)
-            # Normalize click to lowercase
-            if action.lower().startswith('click'):
-                action = 'click' + action[5:]
+            # Find closest valid action
+            for valid in valid_actions:
+                if valid.lower() == action.lower():
+                    return valid
             return action
     
-    # If no pattern found, try to match with valid actions
-    text_lower = text.lower()
+    # Substring match as fallback
     for valid in valid_actions:
-        if valid.lower() in text_lower:
+        if valid.lower() in text_lower or text_lower in valid.lower():
             return valid
     
-    # Default: return first valid action or the raw text
+    # Default: return first valid action
     return valid_actions[0] if valid_actions else text
 
 
@@ -144,7 +149,7 @@ Select the best action to complete the shopping goal. Respond with ONLY the acti
 
 
 class GPTTrajectoryCollector:
-    def __init__(self, model="gpt-4.1-mini", max_retries=3):
+    def __init__(self, model="gpt-4o", max_retries=3):
         self.model = model
         self.max_retries = max_retries
         self.client = OpenAI()
@@ -165,7 +170,7 @@ class GPTTrajectoryCollector:
                         {"role": "user", "content": prompt}
                     ],
                     max_completion_tokens=100,
-                    temperature=0.1,  # Not supported by gpt-5
+                    temperature=0.0,  # Deterministic expert behavior
                 )
                 
                 # Track tokens
@@ -186,7 +191,7 @@ class GPTTrajectoryCollector:
         
         return valid_actions[0], "ERROR: max retries"
 
-    def collect_episode(self, env, idx, max_steps=15, verbose=False):
+    def collect_episode(self, env, idx, max_steps=20, verbose=False):
         """Collect one trajectory using GPT."""
         obs, info = env.reset(idx)
         goal = info['goal']
@@ -241,16 +246,17 @@ class GPTTrajectoryCollector:
     
     def get_cost_estimate(self):
         """Estimate cost based on tokens used."""
-        # Pricing per 1M tokens (approximate)
+        # Pricing per 1M tokens (as of Jan 2025)
         pricing = {
+            'gpt-4o': {'input': 2.50, 'output': 10.00},
+            'gpt-4o-mini': {'input': 0.15, 'output': 0.60},
             'gpt-4.1-nano': {'input': 0.10, 'output': 0.40},
             'gpt-4.1-mini': {'input': 0.40, 'output': 1.60},
-            'gpt-4o-mini': {'input': 0.15, 'output': 0.60},
-            'gpt-5.1-mini': {'input': 0.50, 'output': 2.00},  # Estimated
-            'gpt-5-mini': {'input': 0.50, 'output': 2.00},    # Estimated
+            'gpt-5.1-mini': {'input': 0.50, 'output': 2.00},
+            'gpt-5-mini': {'input': 0.50, 'output': 2.00},
         }
         
-        model_pricing = pricing.get(self.model, {'input': 1.0, 'output': 2.0})
+        model_pricing = pricing.get(self.model, {'input': 2.5, 'output': 10.0})
         
         input_cost = (self.total_input_tokens / 1_000_000) * model_pricing['input']
         output_cost = (self.total_output_tokens / 1_000_000) * model_pricing['output']
@@ -287,7 +293,7 @@ def collect_worker(args):
     return trajectories, collector.get_cost_estimate()
 
 
-def collect_parallel(model, task_indices, num_workers, split='train', max_steps=15, verbose=False):
+def collect_parallel(model, task_indices, num_workers, split='train', max_steps=20, verbose=False):
     """Collect trajectories in parallel."""
     
     # Split tasks among workers
@@ -330,7 +336,7 @@ def collect_parallel(model, task_indices, num_workers, split='train', max_steps=
     return all_trajectories, total_cost
 
 
-def collect_sequential(model, task_indices, split='train', max_steps=15, verbose=False):
+def collect_sequential(model, task_indices, split='train', max_steps=20, verbose=False):
     """Collect trajectories sequentially (for testing/debugging)."""
     
     env_args = webenv_args()[0]
@@ -353,19 +359,19 @@ def collect_sequential(model, task_indices, split='train', max_steps=15, verbose
 
 def parse_args():
     parser = argparse.ArgumentParser(description="GPT-based trajectory collection")
-    parser.add_argument("--model", type=str, default="gpt-4.1-mini",
-                        help="OpenAI model to use")
+    parser.add_argument("--model", type=str, default="gpt-4o",
+                        help="OpenAI model to use (gpt-4o, gpt-4o-mini, etc.)")
     parser.add_argument("--num_tasks", type=int, default=100,
                         help="Number of tasks to collect")
     parser.add_argument("--start_idx", type=int, default=0,
                         help="Starting task index")
     parser.add_argument("--workers", type=int, default=8,
                         help="Number of parallel workers (0 for sequential)")
-    parser.add_argument("--max_steps", type=int, default=15,
+    parser.add_argument("--max_steps", type=int, default=20,
                         help="Maximum steps per episode")
     parser.add_argument("--split", type=str, default="train",
                         choices=["train", "test"])
-    parser.add_argument("--output", type=str, default="./trajectories_gpt.json",
+    parser.add_argument("--output", type=str, default="./trajectories_gpt4o.json",
                         help="Output file path")
     parser.add_argument("--verbose", action="store_true",
                         help="Print episode details")
@@ -382,6 +388,7 @@ def main():
     print(f"Tasks: {args.num_tasks}")
     print(f"Workers: {args.workers}")
     print(f"Split: {args.split}")
+    print(f"Max steps: {args.max_steps}")
     print(f"=" * 60)
     
     # Task indices
@@ -427,6 +434,7 @@ def main():
     print(f"Successes: {len(successes)} ({len(successes)/len(trajectories)*100:.1f}%)")
     print(f"Failures: {len(failures)} ({len(failures)/len(trajectories)*100:.1f}%)")
     print(f"Average reward: {sum(rewards)/len(rewards):.2f}")
+    print(f"Average steps: {sum(t['num_steps'] for t in trajectories)/len(trajectories):.1f}")
     print(f"Uses Next (in successes): {uses_next}")
     print(f"Uses Back (in successes): {uses_back}")
     print(f"Time: {elapsed:.1f}s ({elapsed/len(trajectories):.2f}s per trajectory)")
@@ -434,7 +442,9 @@ def main():
     print(f"Input tokens: {cost['input_tokens']:,}")
     print(f"Output tokens: {cost['output_tokens']:,}")
     print(f"Estimated cost: ${cost['total_cost']:.4f}")
-    print(f"Projected cost for 11K: ${cost['total_cost'] * 11000 / len(trajectories):.2f}")
+    if len(trajectories) > 0:
+        print(f"Cost per trajectory: ${cost['total_cost']/len(trajectories):.4f}")
+        print(f"Projected cost for 1000 tasks: ${cost['total_cost'] * 1000 / len(trajectories):.2f}")
     print(f"=" * 60)
     
     # Save results
@@ -444,14 +454,16 @@ def main():
             'collection_date': datetime.now().isoformat(),
             'num_tasks': len(trajectories),
             'split': args.split,
+            'max_steps': args.max_steps,
             'elapsed_seconds': elapsed,
         },
         'summary': {
             'total': len(trajectories),
             'successes': len(successes),
             'failures': len(failures),
-            'success_rate': len(successes) / len(trajectories) * 100,
-            'avg_reward': sum(rewards) / len(rewards),
+            'success_rate': len(successes) / len(trajectories) * 100 if trajectories else 0,
+            'avg_reward': sum(rewards) / len(rewards) if rewards else 0,
+            'avg_steps': sum(t['num_steps'] for t in trajectories) / len(trajectories) if trajectories else 0,
             'uses_next': uses_next,
             'uses_back': uses_back,
         },
@@ -466,6 +478,7 @@ def main():
         json.dump(output_data, f, indent=2)
     
     print(f"\nSaved to: {args.output}")
+    print(f"\nTo analyze: python -c \"import json; d=json.load(open('{args.output}')); print(d['summary'])\"")
 
 
 if __name__ == "__main__":
