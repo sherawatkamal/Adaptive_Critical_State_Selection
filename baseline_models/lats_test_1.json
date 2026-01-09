@@ -1,0 +1,571 @@
+{
+  "metadata": {
+    "model": "gpt-4o-mini",
+    "method": "LATS",
+    "collection_date": "2026-01-09T00:16:14.277250",
+    "num_tasks": 5,
+    "iterations": 10,
+    "simulations": 1
+  },
+  "summary": {
+    "total_tasks": 5,
+    "expert_successes": 3,
+    "expert_failures": 2,
+    "expert_success_rate": 60.0
+  },
+  "successful_trajectories": [
+    {
+      "idx": 0,
+      "goal": "Instruction: i need a long clip-in hair extension which is natural looking, and price lower than 20.00 dollars",
+      "steps": [
+        {
+          "step": 0,
+          "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 20.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B09QQLDJ93 [button_]\nLroveb Fashion Long Curly Wig Head Dyed Black Gradient Golden Long Straight Wig African Long Curly Hair Wigs Ladies Gradient Color Chemical Fiber Silk Corn Perm Wig for Women\n$34.89\n\n[button] B09QQKPZJR [button_]\nLroveb Beanie Hat Knit with Long Wavy Curly Hair Extensions Wig Winter Warm Fashion Long Curly Hair Hat Wig Wool Curl Corn Perm Curl Knitted Cap Attached Synthetic Hairpiece\n$36.06\n\n[button] B08H5DCD65 [button_]\nCorn Wave Ponytail Extension Clip in - 22 Inch Long Wavy Curly Wrap Around Pony Tail Heat Resistant Synthetic Hairpiece for Women (Natural Black #1B)\n$9.98\n\n[button] B093BKWHFK [button_]\nMJMOJO Hair Extensions Clip in Human Hair Extensions 120g 7pcs Straight Natural Black Hair Clip in Remy Human Hair Extensions Double Weft (16 inches #NST)\n$63.",
+          "valid_actions": [
+            "click[back to search]",
+            "click[next >]",
+            "click[item - lroveb fashion long curly wig head dyed black gradient golden long straight wig african long curly hair wigs ladies gradient color chemical fiber silk corn perm wig for women]",
+            "click[item - lroveb beanie hat knit with long wavy curly hair extensions wig winter warm fashion long curly hair hat wig wool curl corn perm curl knitted cap attached synthetic hairpiece]",
+            "click[item - corn wave ponytail extension clip in - 22 inch long wavy curly wrap around pony tail heat resistant synthetic hairpiece for women (natural black #1b)]",
+            "click[item - mjmojo hair extensions clip in human hair extensions 120g 7pcs straight natural black hair clip in remy human hair extensions double weft (16 inches #nst)]",
+            "click[item - 6 pcs hair extensions 24 inchs synthetic straight tangled long natural white thick clip in stylish fasionable fabulous hair piece for women (d)]",
+            "click[item - 6 pcs hair extensions 24 inchs synthetic straight tangled long natural black thick clip in stylish fasionable fabulous hair for women (h)]",
+            "click[item - hair clip extensions for women natural looking hair extensions clip in hairpieces black synthetic hair extensions]",
+            "click[item - lujun hair extensions clip on hair extensions 23.6\" straight fluffy and not tangled hair pieces for women synthetic cheap straight wigs black silver dark brown grey chrismas gifts for women & girls]",
+            "click[item - hair extensions 24in synthetic straight tangled long natural processed hair pink bang bob wig anita wig cut wig hair net tease hair]",
+            "click[item - hair extensions 24in synthetic straight tangled long natural bang wig human hair mousse curly wig prange wig human hair cut wigs for black women lumina hair color]"
+          ],
+          "action": "search[long clip-in hair extension natural looking]",
+          "raw_response": "search[long clip-in hair extension natural looking]"
+        },
+        {
+          "step": 1,
+          "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 20.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\ncolor\n  [button] black brown #2 [button_]\n  [button] black mixed auburn brown #2-33 [button_]\n  [button] brown mixed blonde #12h24 [button_]\n  [button] brown mixed blonde #8h27 [button_]\n  [button] brown mixed light auburn #8h30 [button_]\n  [button] brown to blonde #6t27 [button_]\n  [button] medium brown #4 [button_]\n  [button] natural black #1b [button_]\n  [button] natural black to auburn #1bt30 [button_]\n  [button] tie up #2 | 33 [button_]\n  [button] wine red #99j [button_]\nCorn Wave Ponytail Extension Clip in - 22 Inch Long Wavy Curly Wrap Around Pony Tail Heat Resistant Synthetic Hairpiece for Women (Natural Black #1B)\nPrice: $9.98\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+          "valid_actions": [
+            "click[back to search]",
+            "click[< prev]",
+            "click[description]",
+            "click[features]",
+            "click[reviews]",
+            "click[buy now]",
+            "click[black brown #2]",
+            "click[black mixed auburn brown #2-33]",
+            "click[brown mixed blonde #12h24]",
+            "click[brown mixed blonde #8h27]",
+            "click[brown mixed light auburn #8h30]",
+            "click[brown to blonde #6t27]",
+            "click[medium brown #4]",
+            "click[natural black #1b]",
+            "click[natural black to auburn #1bt30]",
+            "click[tie up #2 | 33]",
+            "click[wine red #99j]"
+          ],
+          "action": "click[item - corn wave ponytail extension clip in - 22 inch long wavy curly wrap around pony tail heat resistant synthetic hairpiece for women (natural black #1b)]",
+          "raw_response": "click[item - corn wave ponytail extension clip in - 22 inch long wavy curly wrap around pony tail heat resistant synthetic hairpiece for women (natural black #1b)]"
+        },
+        {
+          "step": 2,
+          "observation": "You have clicked natural black #1b.\nInstruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 20.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\ncolor\n  [button] black brown #2 [button_]\n  [button] black mixed auburn brown #2-33 [button_]\n  [button] brown mixed blonde #12h24 [button_]\n  [button] brown mixed blonde #8h27 [button_]\n  [button] brown mixed light auburn #8h30 [button_]\n  [button] brown to blonde #6t27 [button_]\n  [button] medium brown #4 [button_]\n  [clicked button] natural black #1b [clicked button_]\n  [button] natural black to auburn #1bt30 [button_]\n  [button] tie up #2 | 33 [button_]\n  [button] wine red #99j [button_]\nCorn Wave Ponytail Extension Clip in - 22 Inch Long Wavy Curly Wrap Around Pony Tail Heat Resistant Synthetic Hairpiece for Women (Natural Black #1B)\nPrice: $9.98\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+          "valid_actions": [
+            "click[back to search]",
+            "click[< prev]",
+            "click[description]",
+            "click[features]",
+            "click[reviews]",
+            "click[buy now]",
+            "click[black brown #2]",
+            "click[black mixed auburn brown #2-33]",
+            "click[brown mixed blonde #12h24]",
+            "click[brown mixed blonde #8h27]",
+            "click[brown mixed light auburn #8h30]",
+            "click[brown to blonde #6t27]",
+            "click[medium brown #4]",
+            "click[natural black #1b]",
+            "click[natural black to auburn #1bt30]",
+            "click[tie up #2 | 33]",
+            "click[wine red #99j]"
+          ],
+          "action": "click[natural black #1b]",
+          "raw_response": "click[natural black #1b]"
+        },
+        {
+          "step": 3,
+          "observation": "Thank you for shopping with us!\nYour code: \nNone\n (Paste it in your MTurk interface.)\nPurchased\nasin\nB08H5DCD65\noptions\n{\"color\": \"natural black #1b\"}\nattrs\nNone\ncategory\nNone\nquery\nNone\nproduct category\nNone\nTarget\nasin\noptions\nattrs\nprice upper\ninstuction text\ncategory\nproduct category\nquery\nGoal \nNone\nReward\nYour score (min 0.0, max 1.0)\n0.5\nReward Details \nNone\n",
+          "valid_actions": [
+            "finish"
+          ],
+          "action": "click[buy now]",
+          "raw_response": "click[buy now]"
+        }
+      ],
+      "final_reward": 500.0,
+      "success": true,
+      "num_steps": 4,
+      "model": "gpt-4o-mini"
+    },
+    {
+      "idx": 1,
+      "goal": "Instruction: i want a noise cancelling cosycost usb microphone, and price lower than 70.00 dollars",
+      "steps": [
+        {
+          "step": 0,
+          "observation": "Instruction:\ni want a noise cancelling cosycost usb microphone, and price lower than 70.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B0972Q1T8T [button_]\nCosycost USB Microphone,Condenser Computer PC Gaming Microphone for PS4/5 Laptop Windows Mac OS Android Phone,Noise Cancelling Instant Mute,Studio Mic for Voice,Music Recording,Podcasting,Streaming\n$32.99\n\n[button] B072L2D6LY [button_]\nAndrea Communications NC-255VM USB On-Ear Stereo USB Computer Headset with Noise-Canceling Microphone, in-Line Volume/Mute Controls, and Plug\n$34.59\n\n[button] B071H84LTJ [button_]\nAndrea Communications NC-455VM USB Over-Ear Circumaural Stereo USB Computer Headset with Noise-Canceling Microphone, in-Line Volume/Mute Controls, and Plug\n$49.24\n\n[button] B08GLJSWJ9 [button_]\nJiade USB Headset with Noise Canceling Microphone for CallCenter Skype Chat, Computer Phone Headset Voice Recognition Speech Dictation, PC Headphone with Mic Mute Volume Con",
+          "valid_actions": [
+            "click[back to search]",
+            "click[next >]",
+            "click[item - cosycost usb microphone,condenser computer pc gaming microphone for ps4/5 laptop windows mac os android phone,noise cancelling instant mute,studio mic for voice,music recording,podcasting,streaming]",
+            "click[item - andrea communications nc-255vm usb on-ear stereo usb computer headset with noise-canceling microphone, in-line volume/mute controls, and plug]",
+            "click[item - andrea communications nc-455vm usb over-ear circumaural stereo usb computer headset with noise-canceling microphone, in-line volume/mute controls, and plug]",
+            "click[item - jiade usb headset with noise canceling microphone for callcenter skype chat, computer phone headset voice recognition speech dictation, pc headphone with mic mute volume control binaural golden]",
+            "click[item - yealink headset with microphone teams certified uh36& wh66 usb-c and wireless bluetooth dect headphones with microphone noise cancelling teams certified workstation for voip phone computer pc laptop]",
+            "click[item - eksa headset with microphone for laptop, wired usb computer headphones with environmental noise cancellation, lightweight mute control, business telephone headset for pc,skype, call center, office]",
+            "click[item - usb headset with microphone noise cancelling & mic mute, mono computer headphone for call center office business pc softphone calls microsoft teams skype chat, clear voice for speech dictation]",
+            "click[item - usb headset with microphone computer headphone with noise cancelling, corded monaural h390 headset computer pro headphones for business skype uc lync softphone call center office]",
+            "click[item - usb headset with microphone noise cancelling for call center, adjustable boom mic, inline volume control & mute, wired on ear computer pc headphones for zoom, web, skype]",
+            "click[item - lenovo yoga active noise cancellation headphones, wireless on-ear headphones, bluetooth 5.0, 14hrs playtime, microphone, fold-flat, memory foam earpads, carry case, win/mac/android, gxd0u47643, mica]"
+          ],
+          "action": "search[noise cancelling cosycost usb microphone]",
+          "raw_response": "search[noise cancelling cosycost usb microphone]"
+        },
+        {
+          "step": 1,
+          "observation": "Instruction:\ni want a noise cancelling cosycost usb microphone, and price lower than 70.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nCosycost USB Microphone,Condenser Computer PC Gaming Microphone for PS4/5 Laptop Windows Mac OS Android Phone,Noise Cancelling Instant Mute,Studio Mic for Voice,Music Recording,Podcasting,Streaming\nPrice: $32.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+          "valid_actions": [
+            "click[back to search]",
+            "click[< prev]",
+            "click[description]",
+            "click[features]",
+            "click[reviews]",
+            "click[buy now]"
+          ],
+          "action": "click[item - cosycost usb microphone,condenser computer pc gaming microphone for ps4/5 laptop windows mac os android phone,noise cancelling instant mute,studio mic for voice,music recording,podcasting,streaming]",
+          "raw_response": "click[item - cosycost usb microphone,condenser computer pc gaming microphone for ps4/5 laptop windows mac os android phone,noise cancelling instant mute,studio mic for voice,music recording,podcasting,streaming]"
+        },
+        {
+          "step": 2,
+          "observation": "Thank you for shopping with us!\nYour code: \nNone\n (Paste it in your MTurk interface.)\nPurchased\nasin\nB0972Q1T8T\noptions\n{}\nattrs\nNone\ncategory\nNone\nquery\nNone\nproduct category\nNone\nTarget\nasin\noptions\nattrs\nprice upper\ninstuction text\ncategory\nproduct category\nquery\nGoal \nNone\nReward\nYour score (min 0.0, max 1.0)\n1.0\nReward Details \nNone\n",
+          "valid_actions": [
+            "finish"
+          ],
+          "action": "click[buy now]",
+          "raw_response": "click[buy now]"
+        }
+      ],
+      "final_reward": 1000.0,
+      "success": true,
+      "num_steps": 3,
+      "model": "gpt-4o-mini"
+    },
+    {
+      "idx": 4,
+      "goal": "Instruction: find me a high speed dual style package with  12\" power amplifier car subwoofer, and price lower than 200.00 dollars",
+      "steps": [
+        {
+          "step": 0,
+          "observation": "Instruction:\nfind me a high speed dual style package with  12\" power amplifier car subwoofer, and price lower than 200.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B01BGW8GOM [button_]\nMTX TNP212D2 12\" 1200 Watt 4 Ohm Dual Loaded Car Audio Subwoofer Package with Sub Enclosure, Planet 1500W Monoblock A/B Amplifier & 8 Gauge Wiring Kit\n$277.99\n\n[button] B08Q9SCL49 [button_]\nRockville SK510 Package 10\" 1200w Loaded K5 Car Subwoofer Enclosure+DB11 Amp\n$164.95\n\n[button] B06XW8PL68 [button_]\nPlanet Audio AC12D 12\" 1800W 4 Ohm DVC Car Subwoofer Package with Boss Audio 1500W Mono A/B Amplifier, Wiring Amp Kit and QPower Vented Sub Enclosure\n$100.0\n\n[button] B01G8XW640 [button_]\nMTX TNP212D2 12\" 1200 Watt 4 Ohm Dual Loaded Car Audio Subwoofer Package with Sub Enclosure, Sound Storm EV 1500W Monoblock A/B Amplifier & Wiring Kit\n$280.99\n\n[button] B08GGD5NVR [button_]\nPlanet Audio AC12DC 12 Inch 1800 Watt Dual 4 Ohm Voice Coil Car Audi",
+          "valid_actions": [
+            "click[back to search]",
+            "click[next >]",
+            "click[item - mtx tnp212d2 12\" 1200 watt 4 ohm dual loaded car audio subwoofer package with sub enclosure, planet 1500w monoblock a/b amplifier & 8 gauge wiring kit]",
+            "click[item - rockville sk510 package 10\" 1200w loaded k5 car subwoofer enclosure+db11 amp]",
+            "click[item - planet audio ac12d 12\" 1800w 4 ohm dvc car subwoofer package with boss audio 1500w mono a/b amplifier, wiring amp kit and qpower vented sub enclosure]",
+            "click[item - mtx tnp212d2 12\" 1200 watt 4 ohm dual loaded car audio subwoofer package with sub enclosure, sound storm ev 1500w monoblock a/b amplifier & wiring kit]",
+            "click[item - planet audio ac12dc 12 inch 1800 watt dual 4 ohm voice coil car audio subwoofer speaker (2 pack) and ac1500m 1500 watt monoblock amplifier with remote]",
+            "click[item - kicker 44cwcs124 12\" 600w 4 ohm subwoofer pair bass package with dodge quad cab 02 dual 12\" truck sub box, boss 1100w mono a/b amplifier, & wiring kit]",
+            "click[item - planet audio 2 ac10d 10\" 3000w subwoofers + vented box + 2 channel amp +amp kit]",
+            "click[item - mtx tnp212d2 12\" 1200 watt 4 ohm dual loaded car audio subwoofer package with sub enclosure, boss 1100w mono a/b amplifier, wiring kit and capacitor]",
+            "click[item - pyramid bnps122 12\" 1200w car audio speakers with neon accent lighting and 4 ohm impedance, subwoofer box, 1500w mono amplifier, & amp kit]",
+            "click[item - crunch crw12d4 12 inch 800 watt max 4 ohm dual voice coil car subwoofer speaker with 2 channel 1000 watt amp a/b class car audio stereo amplifier]"
+          ],
+          "action": "search[high speed dual style package with  12 power amplifier car subwoofer]",
+          "raw_response": "search[high speed dual style package with  12 power amplifier car subwoofer]"
+        },
+        {
+          "step": 1,
+          "observation": "Instruction:\nfind me a high speed dual style package with  12\" power amplifier car subwoofer, and price lower than 200.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nPlanet Audio AC12D 12\" 1800W 4 Ohm DVC Car Subwoofer Package with Boss Audio 1500W Mono A/B Amplifier, Wiring Amp Kit and QPower Vented Sub Enclosure\nPrice: $100.0\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+          "valid_actions": [
+            "click[back to search]",
+            "click[< prev]",
+            "click[description]",
+            "click[features]",
+            "click[reviews]",
+            "click[buy now]"
+          ],
+          "action": "click[item - planet audio ac12d 12\" 1800w 4 ohm dvc car subwoofer package with boss audio 1500w mono a/b amplifier, wiring amp kit and qpower vented sub enclosure]",
+          "raw_response": "click[item - planet audio ac12d 12\" 1800w 4 ohm dvc car subwoofer package with boss audio 1500w mono a/b amplifier, wiring amp kit and qpower vented sub enclosure]"
+        },
+        {
+          "step": 2,
+          "observation": "Thank you for shopping with us!\nYour code: \nNone\n (Paste it in your MTurk interface.)\nPurchased\nasin\nB06XW8PL68\noptions\n{}\nattrs\nNone\ncategory\nNone\nquery\nNone\nproduct category\nNone\nTarget\nasin\noptions\nattrs\nprice upper\ninstuction text\ncategory\nproduct category\nquery\nGoal \nNone\nReward\nYour score (min 0.0, max 1.0)\n0.5\nReward Details \nNone\n",
+          "valid_actions": [
+            "finish"
+          ],
+          "action": "click[buy now]",
+          "raw_response": "click[buy now]"
+        }
+      ],
+      "final_reward": 500.0,
+      "success": true,
+      "num_steps": 3,
+      "model": "gpt-4o-mini"
+    }
+  ],
+  "all_trajectories": [
+    {
+      "idx": 0,
+      "goal": "Instruction: i need a long clip-in hair extension which is natural looking, and price lower than 20.00 dollars",
+      "steps": [
+        {
+          "step": 0,
+          "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 20.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B09QQLDJ93 [button_]\nLroveb Fashion Long Curly Wig Head Dyed Black Gradient Golden Long Straight Wig African Long Curly Hair Wigs Ladies Gradient Color Chemical Fiber Silk Corn Perm Wig for Women\n$34.89\n\n[button] B09QQKPZJR [button_]\nLroveb Beanie Hat Knit with Long Wavy Curly Hair Extensions Wig Winter Warm Fashion Long Curly Hair Hat Wig Wool Curl Corn Perm Curl Knitted Cap Attached Synthetic Hairpiece\n$36.06\n\n[button] B08H5DCD65 [button_]\nCorn Wave Ponytail Extension Clip in - 22 Inch Long Wavy Curly Wrap Around Pony Tail Heat Resistant Synthetic Hairpiece for Women (Natural Black #1B)\n$9.98\n\n[button] B093BKWHFK [button_]\nMJMOJO Hair Extensions Clip in Human Hair Extensions 120g 7pcs Straight Natural Black Hair Clip in Remy Human Hair Extensions Double Weft (16 inches #NST)\n$63.",
+          "valid_actions": [
+            "click[back to search]",
+            "click[next >]",
+            "click[item - lroveb fashion long curly wig head dyed black gradient golden long straight wig african long curly hair wigs ladies gradient color chemical fiber silk corn perm wig for women]",
+            "click[item - lroveb beanie hat knit with long wavy curly hair extensions wig winter warm fashion long curly hair hat wig wool curl corn perm curl knitted cap attached synthetic hairpiece]",
+            "click[item - corn wave ponytail extension clip in - 22 inch long wavy curly wrap around pony tail heat resistant synthetic hairpiece for women (natural black #1b)]",
+            "click[item - mjmojo hair extensions clip in human hair extensions 120g 7pcs straight natural black hair clip in remy human hair extensions double weft (16 inches #nst)]",
+            "click[item - 6 pcs hair extensions 24 inchs synthetic straight tangled long natural white thick clip in stylish fasionable fabulous hair piece for women (d)]",
+            "click[item - 6 pcs hair extensions 24 inchs synthetic straight tangled long natural black thick clip in stylish fasionable fabulous hair for women (h)]",
+            "click[item - hair clip extensions for women natural looking hair extensions clip in hairpieces black synthetic hair extensions]",
+            "click[item - lujun hair extensions clip on hair extensions 23.6\" straight fluffy and not tangled hair pieces for women synthetic cheap straight wigs black silver dark brown grey chrismas gifts for women & girls]",
+            "click[item - hair extensions 24in synthetic straight tangled long natural processed hair pink bang bob wig anita wig cut wig hair net tease hair]",
+            "click[item - hair extensions 24in synthetic straight tangled long natural bang wig human hair mousse curly wig prange wig human hair cut wigs for black women lumina hair color]"
+          ],
+          "action": "search[long clip-in hair extension natural looking]",
+          "raw_response": "search[long clip-in hair extension natural looking]"
+        },
+        {
+          "step": 1,
+          "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 20.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\ncolor\n  [button] black brown #2 [button_]\n  [button] black mixed auburn brown #2-33 [button_]\n  [button] brown mixed blonde #12h24 [button_]\n  [button] brown mixed blonde #8h27 [button_]\n  [button] brown mixed light auburn #8h30 [button_]\n  [button] brown to blonde #6t27 [button_]\n  [button] medium brown #4 [button_]\n  [button] natural black #1b [button_]\n  [button] natural black to auburn #1bt30 [button_]\n  [button] tie up #2 | 33 [button_]\n  [button] wine red #99j [button_]\nCorn Wave Ponytail Extension Clip in - 22 Inch Long Wavy Curly Wrap Around Pony Tail Heat Resistant Synthetic Hairpiece for Women (Natural Black #1B)\nPrice: $9.98\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+          "valid_actions": [
+            "click[back to search]",
+            "click[< prev]",
+            "click[description]",
+            "click[features]",
+            "click[reviews]",
+            "click[buy now]",
+            "click[black brown #2]",
+            "click[black mixed auburn brown #2-33]",
+            "click[brown mixed blonde #12h24]",
+            "click[brown mixed blonde #8h27]",
+            "click[brown mixed light auburn #8h30]",
+            "click[brown to blonde #6t27]",
+            "click[medium brown #4]",
+            "click[natural black #1b]",
+            "click[natural black to auburn #1bt30]",
+            "click[tie up #2 | 33]",
+            "click[wine red #99j]"
+          ],
+          "action": "click[item - corn wave ponytail extension clip in - 22 inch long wavy curly wrap around pony tail heat resistant synthetic hairpiece for women (natural black #1b)]",
+          "raw_response": "click[item - corn wave ponytail extension clip in - 22 inch long wavy curly wrap around pony tail heat resistant synthetic hairpiece for women (natural black #1b)]"
+        },
+        {
+          "step": 2,
+          "observation": "You have clicked natural black #1b.\nInstruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 20.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\ncolor\n  [button] black brown #2 [button_]\n  [button] black mixed auburn brown #2-33 [button_]\n  [button] brown mixed blonde #12h24 [button_]\n  [button] brown mixed blonde #8h27 [button_]\n  [button] brown mixed light auburn #8h30 [button_]\n  [button] brown to blonde #6t27 [button_]\n  [button] medium brown #4 [button_]\n  [clicked button] natural black #1b [clicked button_]\n  [button] natural black to auburn #1bt30 [button_]\n  [button] tie up #2 | 33 [button_]\n  [button] wine red #99j [button_]\nCorn Wave Ponytail Extension Clip in - 22 Inch Long Wavy Curly Wrap Around Pony Tail Heat Resistant Synthetic Hairpiece for Women (Natural Black #1B)\nPrice: $9.98\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+          "valid_actions": [
+            "click[back to search]",
+            "click[< prev]",
+            "click[description]",
+            "click[features]",
+            "click[reviews]",
+            "click[buy now]",
+            "click[black brown #2]",
+            "click[black mixed auburn brown #2-33]",
+            "click[brown mixed blonde #12h24]",
+            "click[brown mixed blonde #8h27]",
+            "click[brown mixed light auburn #8h30]",
+            "click[brown to blonde #6t27]",
+            "click[medium brown #4]",
+            "click[natural black #1b]",
+            "click[natural black to auburn #1bt30]",
+            "click[tie up #2 | 33]",
+            "click[wine red #99j]"
+          ],
+          "action": "click[natural black #1b]",
+          "raw_response": "click[natural black #1b]"
+        },
+        {
+          "step": 3,
+          "observation": "Thank you for shopping with us!\nYour code: \nNone\n (Paste it in your MTurk interface.)\nPurchased\nasin\nB08H5DCD65\noptions\n{\"color\": \"natural black #1b\"}\nattrs\nNone\ncategory\nNone\nquery\nNone\nproduct category\nNone\nTarget\nasin\noptions\nattrs\nprice upper\ninstuction text\ncategory\nproduct category\nquery\nGoal \nNone\nReward\nYour score (min 0.0, max 1.0)\n0.5\nReward Details \nNone\n",
+          "valid_actions": [
+            "finish"
+          ],
+          "action": "click[buy now]",
+          "raw_response": "click[buy now]"
+        }
+      ],
+      "final_reward": 500.0,
+      "success": true,
+      "num_steps": 4,
+      "model": "gpt-4o-mini"
+    },
+    {
+      "idx": 1,
+      "goal": "Instruction: i want a noise cancelling cosycost usb microphone, and price lower than 70.00 dollars",
+      "steps": [
+        {
+          "step": 0,
+          "observation": "Instruction:\ni want a noise cancelling cosycost usb microphone, and price lower than 70.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B0972Q1T8T [button_]\nCosycost USB Microphone,Condenser Computer PC Gaming Microphone for PS4/5 Laptop Windows Mac OS Android Phone,Noise Cancelling Instant Mute,Studio Mic for Voice,Music Recording,Podcasting,Streaming\n$32.99\n\n[button] B072L2D6LY [button_]\nAndrea Communications NC-255VM USB On-Ear Stereo USB Computer Headset with Noise-Canceling Microphone, in-Line Volume/Mute Controls, and Plug\n$34.59\n\n[button] B071H84LTJ [button_]\nAndrea Communications NC-455VM USB Over-Ear Circumaural Stereo USB Computer Headset with Noise-Canceling Microphone, in-Line Volume/Mute Controls, and Plug\n$49.24\n\n[button] B08GLJSWJ9 [button_]\nJiade USB Headset with Noise Canceling Microphone for CallCenter Skype Chat, Computer Phone Headset Voice Recognition Speech Dictation, PC Headphone with Mic Mute Volume Con",
+          "valid_actions": [
+            "click[back to search]",
+            "click[next >]",
+            "click[item - cosycost usb microphone,condenser computer pc gaming microphone for ps4/5 laptop windows mac os android phone,noise cancelling instant mute,studio mic for voice,music recording,podcasting,streaming]",
+            "click[item - andrea communications nc-255vm usb on-ear stereo usb computer headset with noise-canceling microphone, in-line volume/mute controls, and plug]",
+            "click[item - andrea communications nc-455vm usb over-ear circumaural stereo usb computer headset with noise-canceling microphone, in-line volume/mute controls, and plug]",
+            "click[item - jiade usb headset with noise canceling microphone for callcenter skype chat, computer phone headset voice recognition speech dictation, pc headphone with mic mute volume control binaural golden]",
+            "click[item - yealink headset with microphone teams certified uh36& wh66 usb-c and wireless bluetooth dect headphones with microphone noise cancelling teams certified workstation for voip phone computer pc laptop]",
+            "click[item - eksa headset with microphone for laptop, wired usb computer headphones with environmental noise cancellation, lightweight mute control, business telephone headset for pc,skype, call center, office]",
+            "click[item - usb headset with microphone noise cancelling & mic mute, mono computer headphone for call center office business pc softphone calls microsoft teams skype chat, clear voice for speech dictation]",
+            "click[item - usb headset with microphone computer headphone with noise cancelling, corded monaural h390 headset computer pro headphones for business skype uc lync softphone call center office]",
+            "click[item - usb headset with microphone noise cancelling for call center, adjustable boom mic, inline volume control & mute, wired on ear computer pc headphones for zoom, web, skype]",
+            "click[item - lenovo yoga active noise cancellation headphones, wireless on-ear headphones, bluetooth 5.0, 14hrs playtime, microphone, fold-flat, memory foam earpads, carry case, win/mac/android, gxd0u47643, mica]"
+          ],
+          "action": "search[noise cancelling cosycost usb microphone]",
+          "raw_response": "search[noise cancelling cosycost usb microphone]"
+        },
+        {
+          "step": 1,
+          "observation": "Instruction:\ni want a noise cancelling cosycost usb microphone, and price lower than 70.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nCosycost USB Microphone,Condenser Computer PC Gaming Microphone for PS4/5 Laptop Windows Mac OS Android Phone,Noise Cancelling Instant Mute,Studio Mic for Voice,Music Recording,Podcasting,Streaming\nPrice: $32.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+          "valid_actions": [
+            "click[back to search]",
+            "click[< prev]",
+            "click[description]",
+            "click[features]",
+            "click[reviews]",
+            "click[buy now]"
+          ],
+          "action": "click[item - cosycost usb microphone,condenser computer pc gaming microphone for ps4/5 laptop windows mac os android phone,noise cancelling instant mute,studio mic for voice,music recording,podcasting,streaming]",
+          "raw_response": "click[item - cosycost usb microphone,condenser computer pc gaming microphone for ps4/5 laptop windows mac os android phone,noise cancelling instant mute,studio mic for voice,music recording,podcasting,streaming]"
+        },
+        {
+          "step": 2,
+          "observation": "Thank you for shopping with us!\nYour code: \nNone\n (Paste it in your MTurk interface.)\nPurchased\nasin\nB0972Q1T8T\noptions\n{}\nattrs\nNone\ncategory\nNone\nquery\nNone\nproduct category\nNone\nTarget\nasin\noptions\nattrs\nprice upper\ninstuction text\ncategory\nproduct category\nquery\nGoal \nNone\nReward\nYour score (min 0.0, max 1.0)\n1.0\nReward Details \nNone\n",
+          "valid_actions": [
+            "finish"
+          ],
+          "action": "click[buy now]",
+          "raw_response": "click[buy now]"
+        }
+      ],
+      "final_reward": 1000.0,
+      "success": true,
+      "num_steps": 3,
+      "model": "gpt-4o-mini"
+    },
+    {
+      "idx": 2,
+      "goal": "Instruction: i'm looking for hair treatments that are sulfate and paraben free and are of high quality too. i need it in bottle for with 60 capsules, and price lower than 70.00 dollars",
+      "steps": [
+        {
+          "step": 0,
+          "observation": "Instruction:\ni'm looking for hair treatments that are sulfate and paraben free and are of high quality too. i need it in bottle for with 60 capsules, and price lower than 70.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B07MTPW3Z7 [button_]\nBiotin Shampoo For Hair Growth With DHT Blockers, Sulfate-Free, Paraben-Free, Thickening Shampoo, For Thicker and Fuller Hair, Hair Loss Shampoo, For Men and Women (16 oz)\n$16.95\n\n[button] B07GSVD92H [button_]\nOGX Extra Strength Damage Remedy + Coconut Miracle Oil Hair Mask, Extra Hydrating & Softening Anti-Frizz Treatment to Help Repair Hair, Paraben-Free, Sulfated-Surfactants Free, 6 oz\n$6.99\n\n[button] B01LLT790C [button_]\nSALT SULFATE FREE SHAMPOO for Color Treated Hair (17 Fl Oz / 500ml) Best Hair Aftercare for Extensions (Unisex) Hair Color and Keratin Kit Treatment Straightening Fix Damaged After Care Paraben Free\n$29.99\n\n[button] B0742KDTJ6 [button_]\nKeranique Hair Loss Treatment S",
+          "valid_actions": [
+            "click[back to search]",
+            "click[next >]",
+            "click[item - biotin shampoo for hair growth with dht blockers, sulfate-free, paraben-free, thickening shampoo, for thicker and fuller hair, hair loss shampoo, for men and women (16 oz)]",
+            "click[item - ogx extra strength damage remedy + coconut miracle oil hair mask, extra hydrating & softening anti-frizz treatment to help repair hair, paraben-free, sulfated-surfactants free, 6 oz]",
+            "click[item - salt sulfate free shampoo for color treated hair (17 fl oz / 500ml) best hair aftercare for extensions (unisex) hair color and keratin kit treatment straightening fix damaged after care paraben free]",
+            "click[item - keranique hair loss treatment system clinically proven to regrow thinning hair - shampoo, conditioner, treatment spray and minoxidil - dry hair formula; 60 days, paraben sulfate free]",
+            "click[item - keranique thicker fuller hair 60 days system with keratin shampoo, conditioner, follicle boosting serum and lift and repair treatment for damaged thinning hair, paraben/sulfates free]",
+            "click[item - kachita spell shampoo conditioner for keratin treatments sulfate free no paraben k-shield 16oz]",
+            "click[item - l'oreal paris everpure sulfate free 21-in-1 color caring spray multi benefit leave in treatment, detangling spray, hydrates, silky hair, uv filter, vegan, paraben free, dye free gluten free, 6.8 fl oz]",
+            "click[item - salt and sulfate free shampoo and conditioner set for color treated hair (2 x 17 fl oz / 500ml) sulfate and paraben free shampoo and conditioner set sulfate free shampoo for color treated hair]",
+            "click[item - sulfate free hair oil dye free smoothing and nourishing treatment, coconut, hair food, 3.2 fl oz]",
+            "click[item - joyce giraud ultimate hair strength supplements - clinically tested with cynatine, suitable for men & women - 30-day supply, 60 capsules]"
+          ],
+          "action": "search[sulfate and paraben free hair treatments with 60 capsules]",
+          "raw_response": "search[sulfate and paraben free hair treatments with 60 capsules]"
+        },
+        {
+          "step": 1,
+          "observation": "Instruction:\ni'm looking for hair treatments that are sulfate and paraben free and are of high quality too. i need it in bottle for with 60 capsules, and price lower than 70.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nitem package quantity\n  [button] 1 [button_]\n  [button] 2 [button_]\n  [button] 3 [button_]\nJoyce Giraud Ultimate Hair Strength Supplements - Clinically Tested with Cynatine, Suitable for Men & Women - 30-Day Supply, 60 Capsules\nPrice: $49.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+          "valid_actions": [
+            "click[back to search]",
+            "click[< prev]",
+            "click[description]",
+            "click[features]",
+            "click[reviews]",
+            "click[buy now]",
+            "click[1]",
+            "click[2]",
+            "click[3]"
+          ],
+          "action": "click[item - joyce giraud ultimate hair strength supplements - clinically tested with cynatine, suitable for men & women - 30-day supply, 60 capsules]",
+          "raw_response": "click[item - joyce giraud ultimate hair strength supplements - clinically tested with cynatine, suitable for men & women - 30-day supply, 60 capsules]"
+        },
+        {
+          "step": 2,
+          "observation": "You have clicked 1.\nInstruction:\ni'm looking for hair treatments that are sulfate and paraben free and are of high quality too. i need it in bottle for with 60 capsules, and price lower than 70.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nitem package quantity\n  [clicked button] 1 [clicked button_]\n  [button] 2 [button_]\n  [button] 3 [button_]\nJoyce Giraud Ultimate Hair Strength Supplements - Clinically Tested with Cynatine, Suitable for Men & Women - 30-Day Supply, 60 Capsules\nPrice: $49.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+          "valid_actions": [
+            "click[back to search]",
+            "click[< prev]",
+            "click[description]",
+            "click[features]",
+            "click[reviews]",
+            "click[buy now]",
+            "click[1]",
+            "click[2]",
+            "click[3]"
+          ],
+          "action": "click[1]",
+          "raw_response": "click[1]"
+        },
+        {
+          "step": 3,
+          "observation": "Thank you for shopping with us!\nYour code: \nNone\n (Paste it in your MTurk interface.)\nPurchased\nasin\nB076HDD4FT\noptions\n{\"item package quantity\": \"1\"}\nattrs\nNone\ncategory\nNone\nquery\nNone\nproduct category\nNone\nTarget\nasin\noptions\nattrs\nprice upper\ninstuction text\ncategory\nproduct category\nquery\nGoal \nNone\nReward\nYour score (min 0.0, max 1.0)\n0.025\nReward Details \nNone\n",
+          "valid_actions": [
+            "finish"
+          ],
+          "action": "click[buy now]",
+          "raw_response": "click[buy now]"
+        }
+      ],
+      "final_reward": 25.0,
+      "success": false,
+      "num_steps": 4,
+      "model": "gpt-4o-mini"
+    },
+    {
+      "idx": 3,
+      "goal": "Instruction: i need gluten free vegetarian smoked peppered bacon - 4 ounce (pack of 2), and price lower than 60.00 dollars",
+      "steps": [
+        {
+          "step": 0,
+          "observation": "Instruction:\ni need gluten free vegetarian smoked peppered bacon - 4 ounce (pack of 2), and price lower than 60.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B06Y96MXJV [button_]\nSmoked Bacon Sea Salt 3-Pack: Smoked Bacon Chipotle, Smoked Bacon and Onion, Smoked Peppered Bacon - All-Natural Sea Salts Slowly Smoked Over Alderwood - No Gluten, No MSG, Non-GMO (12 total oz.)\n$29.99\n\n[button] B06Y96N1KG [button_]\nSpicy Hot Pepper Sea Salt 3-Pack: Ghost Pepper, Jalapeno, Habanero - All Natural, Delicious Blends of Peppers & Sea Salt - Gluten-Free, Kosher, No MSG, Non-GMO (12 total oz.)\n$29.99\n\n[button] B07GJTKYJQ [button_]\nLouisville Vegan Jerky - 5 Flavor Variety Pack, Non-GMO Soy Protein, Gluten-Free (Black Pepper, Buffalo Dill, Pepperoni, Maple Bacon, and Carolina BBQ, 3 Ounces)\n$42.99\n\n[button] B07YYTL9BV [button_]\nTBJ Gourmet Smoked Bacon Salt - Steak Seasoning & Bacon Seasoning Salt - Bacon Infused Himalayan Pink Salt & Ass",
+          "valid_actions": [
+            "click[back to search]",
+            "click[next >]",
+            "click[item - smoked bacon sea salt 3-pack: smoked bacon chipotle, smoked bacon and onion, smoked peppered bacon - all-natural sea salts slowly smoked over alderwood - no gluten, no msg, non-gmo (12 total oz.)]",
+            "click[item - spicy hot pepper sea salt 3-pack: ghost pepper, jalapeno, habanero - all natural, delicious blends of peppers & sea salt - gluten-free, kosher, no msg, non-gmo (12 total oz.)]",
+            "click[item - louisville vegan jerky - 5 flavor variety pack, non-gmo soy protein, gluten-free (black pepper, buffalo dill, pepperoni, maple bacon, and carolina bbq, 3 ounces)]",
+            "click[item - tbj gourmet smoked bacon salt - steak seasoning & bacon seasoning salt - bacon infused himalayan pink salt & assorted spices - spicy & savory meat rub & bbq seasoning - vegan, gluten free - 4.9 ounces]",
+            "click[item - smoked bacon fine sea salt - all-natural bacon sea salt slowly smoked for perfect smoky flavor - no gluten, no msg, non-gmo - cooking or finishing salt - 4 oz. stackable jar]",
+            "click[item - sonoma creamery cheese crisps - bacon cheddar 3 count pack savory cheese cracker snack high protein low carb gluten free wheat free (10 ounce (3 count) ea.)]",
+            "click[item - sonoma creamery - cheese crisps, bacon cheddar, 10 oz (1 count) | savory snack | high protein | low carb | gluten free| keto-friendly]",
+            "click[item - sonoma creamery - cheese crisps, pepper jack, 10 oz (1 count) | savory snack | high protein | low carb | gluten free | keto-friendly]",
+            "click[item - smoked applewood fine sea salt - all-natural sea salt slowly smoked for perfect smoky flavor - no gluten, no msg, non-gmo, kosher - 4 oz. stackable jar]",
+            "click[item - smoked bacon chipotle & habanero - spicy hot sea salt - fine grain - 4 oz stackable jar]"
+          ],
+          "action": "search[gluten free vegetarian smoked peppered bacon 4 ounce (pack of 2)]",
+          "raw_response": "search[gluten free vegetarian smoked peppered bacon 4 ounce (pack of 2)]"
+        },
+        {
+          "step": 1,
+          "observation": "WebShop\nInstruction: \ni need gluten free vegetarian smoked peppered bacon - 4 ounce (pack of 2), and price lower than 60.00 dollars\n[button] Search [button_]\n",
+          "valid_actions": [
+            "search[gluten free vegetarian smoked peppered bacon 4 ounce (pack of 2)]",
+            "search[vegan smoked peppered bacon 4 ounce (pack of 2)]",
+            "search[vegan smoked peppered bacon - 4 ounce (pack of 2)]",
+            "search[vegan barbecue smoked peppered bacon 4 ounce (pack of 2)]",
+            "search[vegan bacon 4 ounce (pack of 2)]",
+            "search[vegan barbecue smoked peppered bacon - 4 ounce (pack of 2)]",
+            "search[vegan bacon - 4 ounce (pack of 2)]",
+            "search[vegan smoked peppered bacon 4 ounce (pack of 2), gluten free]",
+            "search[vegan smoked peppered bacon 4 ounce (pack of 2) gluten free]",
+            "search[vegan bacon 4 ounce (pack of 2) gluten free]",
+            "search[i need gluten free vegetarian smoked peppered bacon - 4 ounce (pack of 2), and price lower than 60.00 dollars]"
+          ],
+          "action": "click[back to search]",
+          "raw_response": "click[back to search]"
+        },
+        {
+          "step": 2,
+          "observation": "Instruction:\ni need gluten free vegetarian smoked peppered bacon - 4 ounce (pack of 2), and price lower than 60.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B06Y96MXJV [button_]\nSmoked Bacon Sea Salt 3-Pack: Smoked Bacon Chipotle, Smoked Bacon and Onion, Smoked Peppered Bacon - All-Natural Sea Salts Slowly Smoked Over Alderwood - No Gluten, No MSG, Non-GMO (12 total oz.)\n$29.99\n\n[button] B06Y96N1KG [button_]\nSpicy Hot Pepper Sea Salt 3-Pack: Ghost Pepper, Jalapeno, Habanero - All Natural, Delicious Blends of Peppers & Sea Salt - Gluten-Free, Kosher, No MSG, Non-GMO (12 total oz.)\n$29.99\n\n[button] B07YYTL9BV [button_]\nTBJ Gourmet Smoked Bacon Salt - Steak Seasoning & Bacon Seasoning Salt - Bacon Infused Himalayan Pink Salt & Assorted Spices - Spicy & Savory Meat Rub & BBQ Seasoning - Vegan, Gluten Free - 4.9 Ounces\n$14.95\n\n[button] B07GJTKYJQ [button_]\nLouisville Vegan Jerky - 5 Flavor Variety Pack, Non-GMO Soy Protein, Glut",
+          "valid_actions": [
+            "click[back to search]",
+            "click[next >]",
+            "click[item - smoked bacon sea salt 3-pack: smoked bacon chipotle, smoked bacon and onion, smoked peppered bacon - all-natural sea salts slowly smoked over alderwood - no gluten, no msg, non-gmo (12 total oz.)]",
+            "click[item - spicy hot pepper sea salt 3-pack: ghost pepper, jalapeno, habanero - all natural, delicious blends of peppers & sea salt - gluten-free, kosher, no msg, non-gmo (12 total oz.)]",
+            "click[item - tbj gourmet smoked bacon salt - steak seasoning & bacon seasoning salt - bacon infused himalayan pink salt & assorted spices - spicy & savory meat rub & bbq seasoning - vegan, gluten free - 4.9 ounces]",
+            "click[item - louisville vegan jerky - 5 flavor variety pack, non-gmo soy protein, gluten-free (black pepper, buffalo dill, pepperoni, maple bacon, and carolina bbq, 3 ounces)]",
+            "click[item - smoked bacon fine sea salt - all-natural bacon sea salt slowly smoked for perfect smoky flavor - no gluten, no msg, non-gmo - cooking or finishing salt - 4 oz. stackable jar]",
+            "click[item - sonoma creamery cheese crisps - bacon cheddar 3 count pack savory cheese cracker snack high protein low carb gluten free wheat free (10 ounce (3 count) ea.)]",
+            "click[item - sonoma creamery - cheese crisps, bacon cheddar, 10 oz (1 count) | savory snack | high protein | low carb | gluten free| keto-friendly]",
+            "click[item - sonoma creamery - cheese crisps, pepper jack, 10 oz (1 count) | savory snack | high protein | low carb | gluten free | keto-friendly]",
+            "click[item - smoked applewood fine sea salt - all-natural sea salt slowly smoked for perfect smoky flavor - no gluten, no msg, non-gmo, kosher - 4 oz. stackable jar]",
+            "click[item - smoked bacon chipotle & habanero - spicy hot sea salt - fine grain - 4 oz stackable jar]"
+          ],
+          "action": "search[vegan smoked peppered bacon 4 ounce (pack of 2) gluten free]",
+          "raw_response": "search[vegan smoked peppered bacon 4 ounce (pack of 2) gluten free]"
+        },
+        {
+          "step": 3,
+          "observation": "WebShop\nInstruction: \ni need gluten free vegetarian smoked peppered bacon - 4 ounce (pack of 2), and price lower than 60.00 dollars\n[button] Search [button_]\n",
+          "valid_actions": [
+            "search[gluten free vegetarian smoked peppered bacon 4 ounce (pack of 2)]",
+            "search[vegan smoked peppered bacon 4 ounce (pack of 2)]",
+            "search[vegan smoked peppered bacon - 4 ounce (pack of 2)]",
+            "search[vegan barbecue smoked peppered bacon 4 ounce (pack of 2)]",
+            "search[vegan bacon 4 ounce (pack of 2)]",
+            "search[vegan barbecue smoked peppered bacon - 4 ounce (pack of 2)]",
+            "search[vegan bacon - 4 ounce (pack of 2)]",
+            "search[vegan smoked peppered bacon 4 ounce (pack of 2), gluten free]",
+            "search[vegan smoked peppered bacon 4 ounce (pack of 2) gluten free]",
+            "search[vegan bacon 4 ounce (pack of 2) gluten free]",
+            "search[i need gluten free vegetarian smoked peppered bacon - 4 ounce (pack of 2), and price lower than 60.00 dollars]"
+          ],
+          "action": "click[back to search]",
+          "raw_response": "click[back to search]"
+        }
+      ],
+      "final_reward": 0.0,
+      "success": false,
+      "num_steps": 4,
+      "model": "gpt-4o-mini"
+    },
+    {
+      "idx": 4,
+      "goal": "Instruction: find me a high speed dual style package with  12\" power amplifier car subwoofer, and price lower than 200.00 dollars",
+      "steps": [
+        {
+          "step": 0,
+          "observation": "Instruction:\nfind me a high speed dual style package with  12\" power amplifier car subwoofer, and price lower than 200.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B01BGW8GOM [button_]\nMTX TNP212D2 12\" 1200 Watt 4 Ohm Dual Loaded Car Audio Subwoofer Package with Sub Enclosure, Planet 1500W Monoblock A/B Amplifier & 8 Gauge Wiring Kit\n$277.99\n\n[button] B08Q9SCL49 [button_]\nRockville SK510 Package 10\" 1200w Loaded K5 Car Subwoofer Enclosure+DB11 Amp\n$164.95\n\n[button] B06XW8PL68 [button_]\nPlanet Audio AC12D 12\" 1800W 4 Ohm DVC Car Subwoofer Package with Boss Audio 1500W Mono A/B Amplifier, Wiring Amp Kit and QPower Vented Sub Enclosure\n$100.0\n\n[button] B01G8XW640 [button_]\nMTX TNP212D2 12\" 1200 Watt 4 Ohm Dual Loaded Car Audio Subwoofer Package with Sub Enclosure, Sound Storm EV 1500W Monoblock A/B Amplifier & Wiring Kit\n$280.99\n\n[button] B08GGD5NVR [button_]\nPlanet Audio AC12DC 12 Inch 1800 Watt Dual 4 Ohm Voice Coil Car Audi",
+          "valid_actions": [
+            "click[back to search]",
+            "click[next >]",
+            "click[item - mtx tnp212d2 12\" 1200 watt 4 ohm dual loaded car audio subwoofer package with sub enclosure, planet 1500w monoblock a/b amplifier & 8 gauge wiring kit]",
+            "click[item - rockville sk510 package 10\" 1200w loaded k5 car subwoofer enclosure+db11 amp]",
+            "click[item - planet audio ac12d 12\" 1800w 4 ohm dvc car subwoofer package with boss audio 1500w mono a/b amplifier, wiring amp kit and qpower vented sub enclosure]",
+            "click[item - mtx tnp212d2 12\" 1200 watt 4 ohm dual loaded car audio subwoofer package with sub enclosure, sound storm ev 1500w monoblock a/b amplifier & wiring kit]",
+            "click[item - planet audio ac12dc 12 inch 1800 watt dual 4 ohm voice coil car audio subwoofer speaker (2 pack) and ac1500m 1500 watt monoblock amplifier with remote]",
+            "click[item - kicker 44cwcs124 12\" 600w 4 ohm subwoofer pair bass package with dodge quad cab 02 dual 12\" truck sub box, boss 1100w mono a/b amplifier, & wiring kit]",
+            "click[item - planet audio 2 ac10d 10\" 3000w subwoofers + vented box + 2 channel amp +amp kit]",
+            "click[item - mtx tnp212d2 12\" 1200 watt 4 ohm dual loaded car audio subwoofer package with sub enclosure, boss 1100w mono a/b amplifier, wiring kit and capacitor]",
+            "click[item - pyramid bnps122 12\" 1200w car audio speakers with neon accent lighting and 4 ohm impedance, subwoofer box, 1500w mono amplifier, & amp kit]",
+            "click[item - crunch crw12d4 12 inch 800 watt max 4 ohm dual voice coil car subwoofer speaker with 2 channel 1000 watt amp a/b class car audio stereo amplifier]"
+          ],
+          "action": "search[high speed dual style package with  12 power amplifier car subwoofer]",
+          "raw_response": "search[high speed dual style package with  12 power amplifier car subwoofer]"
+        },
+        {
+          "step": 1,
+          "observation": "Instruction:\nfind me a high speed dual style package with  12\" power amplifier car subwoofer, and price lower than 200.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nPlanet Audio AC12D 12\" 1800W 4 Ohm DVC Car Subwoofer Package with Boss Audio 1500W Mono A/B Amplifier, Wiring Amp Kit and QPower Vented Sub Enclosure\nPrice: $100.0\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+          "valid_actions": [
+            "click[back to search]",
+            "click[< prev]",
+            "click[description]",
+            "click[features]",
+            "click[reviews]",
+            "click[buy now]"
+          ],
+          "action": "click[item - planet audio ac12d 12\" 1800w 4 ohm dvc car subwoofer package with boss audio 1500w mono a/b amplifier, wiring amp kit and qpower vented sub enclosure]",
+          "raw_response": "click[item - planet audio ac12d 12\" 1800w 4 ohm dvc car subwoofer package with boss audio 1500w mono a/b amplifier, wiring amp kit and qpower vented sub enclosure]"
+        },
+        {
+          "step": 2,
+          "observation": "Thank you for shopping with us!\nYour code: \nNone\n (Paste it in your MTurk interface.)\nPurchased\nasin\nB06XW8PL68\noptions\n{}\nattrs\nNone\ncategory\nNone\nquery\nNone\nproduct category\nNone\nTarget\nasin\noptions\nattrs\nprice upper\ninstuction text\ncategory\nproduct category\nquery\nGoal \nNone\nReward\nYour score (min 0.0, max 1.0)\n0.5\nReward Details \nNone\n",
+          "valid_actions": [
+            "finish"
+          ],
+          "action": "click[buy now]",
+          "raw_response": "click[buy now]"
+        }
+      ],
+      "final_reward": 500.0,
+      "success": true,
+      "num_steps": 3,
+      "model": "gpt-4o-mini"
+    }
+  ]
+}
