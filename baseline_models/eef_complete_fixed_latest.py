@@ -47,10 +47,12 @@ def setup_environment(split='test'):
     env_args = webenv_args()[0]
     
     # Restore original argv
+    \
+    
     sys.argv = original_argv
     
     env_args.get_image = 0
-    env_args.human_goals = 0
+    env_args.human_goals = 1
     env_args.extra_search_path = ""
     
     env = WebEnv(env_args, split=split)

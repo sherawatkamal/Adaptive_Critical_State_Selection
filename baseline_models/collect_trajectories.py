@@ -203,33 +203,24 @@ class LLMAgent(WebShopAgent):
     """HuggingFace LLM-based WebShop agent."""
     
     # Default system prompt for WebShop (improved version)
-    DEFAULT_SYSTEM_PROMPT = """You are an expert online shopping assistant. You help users find and purchase products that match their requirements.
+    DEFAULT_SYSTEM_PROMPT = """You are an expert online shopping assistant helping users find and purchase products.
 
-You are interacting with a WebShop environment. At each step, you'll see:
+You are interacting with a WebShop environment. At each step you'll see:
 1. The user's shopping goal/instruction
-2. The current webpage observation
-3. Available actions you can take
+2. The current webpage observation  
+3. A list of VALID ACTIONS you can take
 
-Your task is to select the BEST action to help complete the shopping task.
+CRITICAL: You must respond with EXACTLY one of the valid actions from the list provided. Copy the action exactly as shown - do not modify it or make up actions.
 
-Rules:
-- For search pages: Use search[query] to search for products
-- For product listings: Click on a product ID (e.g., click[B07XYZ123]) to view details
-- For product pages: Click on options (size, color) or click[Buy Now] to purchase
-- Use click[Next >] to see more products if current ones don't match
-- Use click[Back to Search] to try a different search
-- Use click[< Prev] to go back to previous page
+Common action types in WebShop:
+- search[query]: Search for products
+- click[item - product name...]: Click on a product (use the EXACT text from valid actions)
+- click[Buy Now]: Purchase the current product
+- click[Back to Search]: Return to search results
+- click[Next >] or click[< Prev]: Navigate pages
+- click[size/color/option]: Select product options
 
-Respond with ONLY the action in the exact format: action[argument]
-
-Examples of valid actions:
-- search[red running shoes size 10]
-- click[B07ABC123]
-- click[Buy Now]
-- click[Next >]
-- click[large]
-- click[Back to Search]
-"""
+Respond with ONLY the action. Copy it exactly from the valid actions list."""
 
     def __init__(
         self,
@@ -399,60 +390,117 @@ Select the best action from the valid actions above. Respond with ONLY the actio
         # Remove trailing punctuation that model might add
         response = response.rstrip('.,;:!?')
         
+        # Normalize quotes (convert fancy quotes to standard quotes)
+        def normalize_quotes(s):
+            return s.replace('"', '"').replace('"', '"').replace(''', "'").replace(''', "'").replace('″', '"').replace('′', "'")
+        
+        response = normalize_quotes(response)
+        valid_acts_normalized = [normalize_quotes(a) for a in valid_acts]
+        
         # If response is empty after removing think tokens
         if not response:
             print(f"Warning: Response only contained thinking tokens, using first valid action")
             return valid_acts[0]
         
-        # Try exact match first
+        # Try exact match first (with normalized quotes)
         if response in valid_acts:
             return response
+        for i, norm_act in enumerate(valid_acts_normalized):
+            if response == norm_act:
+                return valid_acts[i]
+        
+        # Handle common navigation actions with case-insensitive matching
+        # These are frequently output in wrong case by models
+        response_lower = response.lower().strip()
+        nav_mappings = {
+            'click[< prev]': 'click[< Prev]',
+            'click[<prev]': 'click[< Prev]',
+            'click[prev]': 'click[< Prev]',
+            'click[next >]': 'click[Next >]',
+            'click[next>]': 'click[Next >]',
+            'click[next]': 'click[Next >]',
+            'click[back to search]': 'click[Back to Search]',
+            'click[buy now]': 'click[Buy Now]',
+            'click[buynow]': 'click[Buy Now]',
+        }
+        
+        if response_lower in nav_mappings:
+            canonical = nav_mappings[response_lower]
+            # Find the actual valid action (might have slight variations)
+            for act in valid_acts:
+                if act.lower() == canonical.lower():
+                    return act
+            # If exact canonical not found, return canonical if it's valid
+            if canonical in valid_acts:
+                return canonical
+            # Debug: the navigation action exists but target isn't available
+            # This means model wants to go back but there's no Prev button
+            # Just silently fall through to other matching
+        
+        # Case-insensitive exact match for all actions
+        for i, act in enumerate(valid_acts):
+            if response_lower == act.lower():
+                return act
         
         # Try to find valid action in response (response contains the action)
-        for act in valid_acts:
+        for i, act in enumerate(valid_acts):
             if act in response:
+                return act
+            if valid_acts_normalized[i] in response:
                 return act
         
         # Try to find if response is contained in a valid action
-        for act in valid_acts:
+        for i, act in enumerate(valid_acts):
             if response in act:
                 return act
+            if response in valid_acts_normalized[i]:
+                return act
+        
+        # Handle ASIN/product ID clicks - model outputs click[B07XYZ] but valid action is click[item - ...]
+        if response.startswith('click[B0') or response.startswith('click[b0'):
+            asin_match = re.search(r'click\[([Bb]0[A-Za-z0-9]+)\]', response)
+            if asin_match:
+                asin = asin_match.group(1).upper()
+                for act in valid_acts:
+                    if asin.lower() in act.lower():
+                        return act
+                item_acts = [a for a in valid_acts if a.startswith('click[item')]
+                if item_acts:
+                    return item_acts[0]
         
         # For click actions, try flexible matching
         if response.startswith('click['):
-            # Extract the click target from response
-            click_content = response[6:].rstrip(']')  # Remove 'click[' and trailing ']'
+            click_content = response[6:].rstrip(']')
             
-            for act in valid_acts:
+            for i, act in enumerate(valid_acts):
                 if act.startswith('click['):
                     act_content = act[6:].rstrip(']')
+                    act_content_norm = valid_acts_normalized[i][6:].rstrip(']') if valid_acts_normalized[i].startswith('click[') else act_content
                     
-                    # Exact content match
-                    if click_content == act_content:
+                    # Exact content match (including normalized)
+                    if click_content == act_content or click_content == act_content_norm:
                         return act
                     
                     # Case-insensitive content match
-                    if click_content.lower() == act_content.lower():
+                    if click_content.lower() == act_content.lower() or click_content.lower() == act_content_norm.lower():
                         return act
                     
-                    # Partial content match (for truncated outputs)
-                    if len(click_content) > 10:
-                        if click_content.lower() in act_content.lower():
+                    # Partial content match
+                    if len(click_content) > 5:
+                        if click_content.lower() in act_content.lower() or click_content.lower() in act_content_norm.lower():
                             return act
-                        if act_content.lower() in click_content.lower():
+                        if act_content.lower() in click_content.lower() or act_content_norm.lower() in click_content.lower():
                             return act
                         # First N chars match
-                        if click_content[:20].lower() == act_content[:20].lower():
+                        min_len = min(len(click_content), len(act_content), 15)
+                        if click_content[:min_len].lower() == act_content[:min_len].lower():
                             return act
         
-        # Try case-insensitive full match
-        response_lower = response.lower()
-        for act in valid_acts:
-            if act.lower() == response_lower:
+        # Try case-insensitive full match (already done above, but keep for substring matching)
+        for i, act in enumerate(valid_acts):
+            if act.lower() in response_lower or valid_acts_normalized[i].lower() in response_lower:
                 return act
-            if act.lower() in response_lower:
-                return act
-            if response_lower in act.lower():
+            if response_lower in act.lower() or response_lower in valid_acts_normalized[i].lower():
                 return act
         
         # Try to extract search query
@@ -467,12 +515,11 @@ Select the best action from the valid actions above. Respond with ONLY the actio
         best_match = None
         best_score = 0
         for act in valid_acts:
-            # Simple character overlap score
             response_set = set(response.lower())
             act_set = set(act.lower())
             if len(response_set) > 0:
                 score = len(response_set & act_set) / len(response_set | act_set)
-                if score > best_score and score > 0.5:  # At least 50% overlap
+                if score > best_score and score > 0.5:
                     best_score = score
                     best_match = act
         
@@ -480,7 +527,12 @@ Select the best action from the valid actions above. Respond with ONLY the actio
             return best_match
         
         # Fallback: return first valid action
-        print(f"Warning: Could not parse action from response: {response[:100]}...")
+        # Check if this is a navigation action that's just not available
+        if response_lower in nav_mappings:
+            # Model wanted navigation but it's not available - this is expected behavior
+            pass  # Don't print warning for unavailable navigation
+        else:
+            print(f"Warning: Could not parse action from response: {response[:50]}...")
         return valid_acts[0]
     
     @torch.no_grad()
@@ -578,33 +630,24 @@ Select the best action from the valid actions above. Respond with ONLY the actio
 class OpenAIAgent(WebShopAgent):
     """OpenAI API-based WebShop agent."""
     
-    DEFAULT_SYSTEM_PROMPT = """You are an expert online shopping assistant. You help users find and purchase products that match their requirements.
+    DEFAULT_SYSTEM_PROMPT = """You are an expert online shopping assistant helping users find and purchase products.
 
-You are interacting with a WebShop environment. At each step, you'll see:
+You are interacting with a WebShop environment. At each step you'll see:
 1. The user's shopping goal/instruction
-2. The current webpage observation
-3. Available actions you can take
+2. The current webpage observation  
+3. A list of VALID ACTIONS you can take
 
-Your task is to select the BEST action to help complete the shopping task.
+CRITICAL: You must respond with EXACTLY one of the valid actions from the list provided. Copy the action exactly as shown - do not modify it or make up actions.
 
-Rules:
-- For search pages: Use search[query] to search for products
-- For product listings: Click on a product ID (e.g., click[B07XYZ123]) to view details
-- For product pages: Click on options (size, color) or click[Buy Now] to purchase
-- Use click[Next >] to see more products if current ones don't match
-- Use click[Back to Search] to try a different search
-- Use click[< Prev] to go back to previous page
+Common action types in WebShop:
+- search[query]: Search for products
+- click[item - product name...]: Click on a product (use the EXACT text from valid actions)
+- click[Buy Now]: Purchase the current product
+- click[Back to Search]: Return to search results
+- click[Next >] or click[< Prev]: Navigate pages
+- click[size/color/option]: Select product options
 
-Respond with ONLY the action in the exact format: action[argument]
-
-Examples of valid actions:
-- search[red running shoes size 10]
-- click[B07ABC123]
-- click[Buy Now]
-- click[Next >]
-- click[large]
-- click[Back to Search]
-"""
+Respond with ONLY the action. Copy it exactly from the valid actions list."""
     
     def __init__(
         self,
