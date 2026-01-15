@@ -82,9 +82,13 @@ tokenizer.add_tokens(['[button]', '[button_]', '[clicked button]',
                      '[clicked button_]'], special_tokens=True)
 print(len(tokenizer))
 
-PATH = "./data/il_trajs_finalized_images.jsonl"
+# PATH = "./training_experiment/training_data/train1_all_recoverable_trajectories.jsonl"
+PATH = "./training_experiment/training_data/train2_middle_u_recoverable_trajectories.jsonl"
+# PATH = "./training_experiment/training_data/train3_all_states_trajectories.jsonl"
+# PATH = "./training_experiment/training_data/train4_high_low_u_recoverable_trajectories.jsonl"
 MEM_PATH = "./data/il_trajs_mem_finalized_images.jsonl"
-HUMAN_GOAL_PATH = './data/human_goals.json'
+# HUMAN_GOAL_PATH = './data/human_goals.json'
+HUMAN_GOAL_PATH = './data/goals_from_trajectories.json'
 
 
 def process(s):

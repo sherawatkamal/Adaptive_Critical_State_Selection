@@ -1,41 +1,209 @@
 """
-GPT-based Trajectory Collection for WebShop
-============================================
-Uses OpenAI API (GPT-4.1-mini, GPT-5.1-mini, etc.) to generate expert trajectories.
+Trajectory Collection Script with Multi-Model Support
+
+This script collects trajectories from WebShop tasks using various model backends:
+- BERT+BART (original WebShop model)
+- LLaMA/Qwen/other HuggingFace LLMs
+- OpenAI API models (GPT-4, etc.)
 
 Usage:
-    # Test with 30 tasks
-    python collect_trajectories_gpt.py --model gpt-4.1-mini --num_tasks 30 --output ./test_4.1.json
+    # Using BERT+BART (original)
+    python collect_trajectories_multimodel.py --model_type bert_bart --num_failures 500
     
-    # Full collection with parallel workers
-    python collect_trajectories_gpt.py --model gpt-4.1-mini --num_tasks 11000 --workers 32 --output ./trajectories_11k.json
+    # Using LLaMA
+    python collect_trajectories_multimodel.py --model_type llama --llm_path meta-llama/Llama-3.1-8B-Instruct --num_failures 500
     
-    # Compare models
-    python collect_trajectories_gpt.py --model gpt-4.1-mini --num_tasks 30 --output ./test_4.1.json
-    python collect_trajectories_gpt.py --model gpt-5.1-mini --num_tasks 30 --output ./test_5.1.json
+    # Using Qwen
+    python collect_trajectories_multimodel.py --model_type llm --llm_path Qwen/Qwen3-8B --num_failures 500
+    
+    # Using OpenAI
+    python collect_trajectories_multimodel.py --model_type openai --openai_model gpt-4o-mini --num_failures 500
 """
 
 import os
 import sys
 import json
 import argparse
-import asyncio
-import aiohttp
-from openai import OpenAI, AsyncOpenAI
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import threading
+import random
 from datetime import datetime
-from tqdm import tqdm
-import time
-import re
+from abc import ABC, abstractmethod
+from typing import List, Dict, Tuple, Optional, Any
 
-# Import WebShop environment
-from train_rl import parse_args as webenv_args
-from env import WebEnv
+import torch
+import torch.nn.functional as F
 
 
-# System prompt for GPT
-SYSTEM_PROMPT = """You are an expert online shopping assistant. You help users find and purchase products that match their requirements.
+# ============================================================================
+# Abstract Model Interface
+# ============================================================================
+
+class WebShopAgent(ABC):
+    """Abstract base class for WebShop agents."""
+    
+    @abstractmethod
+    def predict(self, obs: str, info: Dict, verbose: bool = False) -> str:
+        """
+        Predict the next action given observation and info.
+        
+        Args:
+            obs: Current observation string
+            info: Info dict containing 'valid' actions, 'goal', etc.
+            verbose: Whether to print debug info
+            
+        Returns:
+            Selected action string
+        """
+        pass
+    
+    @abstractmethod
+    def get_action_distribution(self, obs: str, info: Dict) -> Dict[str, float]:
+        """
+        Get probability distribution over valid actions.
+        
+        Args:
+            obs: Current observation string
+            info: Info dict containing 'valid' actions
+            
+        Returns:
+            Dict mapping action -> probability
+        """
+        pass
+
+
+# ============================================================================
+# BERT+BART Agent (Original WebShop Model)
+# ============================================================================
+
+class BertBartAgent(WebShopAgent):
+    """Original BERT+BART WebShop agent."""
+    
+    def __init__(
+        self,
+        model_path: str = "./ckpts/web_click/epoch_9/model.pth",
+        bart_path: str = "./ckpts/web_search/checkpoint-800",
+        use_bart: bool = True,
+        use_image: bool = True,
+        use_softmax: bool = True,
+    ):
+        # Lazy imports to avoid errors if not using this agent
+        from transformers import BartForConditionalGeneration, BartTokenizer
+        from train_choice_il import (
+            BertConfigForWebshop, BertModelForWebshop, 
+            tokenizer, data_collator, process, process_goal
+        )
+        
+        self.tokenizer = tokenizer
+        self.data_collator = data_collator
+        self.process = process
+        self.process_goal = process_goal
+        self.use_softmax = use_softmax
+        
+        # Load BART for search queries
+        self.bart_tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
+        if use_bart:
+            self.bart_model = BartForConditionalGeneration.from_pretrained(bart_path)
+            print(f'BART model loaded from {bart_path}')
+        else:
+            self.bart_model = None
+        
+        # Load BERT model for action selection
+        config = BertConfigForWebshop(image=use_image)
+        self.model = BertModelForWebshop(config)
+        self.model.cuda()
+        self.model.load_state_dict(torch.load(model_path), strict=False)
+        print(f'BERT IL model loaded from {model_path}')
+    
+    def _bart_predict(self, input_text: str, **kwargs) -> List[str]:
+        input_ids = self.bart_tokenizer(input_text)['input_ids']
+        input_ids = torch.tensor(input_ids).unsqueeze(0)
+        output = self.bart_model.generate(input_ids, max_length=512, **kwargs)
+        return self.bart_tokenizer.batch_decode(output.tolist(), skip_special_tokens=True)
+    
+    def predict(self, obs: str, info: Dict, verbose: bool = False) -> str:
+        valid_acts = info['valid']
+        
+        # Handle search action
+        if valid_acts[0].startswith('search['):
+            if self.bart_model is None:
+                return valid_acts[-1]
+            else:
+                goal = self.process_goal(obs)
+                query = self._bart_predict(goal, num_return_sequences=5, num_beams=5)
+                query = query[0]
+                return f'search[{query}]'
+        
+        # Score actions with BERT
+        state_encodings = self.tokenizer(
+            self.process(obs), max_length=512, truncation=True, padding='max_length'
+        )
+        action_encodings = self.tokenizer(
+            list(map(self.process, valid_acts)), 
+            max_length=512, truncation=True, padding='max_length'
+        )
+        
+        batch = {
+            'state_input_ids': state_encodings['input_ids'],
+            'state_attention_mask': state_encodings['attention_mask'],
+            'action_input_ids': action_encodings['input_ids'],
+            'action_attention_mask': action_encodings['attention_mask'],
+            'sizes': len(valid_acts),
+            'images': info['image_feat'].tolist(),
+            'labels': 0
+        }
+        batch = self.data_collator([batch])
+        batch = {k: v.cuda() for k, v in batch.items()}
+        
+        outputs = self.model(**batch)
+        
+        if self.use_softmax:
+            idx = torch.multinomial(F.softmax(outputs.logits[0], dim=0), 1)[0].item()
+        else:
+            idx = outputs.logits[0].argmax(0).item()
+        
+        return valid_acts[idx]
+    
+    def get_action_distribution(self, obs: str, info: Dict) -> Dict[str, float]:
+        valid_acts = info['valid']
+        
+        if valid_acts[0].startswith('search['):
+            # For search, return uniform over valid actions
+            return {a: 1.0 / len(valid_acts) for a in valid_acts}
+        
+        state_encodings = self.tokenizer(
+            self.process(obs), max_length=512, truncation=True, padding='max_length'
+        )
+        action_encodings = self.tokenizer(
+            list(map(self.process, valid_acts)), 
+            max_length=512, truncation=True, padding='max_length'
+        )
+        
+        batch = {
+            'state_input_ids': state_encodings['input_ids'],
+            'state_attention_mask': state_encodings['attention_mask'],
+            'action_input_ids': action_encodings['input_ids'],
+            'action_attention_mask': action_encodings['attention_mask'],
+            'sizes': len(valid_acts),
+            'images': info['image_feat'].tolist(),
+            'labels': 0
+        }
+        batch = self.data_collator([batch])
+        batch = {k: v.cuda() for k, v in batch.items()}
+        
+        outputs = self.model(**batch)
+        probs = F.softmax(outputs.logits[0], dim=0).cpu().tolist()
+        
+        return {a: p for a, p in zip(valid_acts, probs)}
+
+
+# ============================================================================
+# LLM Agent (LLaMA, Qwen, Mistral, etc.)
+# ============================================================================
+
+class LLMAgent(WebShopAgent):
+    """HuggingFace LLM-based WebShop agent."""
+    
+    # Default system prompt for WebShop (improved version)
+    DEFAULT_SYSTEM_PROMPT = """You are an expert online shopping assistant. You help users find and purchase products that match their requirements.
 
 You are interacting with a WebShop environment. At each step, you'll see:
 1. The user's shopping goal/instruction
@@ -48,390 +216,1073 @@ Rules:
 - For search pages: Use search[query] to search for products
 - For product listings: Click on a product ID (e.g., click[B07XYZ123]) to view details
 - For product pages: Click on options (size, color) or click[Buy Now] to purchase
-- Use click[Next] to see more products if current ones don't match
+- Use click[Next >] to see more products if current ones don't match
 - Use click[Back to Search] to try a different search
 - Use click[< Prev] to go back to previous page
 
-Think step by step about which action best matches the user's requirements, then respond with ONLY the action in the exact format: action[argument]
+Respond with ONLY the action in the exact format: action[argument]
 
 Examples of valid actions:
 - search[red running shoes size 10]
 - click[B07ABC123]
 - click[Buy Now]
-- click[Next]
+- click[Next >]
 - click[large]
 - click[Back to Search]
 """
 
-
-def parse_action(response_text, valid_actions):
-    """Extract action from GPT response."""
-    text = response_text.strip()
-    
-    # Try to find action pattern
-    patterns = [
-        r'(search\[.+?\])',
-        r'(click\[.+?\])',
-    ]
-    
-    for pattern in patterns:
-        match = re.search(pattern, text, re.IGNORECASE)
-        if match:
-            action = match.group(1)
-            # Normalize click to lowercase
-            if action.lower().startswith('click'):
-                action = 'click' + action[5:]
-            return action
-    
-    # If no pattern found, try to match with valid actions
-    text_lower = text.lower()
-    for valid in valid_actions:
-        if valid.lower() in text_lower:
-            return valid
-    
-    # Default: return first valid action or the raw text
-    return valid_actions[0] if valid_actions else text
-
-
-def format_observation(obs, goal, valid_actions):
-    """Format observation for GPT prompt."""
-    prompt = f"""SHOPPING GOAL: {goal}
-
-CURRENT PAGE:
-{obs[:2000]}
-
-AVAILABLE ACTIONS:
-{chr(10).join(f'- {a}' for a in valid_actions[:20])}
-
-Select the best action to complete the shopping goal. Respond with ONLY the action."""
-    
-    return prompt
-
-
-class GPTTrajectoryCollector:
-    def __init__(self, model="gpt-4.1-mini", max_retries=3):
-        self.model = model
-        self.max_retries = max_retries
-        self.client = OpenAI()
-        self.total_input_tokens = 0
-        self.total_output_tokens = 0
-        self.lock = threading.Lock()
+    def __init__(
+        self,
+        model_path: str,
+        device: str = "cuda",
+        torch_dtype: str = "auto",
+        use_flash_attention: bool = True,
+        temperature: float = 0.0,
+        max_new_tokens: int = 128,
+        system_prompt: Optional[str] = None,
+        prompt_style: str = "eef",  # "eef" or "verbose"
+    ):
+        from transformers import AutoModelForCausalLM, AutoTokenizer
         
-    def get_action(self, obs, goal, valid_actions):
-        """Get action from GPT model."""
-        prompt = format_observation(obs, goal, valid_actions)
+        self.device = device
+        self.temperature = temperature
+        self.max_new_tokens = max_new_tokens
+        self.system_prompt = system_prompt or self.DEFAULT_SYSTEM_PROMPT
+        self.prompt_style = prompt_style
+        self.action_history: List[str] = []  # Track action history for EEF style
         
-        for attempt in range(self.max_retries):
-            try:
-                response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=100,
-                    temperature=0.1,
-                )
-                
-                # Track tokens
-                with self.lock:
-                    self.total_input_tokens += response.usage.prompt_tokens
-                    self.total_output_tokens += response.usage.completion_tokens
-                
-                action_text = response.choices[0].message.content
-                action = parse_action(action_text, valid_actions)
-                return action, action_text
-                
-            except Exception as e:
-                if attempt < self.max_retries - 1:
-                    time.sleep(2 ** attempt)  # Exponential backoff
-                else:
-                    print(f"API error after {self.max_retries} attempts: {e}")
-                    return valid_actions[0], f"ERROR: {e}"
+        print(f"Loading LLM from {model_path}...")
         
-        return valid_actions[0], "ERROR: max retries"
-
-    def collect_episode(self, env, idx, max_steps=15, verbose=False):
-        """Collect one trajectory using GPT."""
-        obs, info = env.reset(idx)
-        goal = info['goal']
+        # Determine torch dtype
+        if torch_dtype == "auto":
+            dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+        elif torch_dtype == "float16":
+            dtype = torch.float16
+        elif torch_dtype == "bfloat16":
+            dtype = torch.bfloat16
+        else:
+            dtype = torch.float32
         
-        if verbose:
-            print(f"\n=== Task {idx} ===")
-            print(f"Goal: {goal}")
+        # Load tokenizer
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_path,
+            trust_remote_code=True,
+            padding_side="left"
+        )
+        if self.tokenizer.pad_token is None:
+            self.tokenizer.pad_token = self.tokenizer.eos_token
         
-        trajectory = {
-            'idx': idx,
-            'goal': goal,
-            'steps': [],
-            'final_reward': 0,
-            'success': False,
-            'num_steps': 0,
-            'model': self.model
+        # Load model
+        model_kwargs = {
+            "torch_dtype": dtype,
+            "device_map": "auto" if device == "cuda" else None,
+            "trust_remote_code": True,
         }
         
-        for step in range(max_steps):
-            valid_actions = info['valid']
+        # Try flash attention if requested and available
+        if use_flash_attention and torch.cuda.is_available():
+            try:
+                # Check if flash_attn is installed before requesting it
+                import importlib.util
+                if importlib.util.find_spec("flash_attn") is not None:
+                    model_kwargs["attn_implementation"] = "flash_attention_2"
+                    print("Using Flash Attention 2")
+                else:
+                    print("Flash Attention not installed, using default attention")
+            except Exception as e:
+                print(f"Flash Attention check failed ({e}), using default attention")
+        
+        try:
+            self.model = AutoModelForCausalLM.from_pretrained(model_path, **model_kwargs)
+        except ImportError as e:
+            # If flash attention was requested but failed, retry without it
+            if "flash_attn" in str(e) and "attn_implementation" in model_kwargs:
+                print(f"Flash Attention failed to load, retrying with default attention...")
+                del model_kwargs["attn_implementation"]
+                self.model = AutoModelForCausalLM.from_pretrained(model_path, **model_kwargs)
+            else:
+                raise
+        
+        if device != "cuda" or "device_map" not in model_kwargs:
+            self.model = self.model.to(device)
+        
+        self.model.eval()
+        print(f"LLM loaded successfully on {device}")
+    
+    def reset_history(self):
+        """Reset action history for new episode."""
+        self.action_history = []
+    
+    def _format_prompt(self, obs: str, info: Dict) -> str:
+        """Format the prompt for the LLM."""
+        goal = info.get('goal', '')
+        valid_acts = info['valid']
+        
+        if self.prompt_style == "eef":
+            # EEF paper style - simpler and more direct
+            action_history_str = "\n".join(self.action_history[-5:]) if self.action_history else "None"
             
-            # Get action from GPT
-            action, raw_response = self.get_action(obs, goal, valid_actions)
+            user_message = f"""Task: {goal}
+
+Current observation:
+{obs}
+
+Previous actions:
+{action_history_str}
+
+Available actions:
+{chr(10).join(valid_acts)}
+
+Choose the next action:"""
+        else:
+            # Verbose style (original)
+            user_message = f"""GOAL: {goal}
+
+CURRENT OBSERVATION:
+{obs}
+
+VALID ACTIONS:
+{chr(10).join(f'- {act}' for act in valid_acts)}
+
+Select the best action from the valid actions above. Respond with ONLY the action, nothing else."""
+        
+        # Format as chat messages
+        messages = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": user_message}
+        ]
+        
+        # Apply chat template
+        if hasattr(self.tokenizer, 'apply_chat_template'):
+            # Check if this is a Qwen3 model - disable thinking mode
+            is_qwen3 = "qwen3" in self.tokenizer.name_or_path.lower() if hasattr(self.tokenizer, 'name_or_path') else False
             
-            # Store step
+            try:
+                if is_qwen3:
+                    # Qwen3 specific: disable thinking with enable_thinking=False
+                    prompt = self.tokenizer.apply_chat_template(
+                        messages, 
+                        tokenize=False, 
+                        add_generation_prompt=True,
+                        enable_thinking=False  # Disable thinking for Qwen3
+                    )
+                else:
+                    prompt = self.tokenizer.apply_chat_template(
+                        messages, 
+                        tokenize=False, 
+                        add_generation_prompt=True
+                    )
+            except TypeError:
+                # If enable_thinking parameter is not supported, fall back
+                prompt = self.tokenizer.apply_chat_template(
+                    messages, 
+                    tokenize=False, 
+                    add_generation_prompt=True
+                )
+        else:
+            # Fallback for tokenizers without chat template
+            prompt = f"System: {self.system_prompt}\n\nUser: {user_message}\n\nAssistant:"
+        
+        return prompt
+    
+    def _parse_action(self, response: str, valid_acts: List[str]) -> str:
+        """Parse LLM response to extract valid action."""
+        import re
+        
+        response = response.strip()
+        
+        # Handle Qwen3 thinking tokens - remove <think>...</think> blocks
+        response = re.sub(r'<think>.*?</think>', '', response, flags=re.DOTALL)
+        response = re.sub(r'^<think>.*', '', response, flags=re.DOTALL)
+        response = response.strip()
+        
+        # Remove trailing punctuation that model might add
+        response = response.rstrip('.,;:!?')
+        
+        # If response is empty after removing think tokens
+        if not response:
+            print(f"Warning: Response only contained thinking tokens, using first valid action")
+            return valid_acts[0]
+        
+        # Try exact match first
+        if response in valid_acts:
+            return response
+        
+        # Try to find valid action in response (response contains the action)
+        for act in valid_acts:
+            if act in response:
+                return act
+        
+        # Try to find if response is contained in a valid action
+        for act in valid_acts:
+            if response in act:
+                return act
+        
+        # For click actions, try flexible matching
+        if response.startswith('click['):
+            # Extract the click target from response
+            click_content = response[6:].rstrip(']')  # Remove 'click[' and trailing ']'
+            
+            for act in valid_acts:
+                if act.startswith('click['):
+                    act_content = act[6:].rstrip(']')
+                    
+                    # Exact content match
+                    if click_content == act_content:
+                        return act
+                    
+                    # Case-insensitive content match
+                    if click_content.lower() == act_content.lower():
+                        return act
+                    
+                    # Partial content match (for truncated outputs)
+                    if len(click_content) > 10:
+                        if click_content.lower() in act_content.lower():
+                            return act
+                        if act_content.lower() in click_content.lower():
+                            return act
+                        # First N chars match
+                        if click_content[:20].lower() == act_content[:20].lower():
+                            return act
+        
+        # Try case-insensitive full match
+        response_lower = response.lower()
+        for act in valid_acts:
+            if act.lower() == response_lower:
+                return act
+            if act.lower() in response_lower:
+                return act
+            if response_lower in act.lower():
+                return act
+        
+        # Try to extract search query
+        if any(a.startswith('search[') for a in valid_acts):
+            search_match = re.search(r'search\[([^\]]+)\]', response, re.IGNORECASE)
+            if search_match:
+                return f"search[{search_match.group(1)}]"
+            if len(response) < 100 and not response.startswith('click'):
+                return f"search[{response}]"
+        
+        # Last resort: find best fuzzy match
+        best_match = None
+        best_score = 0
+        for act in valid_acts:
+            # Simple character overlap score
+            response_set = set(response.lower())
+            act_set = set(act.lower())
+            if len(response_set) > 0:
+                score = len(response_set & act_set) / len(response_set | act_set)
+                if score > best_score and score > 0.5:  # At least 50% overlap
+                    best_score = score
+                    best_match = act
+        
+        if best_match:
+            return best_match
+        
+        # Fallback: return first valid action
+        print(f"Warning: Could not parse action from response: {response[:100]}...")
+        return valid_acts[0]
+    
+    @torch.no_grad()
+    def predict(self, obs: str, info: Dict, verbose: bool = False) -> str:
+        prompt = self._format_prompt(obs, info)
+        
+        if verbose:
+            print("\n" + "="*60)
+            print("PROMPT:")
+            print("="*60)
+            print(prompt)
+            print("="*60)
+        
+        inputs = self.tokenizer(prompt, return_tensors="pt").to(self.model.device)
+        
+        # Build generation kwargs based on temperature
+        generation_kwargs = {
+            "max_new_tokens": self.max_new_tokens,
+            "pad_token_id": self.tokenizer.pad_token_id,
+        }
+        
+        # Only add sampling parameters if temperature > 0
+        if self.temperature > 0:
+            generation_kwargs["do_sample"] = True
+            generation_kwargs["temperature"] = self.temperature
+        else:
+            # Greedy decoding - don't pass temperature/top_p/top_k
+            generation_kwargs["do_sample"] = False
+        
+        outputs = self.model.generate(**inputs, **generation_kwargs)
+        
+        # Decode only the new tokens
+        response = self.tokenizer.decode(
+            outputs[0][inputs['input_ids'].shape[1]:], 
+            skip_special_tokens=True
+        )
+        
+        if verbose:
+            print("\nRAW RESPONSE:")
+            print("-"*40)
+            print(repr(response))
+            print("-"*40)
+        
+        action = self._parse_action(response, info['valid'])
+        
+        if verbose:
+            print(f"\nPARSED ACTION: {action}")
+            print(f"VALID ACTIONS: {info['valid'][:5]}..." if len(info['valid']) > 5 else f"VALID ACTIONS: {info['valid']}")
+            print("="*60 + "\n")
+        
+        # Track action history for EEF style prompts
+        self.action_history.append(action)
+        
+        return action
+    
+    @torch.no_grad()
+    def get_action_distribution(self, obs: str, info: Dict) -> Dict[str, float]:
+        """
+        Get probability distribution over valid actions by scoring each action.
+        """
+        prompt = self._format_prompt(obs, info)
+        valid_acts = info['valid']
+        
+        # Score each valid action
+        scores = []
+        for act in valid_acts:
+            full_text = prompt + act
+            inputs = self.tokenizer(full_text, return_tensors="pt").to(self.model.device)
+            
+            outputs = self.model(**inputs)
+            logits = outputs.logits
+            
+            # Get log probability of the action tokens
+            prompt_inputs = self.tokenizer(prompt, return_tensors="pt")
+            prompt_len = prompt_inputs['input_ids'].shape[1]
+            
+            action_logits = logits[0, prompt_len-1:-1, :]
+            action_tokens = inputs['input_ids'][0, prompt_len:]
+            
+            log_probs = F.log_softmax(action_logits, dim=-1)
+            action_log_prob = log_probs.gather(1, action_tokens.unsqueeze(1)).sum()
+            scores.append(action_log_prob.item())
+        
+        # Convert to probabilities
+        scores_tensor = torch.tensor(scores)
+        probs = F.softmax(scores_tensor, dim=0).tolist()
+        
+        return {a: p for a, p in zip(valid_acts, probs)}
+
+
+# ============================================================================
+# OpenAI API Agent
+# ============================================================================
+
+class OpenAIAgent(WebShopAgent):
+    """OpenAI API-based WebShop agent."""
+    
+    DEFAULT_SYSTEM_PROMPT = """You are an expert online shopping assistant. You help users find and purchase products that match their requirements.
+
+You are interacting with a WebShop environment. At each step, you'll see:
+1. The user's shopping goal/instruction
+2. The current webpage observation
+3. Available actions you can take
+
+Your task is to select the BEST action to help complete the shopping task.
+
+Rules:
+- For search pages: Use search[query] to search for products
+- For product listings: Click on a product ID (e.g., click[B07XYZ123]) to view details
+- For product pages: Click on options (size, color) or click[Buy Now] to purchase
+- Use click[Next >] to see more products if current ones don't match
+- Use click[Back to Search] to try a different search
+- Use click[< Prev] to go back to previous page
+
+Respond with ONLY the action in the exact format: action[argument]
+
+Examples of valid actions:
+- search[red running shoes size 10]
+- click[B07ABC123]
+- click[Buy Now]
+- click[Next >]
+- click[large]
+- click[Back to Search]
+"""
+    
+    def __init__(
+        self,
+        model: str = "gpt-4o-mini",
+        temperature: float = 0.0,
+        api_key: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+    ):
+        try:
+            from openai import OpenAI
+        except ImportError:
+            raise ImportError("Please install openai: pip install openai")
+        
+        self.model = model
+        self.temperature = temperature
+        self.system_prompt = system_prompt or self.DEFAULT_SYSTEM_PROMPT
+        
+        api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OpenAI API key not found. Set OPENAI_API_KEY env var or pass api_key argument.")
+        
+        self.client = OpenAI(api_key=api_key)
+        print(f"OpenAI agent initialized with model: {model}")
+    
+    def _format_user_message(self, obs: str, info: Dict) -> str:
+        goal = info.get('goal', '')
+        valid_acts = info['valid']
+        
+        return f"""GOAL: {goal}
+
+CURRENT OBSERVATION:
+{obs}
+
+VALID ACTIONS:
+{chr(10).join(f'- {act}' for act in valid_acts)}
+
+Select the best action from the valid actions above. Respond with ONLY the action, nothing else."""
+    
+    def _parse_action(self, response: str, valid_acts: List[str]) -> str:
+        """Parse API response to extract valid action."""
+        response = response.strip()
+        
+        # Try exact match first
+        if response in valid_acts:
+            return response
+        
+        # Try to find valid action in response
+        for act in valid_acts:
+            if act in response:
+                return act
+        
+        # Try case-insensitive match
+        response_lower = response.lower()
+        for act in valid_acts:
+            if act.lower() in response_lower:
+                return act
+        
+        # Handle search queries
+        if any(a.startswith('search[') for a in valid_acts):
+            import re
+            search_match = re.search(r'search\[([^\]]+)\]', response, re.IGNORECASE)
+            if search_match:
+                return f"search[{search_match.group(1)}]"
+            if len(response) < 100 and not response.startswith('click'):
+                return f"search[{response}]"
+        
+        print(f"Warning: Could not parse action from response: {response[:100]}...")
+        return valid_acts[0]
+    
+    def predict(self, obs: str, info: Dict, verbose: bool = False) -> str:
+        user_message = self._format_user_message(obs, info)
+        
+        if verbose:
+            print(f"User message:\n{user_message}\n")
+        
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": self.system_prompt},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=self.temperature,
+            max_tokens=256,
+        )
+        
+        response_text = response.choices[0].message.content
+        
+        if verbose:
+            print(f"Response: {response_text}\n")
+        
+        return self._parse_action(response_text, info['valid'])
+    
+    def get_action_distribution(self, obs: str, info: Dict) -> Dict[str, float]:
+        """
+        Get probability distribution over valid actions using logprobs.
+        Note: This is an approximation since we can't get exact action probabilities from API.
+        """
+        # For now, return uniform distribution (API doesn't expose logprobs for completion)
+        valid_acts = info['valid']
+        return {a: 1.0 / len(valid_acts) for a in valid_acts}
+
+
+# ============================================================================
+# Rule-Based Agent (Baseline)
+# ============================================================================
+
+class RuleAgent(WebShopAgent):
+    """Simple rule-based baseline agent."""
+    
+    def __init__(self):
+        print("Rule-based agent initialized")
+    
+    def predict(self, obs: str, info: Dict, verbose: bool = False) -> str:
+        valid_acts = info['valid']
+        
+        # Search: use first valid search action
+        if valid_acts[0].startswith('search['):
+            return valid_acts[-1]  # Usually the last one has the query
+        
+        # Click on first item if available
+        item_acts = [act for act in valid_acts if act.startswith('click[item - ')]
+        if item_acts:
+            return item_acts[0]
+        
+        # Buy if available
+        if 'click[buy now]' in valid_acts:
+            return 'click[buy now]'
+        
+        # Otherwise, return first action
+        return valid_acts[0]
+    
+    def get_action_distribution(self, obs: str, info: Dict) -> Dict[str, float]:
+        # Rule agent is deterministic
+        action = self.predict(obs, info)
+        return {a: 1.0 if a == action else 0.0 for a in info['valid']}
+
+
+# ============================================================================
+# Agent Factory
+# ============================================================================
+
+def create_agent(args) -> WebShopAgent:
+    """Create agent based on command line arguments."""
+    
+    model_type = args.model_type.lower()
+    
+    if model_type == "bert_bart":
+        return BertBartAgent(
+            model_path=args.model_path,
+            bart_path=args.bart_path,
+            use_bart=args.use_bart,
+            use_image=args.use_image,
+            use_softmax=args.softmax,
+        )
+    
+    elif model_type in ["llm", "llama", "qwen", "mistral"]:
+        return LLMAgent(
+            model_path=args.llm_path,
+            device=args.device,
+            torch_dtype=args.torch_dtype,
+            use_flash_attention=args.use_flash_attention,
+            temperature=args.temperature,
+            max_new_tokens=args.max_new_tokens,
+            system_prompt=args.system_prompt,
+            prompt_style=args.prompt_style,
+        )
+    
+    elif model_type == "openai":
+        return OpenAIAgent(
+            model=args.openai_model,
+            temperature=args.temperature,
+            api_key=args.openai_api_key,
+            system_prompt=args.system_prompt,
+        )
+    
+    elif model_type == "rule":
+        return RuleAgent()
+    
+    else:
+        raise ValueError(f"Unknown model type: {model_type}")
+
+
+# ============================================================================
+# Episode Runner
+# ============================================================================
+
+def run_episode(
+    agent: WebShopAgent,
+    env,
+    task_idx: Optional[int] = None,
+    verbose: bool = False,
+    save_trajectory: bool = False,
+    save_action_probs: bool = False,
+    max_steps: int = 100,
+) -> Tuple[float, Optional[Dict]]:
+    """
+    Run a single episode.
+    
+    Args:
+        agent: WebShop agent
+        env: WebShop environment
+        task_idx: Task index (None for random)
+        verbose: Print actions and observations
+        save_trajectory: Save full trajectory
+        save_action_probs: Save action probability distributions
+        max_steps: Maximum steps per episode
+        
+    Returns:
+        reward: Final reward (0-100 scale)
+        trajectory: Trajectory dict if save_trajectory=True, else None
+    """
+    # Reset agent's action history if it has one (for EEF style prompts)
+    if hasattr(agent, 'reset_history'):
+        agent.reset_history()
+    
+    obs, info = env.reset(task_idx)
+    
+    trajectory = {
+        'task_id': task_idx,
+        'goal': info.get('goal', ''),
+        'steps': [],
+        'reward': 0,
+        'done': False,
+        'success': False
+    } if save_trajectory else None
+    
+    if verbose:
+        print("\n" + "#"*70)
+        print(f"# EPISODE START - Task {task_idx}")
+        print("#"*70)
+        print(f"\nGOAL: {info['goal']}")
+        print("-"*70)
+    
+    for step in range(max_steps):
+        if verbose:
+            print(f"\n>>> STEP {step} <<<")
+        
+        # Get action (and optionally action distribution)
+        action = agent.predict(obs, info, verbose=verbose)
+        
+        if save_trajectory:
             step_data = {
                 'step': step,
-                'observation': obs[:1000],  # Truncate for storage
-                'valid_actions': valid_actions,
-                'action': action,
-                'raw_response': raw_response
+                'observation': obs,
+                'action_taken': action,
+                'valid_actions': info.get('valid', [])
             }
+            
+            if save_action_probs:
+                try:
+                    action_probs = agent.get_action_distribution(obs, info)
+                    step_data['action_probs'] = action_probs
+                except Exception as e:
+                    print(f"Warning: Could not get action distribution: {e}")
+            
             trajectory['steps'].append(step_data)
-            
-            if verbose:
-                print(f"  Step {step}: {action[:60]}")
-            
-            # Take action
-            obs, reward, done, info = env.step(action)
-            
-            if done:
-                trajectory['final_reward'] = reward * 10  # Scale to 0-100
-                trajectory['success'] = (reward == 1.0)
-                trajectory['num_steps'] = step + 1
-                break
         
         if verbose:
-            status = 'SUCCESS' if trajectory['success'] else 'FAILURE'
-            print(f"  Result: {status} | Reward: {trajectory['final_reward']:.1f}")
+            print(f"ACTION TAKEN: {action}")
         
-        return trajectory
-    
-    def get_cost_estimate(self):
-        """Estimate cost based on tokens used."""
-        # Pricing per 1M tokens (approximate)
-        pricing = {
-            'gpt-4.1-nano': {'input': 0.10, 'output': 0.40},
-            'gpt-4.1-mini': {'input': 0.40, 'output': 1.60},
-            'gpt-4o-mini': {'input': 0.15, 'output': 0.60},
-            'gpt-5.1-mini': {'input': 0.50, 'output': 2.00},  # Estimated
-            'gpt-5-mini': {'input': 0.50, 'output': 2.00},    # Estimated
-        }
+        obs, reward, done, info = env.step(action)
         
-        model_pricing = pricing.get(self.model, {'input': 1.0, 'output': 2.0})
+        if verbose and done:
+            print(f"\n>>> EPISODE DONE <<<")
+            print(f"Final reward: {reward * 10:.0f}")
         
-        input_cost = (self.total_input_tokens / 1_000_000) * model_pricing['input']
-        output_cost = (self.total_output_tokens / 1_000_000) * model_pricing['output']
-        
-        return {
-            'input_tokens': self.total_input_tokens,
-            'output_tokens': self.total_output_tokens,
-            'input_cost': input_cost,
-            'output_cost': output_cost,
-            'total_cost': input_cost + output_cost
-        }
+        if done:
+            # Convert reward from 0-10 to 0-100 range
+            reward_100 = reward * 10
+            if save_trajectory:
+                trajectory['reward'] = reward_100
+                trajectory['done'] = True
+                trajectory['success'] = (reward_100 == 100.0)
+                return reward_100, trajectory
+            return reward_100, None
+    
+    # Episode didn't finish
+    if verbose:
+        print(f"\n>>> EPISODE TIMEOUT (max_steps={max_steps}) <<<")
+    
+    if save_trajectory:
+        trajectory['reward'] = 0
+        trajectory['done'] = False
+        trajectory['success'] = False
+        return 0, trajectory
+    return 0, None
 
 
-def collect_worker(args):
-    """Worker function for parallel collection."""
-    worker_id, task_indices, model, split, max_steps, verbose = args
-    
-    # Each worker creates its own environment and collector
-    env_args = webenv_args()[0]
-    env = WebEnv(env_args, split=split)
-    env.env.num_prev_obs = 0
-    env.env.num_prev_actions = 0
-    
-    collector = GPTTrajectoryCollector(model=model)
-    
-    trajectories = []
-    for idx in task_indices:
-        try:
-            traj = collector.collect_episode(env, idx, max_steps=max_steps, verbose=verbose)
-            trajectories.append(traj)
-        except Exception as e:
-            print(f"Worker {worker_id} error on task {idx}: {e}")
-    
-    return trajectories, collector.get_cost_estimate()
+# ============================================================================
+# Main Collection Logic
+# ============================================================================
 
-
-def collect_parallel(model, task_indices, num_workers, split='train', max_steps=15, verbose=False):
-    """Collect trajectories in parallel."""
+def collect_trajectories(args):
+    """Main trajectory collection function."""
     
-    # Split tasks among workers
-    chunks = [[] for _ in range(num_workers)]
-    for i, idx in enumerate(task_indices):
-        chunks[i % num_workers].append(idx)
-    
-    # Prepare worker arguments
-    worker_args = [
-        (worker_id, chunks[worker_id], model, split, max_steps, verbose)
-        for worker_id in range(num_workers)
-    ]
-    
-    all_trajectories = []
-    total_cost = {'input_tokens': 0, 'output_tokens': 0, 'input_cost': 0, 'output_cost': 0, 'total_cost': 0}
-    
-    print(f"\nStarting {num_workers} workers for {len(task_indices)} tasks...")
-    
-    with ThreadPoolExecutor(max_workers=num_workers) as executor:
-        futures = {executor.submit(collect_worker, args): args[0] for args in worker_args}
-        
-        with tqdm(total=len(task_indices), desc=f"Collecting ({model})") as pbar:
-            completed = 0
-            for future in as_completed(futures):
-                worker_id = futures[future]
-                try:
-                    trajectories, cost = future.result()
-                    all_trajectories.extend(trajectories)
-                    
-                    # Aggregate cost
-                    for key in total_cost:
-                        total_cost[key] += cost[key]
-                    
-                    pbar.update(len(trajectories))
-                    completed += len(trajectories)
-                    
-                except Exception as e:
-                    print(f"Worker {worker_id} failed: {e}")
-    
-    return all_trajectories, total_cost
-
-
-def collect_sequential(model, task_indices, split='train', max_steps=15, verbose=False):
-    """Collect trajectories sequentially (for testing/debugging)."""
+    # Import and setup environment
+    from train_rl import parse_args as webenv_args
+    from env import WebEnv
     
     env_args = webenv_args()[0]
-    env = WebEnv(env_args, split=split)
-    env.env.num_prev_obs = 0
-    env.env.num_prev_actions = 0
+    env = WebEnv(env_args, split='test')
+    print('WebShop environment loaded')
     
-    collector = GPTTrajectoryCollector(model=model)
+    # Configure memory settings
+    if args.mem:
+        env.env.num_prev_obs = 1
+        env.env.num_prev_actions = 5
+        print('Memory mode: ON')
+    else:
+        env.env.num_prev_obs = 0
+        env.env.num_prev_actions = 0
+        print('Memory mode: OFF')
     
-    trajectories = []
-    for idx in tqdm(task_indices, desc=f"Collecting ({model})"):
-        try:
-            traj = collector.collect_episode(env, idx, max_steps=max_steps, verbose=verbose)
-            trajectories.append(traj)
-        except Exception as e:
-            print(f"Error on task {idx}: {e}")
+    # Verify deterministic goal generation
+    print("\n" + "="*70)
+    print("VERIFYING DETERMINISTIC GOAL GENERATION")
+    print("="*70)
+    test_task = 6
+    goals = []
+    for i in range(3):
+        obs, info = env.reset(test_task)
+        goals.append(info['goal'])
     
-    return trajectories, collector.get_cost_estimate()
+    if len(set(goals)) == 1:
+        print(f"✓ Task {test_task} returns consistent goal across 3 resets")
+        print(f"  Goal: {goals[0][:100]}...")
+    else:
+        print(f"✗ WARNING: Task {test_task} returns DIFFERENT goals!")
+        print("  This means goal.py fix is NOT applied correctly")
+        for i, g in enumerate(set(goals)):
+            print(f"  Variant {i+1}: {g[:100]}...")
+        if not args.force:
+            print("\nABORTING: Fix goal.py before collecting trajectories!")
+            print("Use --force to override this check.")
+            sys.exit(1)
+    print("="*70 + "\n")
+    
+    # Create agent
+    agent = create_agent(args)
+    
+    # Also create rule baseline if requested
+    rule_agent = RuleAgent() if args.run_rule_baseline else None
+    
+    print("\n" + "="*70)
+    print(f"COLLECTING {args.num_failures} FAILURES")
+    print("="*70)
+    print(f"  Model type: {args.model_type}")
+    print(f"  Target failures: {args.num_failures}")
+    print(f"  Max tasks to try: {args.max_tasks}")
+    print(f"  Temperature: {args.temperature}")
+    print(f"  Save action probs: {args.save_action_probs}")
+    print("="*70 + "\n")
+    
+    # Collection containers
+    successes = []
+    failures = []
+    scores = []
+    
+    successes_rule = []
+    failures_rule = []
+    scores_rule = []
+    
+    task_idx = 0
+    
+    # Collection loop
+    print('idx | reward (model)' + (' | reward (rule)' if args.run_rule_baseline else ''))
+    
+    while len(failures) < args.num_failures and task_idx < args.max_tasks:
+        # Run with main agent
+        reward, traj = run_episode(
+            agent, env, 
+            task_idx=task_idx,
+            verbose=args.verbose,
+            save_trajectory=args.save_trajectories,
+            save_action_probs=args.save_action_probs,
+            max_steps=args.max_steps,
+        )
+        
+        scores.append(reward)
+        
+        if args.save_trajectories:
+            if traj['success']:
+                successes.append(traj)
+            else:
+                failures.append(traj)
+        else:
+            if reward < 100.0:
+                failures.append({'task_id': task_idx, 'reward': reward})
+        
+        # Run rule baseline if requested
+        if args.run_rule_baseline:
+            reward_rule, traj_rule = run_episode(
+                rule_agent, env,
+                task_idx=task_idx,
+                save_trajectory=args.save_trajectories,
+                max_steps=args.max_steps,
+            )
+            
+            scores_rule.append(reward_rule)
+            
+            if args.save_trajectories:
+                if traj_rule['success']:
+                    successes_rule.append(traj_rule)
+                else:
+                    failures_rule.append(traj_rule)
+            
+            print(f"{task_idx} | {reward:.0f} | {reward_rule:.0f} | "
+                  f"Failures: {len(failures)}/{args.num_failures}")
+        else:
+            print(f"{task_idx} | {reward:.0f} | "
+                  f"Failures: {len(failures)}/{args.num_failures}")
+        
+        task_idx += 1
+    
+    # Calculate and print statistics
+    avg_score = sum(scores) / len(scores)
+    success_rate = len([s for s in scores if s == 100.0]) / len(scores) * 100
+    
+    print("\n" + "="*70)
+    print('MODEL RESULTS:')
+    print("="*70)
+    print(f'  Model type: {args.model_type}')
+    print(f'  Tasks run: {task_idx}')
+    print(f'  Avg score: {avg_score:.2f}')
+    print(f'  Success rate: {success_rate:.1f}%')
+    print(f'  Successes: {len(successes)}')
+    print(f'  Failures: {len(failures)}')
+    print(f'  Target failures: {args.num_failures}')
+    
+    if len(failures) < args.num_failures:
+        print(f'\n  ⚠️  WARNING: Only collected {len(failures)}/{args.num_failures} failures')
+        print(f'     Reached max_tasks limit of {args.max_tasks}')
+    else:
+        print(f'\n  ✓ SUCCESS: Collected {args.num_failures} failures')
+    
+    # Rule baseline stats
+    if args.run_rule_baseline:
+        avg_score_rule = sum(scores_rule) / len(scores_rule)
+        success_rate_rule = len([s for s in scores_rule if s == 100.0]) / len(scores_rule) * 100
+        
+        print(f'\nRULE BASELINE RESULTS:')
+        print(f'  Avg score: {avg_score_rule:.2f}')
+        print(f'  Success rate: {success_rate_rule:.1f}%')
+    
+    # Save trajectories
+    if args.save_trajectories:
+        os.makedirs(args.output_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        model_suffix = args.model_type
+        
+        # Save model trajectories
+        if successes:
+            path = os.path.join(args.output_dir, f'successes_{model_suffix}_{timestamp}.json')
+            with open(path, 'w') as f:
+                json.dump(successes, f, indent=2)
+            print(f'\n✓ Saved {len(successes)} successful trajectories to {path}')
+        
+        if failures:
+            path = os.path.join(args.output_dir, f'failures_{model_suffix}_{timestamp}.json')
+            with open(path, 'w') as f:
+                json.dump(failures, f, indent=2)
+            print(f'✓ Saved {len(failures)} failed trajectories to {path}')
+        
+        # Save rule baseline trajectories
+        if args.run_rule_baseline:
+            if successes_rule:
+                path = os.path.join(args.output_dir, f'successes_rule_{timestamp}.json')
+                with open(path, 'w') as f:
+                    json.dump(successes_rule, f, indent=2)
+                print(f'✓ Saved {len(successes_rule)} rule successes to {path}')
+            
+            if failures_rule:
+                path = os.path.join(args.output_dir, f'failures_rule_{timestamp}.json')
+                with open(path, 'w') as f:
+                    json.dump(failures_rule, f, indent=2)
+                print(f'✓ Saved {len(failures_rule)} rule failures to {path}')
+        
+        # Save statistics
+        stats = {
+            'timestamp': timestamp,
+            'model_type': args.model_type,
+            'tasks_run': task_idx,
+            'target_failures': args.num_failures,
+            'config': {
+                'temperature': args.temperature,
+                'max_steps': args.max_steps,
+                'llm_path': getattr(args, 'llm_path', None),
+                'openai_model': getattr(args, 'openai_model', None),
+            },
+            'results': {
+                'avg_score': avg_score,
+                'success_rate': success_rate,
+                'num_successes': len(successes),
+                'num_failures': len(failures),
+                'scores': scores
+            }
+        }
+        
+        if args.run_rule_baseline:
+            stats['rule_baseline'] = {
+                'avg_score': avg_score_rule,
+                'success_rate': success_rate_rule,
+                'num_successes': len(successes_rule),
+                'num_failures': len(failures_rule),
+                'scores': scores_rule
+            }
+        
+        stats_path = os.path.join(args.output_dir, f'statistics_{model_suffix}_{timestamp}.json')
+        with open(stats_path, 'w') as f:
+            json.dump(stats, f, indent=2)
+        print(f'✓ Saved statistics to {stats_path}')
+        
+        # Verification
+        print("\n" + "="*70)
+        print("POST-COLLECTION VERIFICATION")
+        print("="*70)
+        
+        all_trajectories = failures + successes
+        mismatches = 0
+        checked = 0
+        
+        for traj in all_trajectories[:min(20, len(all_trajectories))]:
+            task_id = traj['task_id']
+            saved_goal = traj['goal']
+            
+            obs, info = env.reset(task_id)
+            env_goal = info['goal']
+            
+            if saved_goal == env_goal:
+                print(f"Task {task_id}: ✓ Goal matches")
+            else:
+                print(f"Task {task_id}: ✗ MISMATCH!")
+                print(f"  Saved: {saved_goal[:100]}...")
+                print(f"  Env:   {env_goal[:100]}...")
+                mismatches += 1
+            checked += 1
+        
+        if mismatches == 0:
+            print(f"\n✓ All {checked} sampled trajectories have consistent goals!")
+        else:
+            print(f"\n✗ WARNING: {mismatches}/{checked} mismatches found!")
+        
+        print("="*70)
+    
+    return {
+        'successes': successes,
+        'failures': failures,
+        'scores': scores,
+    }
 
+
+# ============================================================================
+# Argument Parsing
+# ============================================================================
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="GPT-based trajectory collection")
-    parser.add_argument("--model", type=str, default="gpt-4.1-mini",
-                        help="OpenAI model to use")
-    parser.add_argument("--num_tasks", type=int, default=100,
-                        help="Number of tasks to collect")
-    parser.add_argument("--start_idx", type=int, default=0,
-                        help="Starting task index")
-    parser.add_argument("--workers", type=int, default=8,
-                        help="Number of parallel workers (0 for sequential)")
-    parser.add_argument("--max_steps", type=int, default=15,
-                        help="Maximum steps per episode")
-    parser.add_argument("--split", type=str, default="train",
-                        choices=["train", "test"])
-    parser.add_argument("--output", type=str, default="./trajectories_gpt.json",
-                        help="Output file path")
-    parser.add_argument("--verbose", action="store_true",
-                        help="Print episode details")
+    parser = argparse.ArgumentParser(
+        description="Collect WebShop trajectories with multi-model support",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # BERT+BART (original WebShop model)
+  python collect_trajectories_multimodel.py --model_type bert_bart --num_failures 500
+  
+  # LLaMA
+  python collect_trajectories_multimodel.py --model_type llama \\
+      --llm_path meta-llama/Llama-3.1-8B-Instruct --num_failures 500
+  
+  # Qwen
+  python collect_trajectories_multimodel.py --model_type llm \\
+      --llm_path Qwen/Qwen3-8B --num_failures 500
+  
+  # OpenAI
+  python collect_trajectories_multimodel.py --model_type openai \\
+      --openai_model gpt-4o-mini --num_failures 500
+  
+  # Rule baseline only
+  python collect_trajectories_multimodel.py --model_type rule --num_failures 500
+"""
+    )
+    
+    # Model selection
+    parser.add_argument("--model_type", type=str, default="bert_bart",
+                       choices=["bert_bart", "llm", "llama", "qwen", "mistral", "openai", "rule"],
+                       help="Type of model to use")
+    
+    # BERT+BART specific
+    parser.add_argument("--model_path", type=str, default="./ckpts/web_click/epoch_9/model.pth",
+                       help="Path to BERT model checkpoint")
+    parser.add_argument("--bart_path", type=str, default="./ckpts/web_search/checkpoint-800",
+                       help="Path to BART model checkpoint")
+    parser.add_argument("--use_bart", type=bool, default=True,
+                       help="Use BART for search queries")
+    parser.add_argument("--use_image", type=bool, default=True,
+                       help="Use image features in BERT model")
+    
+    # LLM specific
+    parser.add_argument("--llm_path", type=str, default=None,
+                       help="HuggingFace model path (e.g., meta-llama/Llama-3.1-8B-Instruct)")
+    parser.add_argument("--torch_dtype", type=str, default="auto",
+                       choices=["auto", "float16", "bfloat16", "float32"],
+                       help="Torch dtype for LLM")
+    parser.add_argument("--use_flash_attention", type=bool, default=True,
+                       help="Use flash attention if available")
+    parser.add_argument("--max_new_tokens", type=int, default=128,
+                       help="Max new tokens for LLM generation")
+    parser.add_argument("--device", type=str, default="cuda",
+                       help="Device for LLM (cuda/cpu)")
+    parser.add_argument("--prompt_style", type=str, default="eef",
+                       choices=["eef", "verbose"],
+                       help="Prompt style: 'eef' (simpler, EEF paper style) or 'verbose' (detailed)")
+    
+    # OpenAI specific
+    parser.add_argument("--openai_model", type=str, default="gpt-4o-mini",
+                       help="OpenAI model name")
+    parser.add_argument("--openai_api_key", type=str, default=None,
+                       help="OpenAI API key (or set OPENAI_API_KEY env var)")
+    
+    # Common model settings
+    parser.add_argument("--temperature", type=float, default=0.0,
+                       help="Sampling temperature (0 for greedy)")
+    parser.add_argument("--softmax", type=bool, default=True,
+                       help="Use softmax sampling for BERT model")
+    parser.add_argument("--system_prompt", type=str, default=None,
+                       help="Custom system prompt for LLM/OpenAI agents")
+    
+    # Environment settings
+    parser.add_argument("--mem", type=int, default=0,
+                       help="Use memory mode (0 or 1)")
+    parser.add_argument("--max_steps", type=int, default=100,
+                       help="Maximum steps per episode")
+    
+    # Collection settings
+    parser.add_argument("--save_trajectories", action='store_true',
+                       help="Save full trajectories to JSON")
+    parser.add_argument("--save_action_probs", action='store_true',
+                       help="Save action probability distributions (slower)")
+    parser.add_argument("--output_dir", type=str, default="./trajectories",
+                       help="Directory to save trajectories")
+    parser.add_argument("--num_failures", type=int, default=500,
+                       help="Number of FAILURES to collect")
+    parser.add_argument("--max_tasks", type=int, default=10000,
+                       help="Maximum number of tasks to try")
+    parser.add_argument("--run_rule_baseline", action='store_true',
+                       help="Also run rule baseline for comparison")
+    
+    # Debug settings
+    parser.add_argument("--verbose", action='store_true',
+                       help="Print detailed output during episodes")
+    parser.add_argument("--force", action='store_true',
+                       help="Force collection even if goal verification fails")
+    
     return parser.parse_args()
 
 
-def main():
-    args = parse_args()
-    
-    print(f"=" * 60)
-    print(f"GPT TRAJECTORY COLLECTION")
-    print(f"=" * 60)
-    print(f"Model: {args.model}")
-    print(f"Tasks: {args.num_tasks}")
-    print(f"Workers: {args.workers}")
-    print(f"Split: {args.split}")
-    print(f"=" * 60)
-    
-    # Task indices
-    task_indices = list(range(args.start_idx, args.start_idx + args.num_tasks))
-    
-    # Collect
-    start_time = time.time()
-    
-    if args.workers > 0:
-        trajectories, cost = collect_parallel(
-            model=args.model,
-            task_indices=task_indices,
-            num_workers=args.workers,
-            split=args.split,
-            max_steps=args.max_steps,
-            verbose=args.verbose
-        )
-    else:
-        trajectories, cost = collect_sequential(
-            model=args.model,
-            task_indices=task_indices,
-            split=args.split,
-            max_steps=args.max_steps,
-            verbose=args.verbose
-        )
-    
-    elapsed = time.time() - start_time
-    
-    # Compute statistics
-    successes = [t for t in trajectories if t['success']]
-    failures = [t for t in trajectories if not t['success']]
-    rewards = [t['final_reward'] for t in trajectories]
-    
-    # Check for navigation skills
-    uses_next = sum(1 for t in successes if any('Next' in s['action'] for s in t['steps']))
-    uses_back = sum(1 for t in successes if any('Back' in s['action'] for s in t['steps']))
-    
-    # Print summary
-    print(f"\n" + "=" * 60)
-    print(f"COLLECTION SUMMARY")
-    print(f"=" * 60)
-    print(f"Total trajectories: {len(trajectories)}")
-    print(f"Successes: {len(successes)} ({len(successes)/len(trajectories)*100:.1f}%)")
-    print(f"Failures: {len(failures)} ({len(failures)/len(trajectories)*100:.1f}%)")
-    print(f"Average reward: {sum(rewards)/len(rewards):.2f}")
-    print(f"Uses Next (in successes): {uses_next}")
-    print(f"Uses Back (in successes): {uses_back}")
-    print(f"Time: {elapsed:.1f}s ({elapsed/len(trajectories):.2f}s per trajectory)")
-    print(f"\n--- Cost ---")
-    print(f"Input tokens: {cost['input_tokens']:,}")
-    print(f"Output tokens: {cost['output_tokens']:,}")
-    print(f"Estimated cost: ${cost['total_cost']:.4f}")
-    print(f"Projected cost for 11K: ${cost['total_cost'] * 11000 / len(trajectories):.2f}")
-    print(f"=" * 60)
-    
-    # Save results
-    output_data = {
-        'metadata': {
-            'model': args.model,
-            'collection_date': datetime.now().isoformat(),
-            'num_tasks': len(trajectories),
-            'split': args.split,
-            'elapsed_seconds': elapsed,
-        },
-        'summary': {
-            'total': len(trajectories),
-            'successes': len(successes),
-            'failures': len(failures),
-            'success_rate': len(successes) / len(trajectories) * 100,
-            'avg_reward': sum(rewards) / len(rewards),
-            'uses_next': uses_next,
-            'uses_back': uses_back,
-        },
-        'cost': cost,
-        'trajectories': trajectories,
-        'success_trajectories': successes,
-        'failed_trajectories': failures,
-    }
-    
-    os.makedirs(os.path.dirname(args.output) or '.', exist_ok=True)
-    with open(args.output, 'w') as f:
-        json.dump(output_data, f, indent=2)
-    
-    print(f"\nSaved to: {args.output}")
-
+# ============================================================================
+# Entry Point
+# ============================================================================
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    
+    # Validate arguments
+    if args.model_type in ["llm", "llama", "qwen", "mistral"] and not args.llm_path:
+        print("Error: --llm_path is required for LLM model types")
+        sys.exit(1)
+    
+    print("\n" + "="*70)
+    print("TRAJECTORY COLLECTION - MULTI-MODEL")
+    print("="*70)
+    print(f"Model type: {args.model_type}")
+    if args.model_type in ["llm", "llama", "qwen", "mistral"]:
+        print(f"LLM path: {args.llm_path}")
+    elif args.model_type == "openai":
+        print(f"OpenAI model: {args.openai_model}")
+    elif args.model_type == "bert_bart":
+        print(f"BERT path: {args.model_path}")
+        print(f"BART path: {args.bart_path}")
+    print("="*70 + "\n")
+    
+    collect_trajectories(args)

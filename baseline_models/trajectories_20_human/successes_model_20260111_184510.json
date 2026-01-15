@@ -1,0 +1,826 @@
+[
+  {
+    "task_id": 0,
+    "goal": "Instruction: i need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars",
+    "steps": [
+      {
+        "step": 0,
+        "observation": "WebShop\nInstruction: \ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Search [button_]\n",
+        "action_taken": "search[hair extension natural looking]",
+        "valid_actions": [
+          "search[long clip-in hair extension natural looking]",
+          "search[long clip-in hair extension]",
+          "search[natural looking hair extension]",
+          "search[short clip-in hair extension natural looking]",
+          "search[natural looking long clip-in hair extension]",
+          "search[short clip-in hair extension]",
+          "search[natural looking hair extension long clip-in]",
+          "search[hair extension natural looking]",
+          "search[a long clip-in hair extension]",
+          "search[natural looking human hair extension]",
+          "search[i need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars]"
+        ]
+      },
+      {
+        "step": 1,
+        "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B09QQKPZJR [button_]\nLroveb Beanie Hat Knit with Long Wavy Curly Hair Extensions Wig Winter Warm Fashion Long Curly Hair Hat Wig Wool Curl Corn Perm Curl Knitted Cap Attached Synthetic Hairpiece\n$36.06\n\n[button] B09QQLDJ93 [button_]\nLroveb Fashion Long Curly Wig Head Dyed Black Gradient Golden Long Straight Wig African Long Curly Hair Wigs Ladies Gradient Color Chemical Fiber Silk Corn Perm Wig for Women\n$34.89\n\n[button] B086HJGYS7 [button_]\nHair Bun Extensions 100% Human Hair Piece Updo Scrunchies Donut Chignons Hairpiece Ponytail Hair Accessories for Women Girls\n$12.99\n\n[button] B09P3X4XBH [button_]\nSimayixx Wigs Ponytail Extension For Black Women, Fashionable Drawstring Premium Medium Brown Short Synthetic Ponytail For Natural Hair, Clip On Kinky Drawstring Curly Ponytail(E)\n$10.0\n\n[button] B09SLZ21XY [button_]\nSimayixx Gifts For Women Wigs Ponytail Extension For Black Women, Fashionable Drawstring Premium Medium Brown Short Synthetic Ponytail For Natural Hair(E)\n$12.99\n\n[button] B07JBJDPP7 [button_]\nAdorna Chic 18\" Premium Quality Full Density Synthetic Hair Extension Heat Resistant (Blonde Ombre)\n$79.99\n\n[button] B07VRC7NTV [button_]\n2 Pieces Afro Puff Drawstring Ponytail Synthetic Short Curly Hair Afro Bun Extension Afro Chignon Hairpieces Wig Updo Hair Extensions (Black)\n$12.59\n\n[button] B09RWVCDHL [button_]\nSimayixx Wigs For Black Women Human Hair High Puff Ponytail With Bangs Curl Bangs And Puff Bangs Clip In Hairpieces Ponytail With Bangs Curly Puff Style Full And Even Shape(D)\n$13.8\n\n[button] B09P8DMDK5 [button_]\nDrawstring Ponytail Extension for Black Women, Clip On Kinky Drawstring Curly Ponytail Bun,Premium Medium Short Synthetic Puff Ponytail for Natural Hair\n$5.67\n\n[button] B0924PQ9R4 [button_]\nAfro Bun Puff Hair Bun Soft Afro Curly Hair Wigs Extension Hairpieces Hair Accessory Synthetic Short Afro Wigs Black\n$100.0\n",
+        "action_taken": "click[item - lroveb beanie hat knit with long wavy curly hair extensions wig winter warm fashion long curly hair hat wig wool curl corn perm curl knitted cap attached synthetic hairpiece]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[next >]",
+          "click[item - lroveb beanie hat knit with long wavy curly hair extensions wig winter warm fashion long curly hair hat wig wool curl corn perm curl knitted cap attached synthetic hairpiece]",
+          "click[item - lroveb fashion long curly wig head dyed black gradient golden long straight wig african long curly hair wigs ladies gradient color chemical fiber silk corn perm wig for women]",
+          "click[item - hair bun extensions 100% human hair piece updo scrunchies donut chignons hairpiece ponytail hair accessories for women girls]",
+          "click[item - simayixx wigs ponytail extension for black women, fashionable drawstring premium medium brown short synthetic ponytail for natural hair, clip on kinky drawstring curly ponytail(e)]",
+          "click[item - simayixx gifts for women wigs ponytail extension for black women, fashionable drawstring premium medium brown short synthetic ponytail for natural hair(e)]",
+          "click[item - adorna chic 18\" premium quality full density synthetic hair extension heat resistant (blonde ombre)]",
+          "click[item - 2 pieces afro puff drawstring ponytail synthetic short curly hair afro bun extension afro chignon hairpieces wig updo hair extensions (black)]",
+          "click[item - simayixx wigs for black women human hair high puff ponytail with bangs curl bangs and puff bangs clip in hairpieces ponytail with bangs curly puff style full and even shape(d)]",
+          "click[item - drawstring ponytail extension for black women, clip on kinky drawstring curly ponytail bun,premium medium short synthetic puff ponytail for natural hair]",
+          "click[item - afro bun puff hair bun soft afro curly hair wigs extension hairpieces hair accessory synthetic short afro wigs black]"
+        ]
+      },
+      {
+        "step": 2,
+        "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nLroveb Beanie Hat Knit with Long Wavy Curly Hair Extensions Wig Winter Warm Fashion Long Curly Hair Hat Wig Wool Curl Corn Perm Curl Knitted Cap Attached Synthetic Hairpiece\nPrice: $36.06\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[features]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]"
+        ]
+      },
+      {
+        "step": 3,
+        "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\n Wigs are made of heat-resistant silk. Wigs are soft, smooth, realistic and heat-resistant. It has a medium split, wavy curly hair shape that looks like normal hair. It's natural. \n [Easy to wear & time saving] Wigs for white women does not need glue or sewing. It takes only 10 seconds to put on a wig. You can save half the time when you go out to dress up. The average cap circumference of hair replacement wigs,which is suitable for most head sizes. There are two adjustable belts in wig cap, which can help you adjust the cap size according to your head. The belt is strong, elastic and not easy to deform \n \u00b7\u00a0\u2665Appearance Occasions:Perfect for Daily Use, Work, Concerts, Theme Parties, Wedding Bride, Dating, Filming, Masquerade, Costume, Fashion, Carnival, Halloween, Christmas, New Year or Just for Fun, Cosplay Like Fairy, Princess,Mermaid or Witch;Good Gift For Your Honey. \n Perfect Gift: This Product with a cute appearance and packaging, full of childishness. It is the best choice as a gift for your mom, wife, girlfriends on birthday, Thanksgiving Day, Christmas, Halloween, or other festivals. \n \u00b7\u00a0\u3010Services\u3011: We are committed to providing all customers with good-quality products and a 100% satisfactory shopping experience. We also offer 24-hour online customer service. Any problems with this blue wig, we provide Return and Exchange. \n",
+        "action_taken": "click[< prev]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]"
+        ]
+      },
+      {
+        "step": 4,
+        "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nLroveb Beanie Hat Knit with Long Wavy Curly Hair Extensions Wig Winter Warm Fashion Long Curly Hair Hat Wig Wool Curl Corn Perm Curl Knitted Cap Attached Synthetic Hairpiece\nPrice: $36.06\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[< prev]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]"
+        ]
+      },
+      {
+        "step": 5,
+        "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[clicked button] B09QQKPZJR [clicked button_]\nLroveb Beanie Hat Knit with Long Wavy Curly Hair Extensions Wig Winter Warm Fashion Long Curly Hair Hat Wig Wool Curl Corn Perm Curl Knitted Cap Attached Synthetic Hairpiece\n$36.06\n\n[button] B09QQLDJ93 [button_]\nLroveb Fashion Long Curly Wig Head Dyed Black Gradient Golden Long Straight Wig African Long Curly Hair Wigs Ladies Gradient Color Chemical Fiber Silk Corn Perm Wig for Women\n$34.89\n\n[button] B086HJGYS7 [button_]\nHair Bun Extensions 100% Human Hair Piece Updo Scrunchies Donut Chignons Hairpiece Ponytail Hair Accessories for Women Girls\n$12.99\n\n[button] B09P3X4XBH [button_]\nSimayixx Wigs Ponytail Extension For Black Women, Fashionable Drawstring Premium Medium Brown Short Synthetic Ponytail For Natural Hair, Clip On Kinky Drawstring Curly Ponytail(E)\n$10.0\n\n[button] B09SLZ21XY [button_]\nSimayixx Gifts For Women Wigs Ponytail Extension For Black Women, Fashionable Drawstring Premium Medium Brown Short Synthetic Ponytail For Natural Hair(E)\n$12.99\n\n[button] B07JBJDPP7 [button_]\nAdorna Chic 18\" Premium Quality Full Density Synthetic Hair Extension Heat Resistant (Blonde Ombre)\n$79.99\n\n[button] B07VRC7NTV [button_]\n2 Pieces Afro Puff Drawstring Ponytail Synthetic Short Curly Hair Afro Bun Extension Afro Chignon Hairpieces Wig Updo Hair Extensions (Black)\n$12.59\n\n[button] B09RWVCDHL [button_]\nSimayixx Wigs For Black Women Human Hair High Puff Ponytail With Bangs Curl Bangs And Puff Bangs Clip In Hairpieces Ponytail With Bangs Curly Puff Style Full And Even Shape(D)\n$13.8\n\n[button] B09P8DMDK5 [button_]\nDrawstring Ponytail Extension for Black Women, Clip On Kinky Drawstring Curly Ponytail Bun,Premium Medium Short Synthetic Puff Ponytail for Natural Hair\n$5.67\n\n[button] B0924PQ9R4 [button_]\nAfro Bun Puff Hair Bun Soft Afro Curly Hair Wigs Extension Hairpieces Hair Accessory Synthetic Short Afro Wigs Black\n$100.0\n",
+        "action_taken": "click[item - lroveb fashion long curly wig head dyed black gradient golden long straight wig african long curly hair wigs ladies gradient color chemical fiber silk corn perm wig for women]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[next >]",
+          "click[item - lroveb beanie hat knit with long wavy curly hair extensions wig winter warm fashion long curly hair hat wig wool curl corn perm curl knitted cap attached synthetic hairpiece]",
+          "click[item - lroveb fashion long curly wig head dyed black gradient golden long straight wig african long curly hair wigs ladies gradient color chemical fiber silk corn perm wig for women]",
+          "click[item - hair bun extensions 100% human hair piece updo scrunchies donut chignons hairpiece ponytail hair accessories for women girls]",
+          "click[item - simayixx wigs ponytail extension for black women, fashionable drawstring premium medium brown short synthetic ponytail for natural hair, clip on kinky drawstring curly ponytail(e)]",
+          "click[item - simayixx gifts for women wigs ponytail extension for black women, fashionable drawstring premium medium brown short synthetic ponytail for natural hair(e)]",
+          "click[item - adorna chic 18\" premium quality full density synthetic hair extension heat resistant (blonde ombre)]",
+          "click[item - 2 pieces afro puff drawstring ponytail synthetic short curly hair afro bun extension afro chignon hairpieces wig updo hair extensions (black)]",
+          "click[item - simayixx wigs for black women human hair high puff ponytail with bangs curl bangs and puff bangs clip in hairpieces ponytail with bangs curly puff style full and even shape(d)]",
+          "click[item - drawstring ponytail extension for black women, clip on kinky drawstring curly ponytail bun,premium medium short synthetic puff ponytail for natural hair]",
+          "click[item - afro bun puff hair bun soft afro curly hair wigs extension hairpieces hair accessory synthetic short afro wigs black]"
+        ]
+      },
+      {
+        "step": 6,
+        "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nLroveb Fashion Long Curly Wig Head Dyed Black Gradient Golden Long Straight Wig African Long Curly Hair Wigs Ladies Gradient Color Chemical Fiber Silk Corn Perm Wig for Women\nPrice: $34.89\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[< prev]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]"
+        ]
+      },
+      {
+        "step": 7,
+        "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[clicked button] B09QQKPZJR [clicked button_]\nLroveb Beanie Hat Knit with Long Wavy Curly Hair Extensions Wig Winter Warm Fashion Long Curly Hair Hat Wig Wool Curl Corn Perm Curl Knitted Cap Attached Synthetic Hairpiece\n$36.06\n\n[clicked button] B09QQLDJ93 [clicked button_]\nLroveb Fashion Long Curly Wig Head Dyed Black Gradient Golden Long Straight Wig African Long Curly Hair Wigs Ladies Gradient Color Chemical Fiber Silk Corn Perm Wig for Women\n$34.89\n\n[button] B086HJGYS7 [button_]\nHair Bun Extensions 100% Human Hair Piece Updo Scrunchies Donut Chignons Hairpiece Ponytail Hair Accessories for Women Girls\n$12.99\n\n[button] B09P3X4XBH [button_]\nSimayixx Wigs Ponytail Extension For Black Women, Fashionable Drawstring Premium Medium Brown Short Synthetic Ponytail For Natural Hair, Clip On Kinky Drawstring Curly Ponytail(E)\n$10.0\n\n[button] B09SLZ21XY [button_]\nSimayixx Gifts For Women Wigs Ponytail Extension For Black Women, Fashionable Drawstring Premium Medium Brown Short Synthetic Ponytail For Natural Hair(E)\n$12.99\n\n[button] B07JBJDPP7 [button_]\nAdorna Chic 18\" Premium Quality Full Density Synthetic Hair Extension Heat Resistant (Blonde Ombre)\n$79.99\n\n[button] B07VRC7NTV [button_]\n2 Pieces Afro Puff Drawstring Ponytail Synthetic Short Curly Hair Afro Bun Extension Afro Chignon Hairpieces Wig Updo Hair Extensions (Black)\n$12.59\n\n[button] B09RWVCDHL [button_]\nSimayixx Wigs For Black Women Human Hair High Puff Ponytail With Bangs Curl Bangs And Puff Bangs Clip In Hairpieces Ponytail With Bangs Curly Puff Style Full And Even Shape(D)\n$13.8\n\n[button] B09P8DMDK5 [button_]\nDrawstring Ponytail Extension for Black Women, Clip On Kinky Drawstring Curly Ponytail Bun,Premium Medium Short Synthetic Puff Ponytail for Natural Hair\n$5.67\n\n[button] B0924PQ9R4 [button_]\nAfro Bun Puff Hair Bun Soft Afro Curly Hair Wigs Extension Hairpieces Hair Accessory Synthetic Short Afro Wigs Black\n$100.0\n",
+        "action_taken": "click[item - hair bun extensions 100% human hair piece updo scrunchies donut chignons hairpiece ponytail hair accessories for women girls]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[next >]",
+          "click[item - lroveb beanie hat knit with long wavy curly hair extensions wig winter warm fashion long curly hair hat wig wool curl corn perm curl knitted cap attached synthetic hairpiece]",
+          "click[item - lroveb fashion long curly wig head dyed black gradient golden long straight wig african long curly hair wigs ladies gradient color chemical fiber silk corn perm wig for women]",
+          "click[item - hair bun extensions 100% human hair piece updo scrunchies donut chignons hairpiece ponytail hair accessories for women girls]",
+          "click[item - simayixx wigs ponytail extension for black women, fashionable drawstring premium medium brown short synthetic ponytail for natural hair, clip on kinky drawstring curly ponytail(e)]",
+          "click[item - simayixx gifts for women wigs ponytail extension for black women, fashionable drawstring premium medium brown short synthetic ponytail for natural hair(e)]",
+          "click[item - adorna chic 18\" premium quality full density synthetic hair extension heat resistant (blonde ombre)]",
+          "click[item - 2 pieces afro puff drawstring ponytail synthetic short curly hair afro bun extension afro chignon hairpieces wig updo hair extensions (black)]",
+          "click[item - simayixx wigs for black women human hair high puff ponytail with bangs curl bangs and puff bangs clip in hairpieces ponytail with bangs curly puff style full and even shape(d)]",
+          "click[item - drawstring ponytail extension for black women, clip on kinky drawstring curly ponytail bun,premium medium short synthetic puff ponytail for natural hair]",
+          "click[item - afro bun puff hair bun soft afro curly hair wigs extension hairpieces hair accessory synthetic short afro wigs black]"
+        ]
+      },
+      {
+        "step": 8,
+        "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\ncolor\n  [button] black brown-hair bun [button_]\n  [button] black mix brown-hair bun [button_]\n  [button] brown mix auburn-hair bun [button_]\n  [button] brown mix ginger brown-hair bun [button_]\n  [button] natural black-hair bun [button_]\n  [button] wine red-hair bun [button_]\nHair Bun Extensions 100% Human Hair Piece Updo Scrunchies Donut Chignons Hairpiece Ponytail Hair Accessories for Women Girls\nPrice: $12.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[< prev]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]",
+          "click[black brown-hair bun]",
+          "click[black mix brown-hair bun]",
+          "click[brown mix auburn-hair bun]",
+          "click[brown mix ginger brown-hair bun]",
+          "click[natural black-hair bun]",
+          "click[wine red-hair bun]"
+        ]
+      },
+      {
+        "step": 9,
+        "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[clicked button] B09QQKPZJR [clicked button_]\nLroveb Beanie Hat Knit with Long Wavy Curly Hair Extensions Wig Winter Warm Fashion Long Curly Hair Hat Wig Wool Curl Corn Perm Curl Knitted Cap Attached Synthetic Hairpiece\n$36.06\n\n[clicked button] B09QQLDJ93 [clicked button_]\nLroveb Fashion Long Curly Wig Head Dyed Black Gradient Golden Long Straight Wig African Long Curly Hair Wigs Ladies Gradient Color Chemical Fiber Silk Corn Perm Wig for Women\n$34.89\n\n[clicked button] B086HJGYS7 [clicked button_]\nHair Bun Extensions 100% Human Hair Piece Updo Scrunchies Donut Chignons Hairpiece Ponytail Hair Accessories for Women Girls\n$12.99\n\n[button] B09P3X4XBH [button_]\nSimayixx Wigs Ponytail Extension For Black Women, Fashionable Drawstring Premium Medium Brown Short Synthetic Ponytail For Natural Hair, Clip On Kinky Drawstring Curly Ponytail(E)\n$10.0\n\n[button] B09SLZ21XY [button_]\nSimayixx Gifts For Women Wigs Ponytail Extension For Black Women, Fashionable Drawstring Premium Medium Brown Short Synthetic Ponytail For Natural Hair(E)\n$12.99\n\n[button] B07JBJDPP7 [button_]\nAdorna Chic 18\" Premium Quality Full Density Synthetic Hair Extension Heat Resistant (Blonde Ombre)\n$79.99\n\n[button] B07VRC7NTV [button_]\n2 Pieces Afro Puff Drawstring Ponytail Synthetic Short Curly Hair Afro Bun Extension Afro Chignon Hairpieces Wig Updo Hair Extensions (Black)\n$12.59\n\n[button] B09RWVCDHL [button_]\nSimayixx Wigs For Black Women Human Hair High Puff Ponytail With Bangs Curl Bangs And Puff Bangs Clip In Hairpieces Ponytail With Bangs Curly Puff Style Full And Even Shape(D)\n$13.8\n\n[button] B09P8DMDK5 [button_]\nDrawstring Ponytail Extension for Black Women, Clip On Kinky Drawstring Curly Ponytail Bun,Premium Medium Short Synthetic Puff Ponytail for Natural Hair\n$5.67\n\n[button] B0924PQ9R4 [button_]\nAfro Bun Puff Hair Bun Soft Afro Curly Hair Wigs Extension Hairpieces Hair Accessory Synthetic Short Afro Wigs Black\n$100.0\n",
+        "action_taken": "click[back to search]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[next >]",
+          "click[item - lroveb beanie hat knit with long wavy curly hair extensions wig winter warm fashion long curly hair hat wig wool curl corn perm curl knitted cap attached synthetic hairpiece]",
+          "click[item - lroveb fashion long curly wig head dyed black gradient golden long straight wig african long curly hair wigs ladies gradient color chemical fiber silk corn perm wig for women]",
+          "click[item - hair bun extensions 100% human hair piece updo scrunchies donut chignons hairpiece ponytail hair accessories for women girls]",
+          "click[item - simayixx wigs ponytail extension for black women, fashionable drawstring premium medium brown short synthetic ponytail for natural hair, clip on kinky drawstring curly ponytail(e)]",
+          "click[item - simayixx gifts for women wigs ponytail extension for black women, fashionable drawstring premium medium brown short synthetic ponytail for natural hair(e)]",
+          "click[item - adorna chic 18\" premium quality full density synthetic hair extension heat resistant (blonde ombre)]",
+          "click[item - 2 pieces afro puff drawstring ponytail synthetic short curly hair afro bun extension afro chignon hairpieces wig updo hair extensions (black)]",
+          "click[item - simayixx wigs for black women human hair high puff ponytail with bangs curl bangs and puff bangs clip in hairpieces ponytail with bangs curly puff style full and even shape(d)]",
+          "click[item - drawstring ponytail extension for black women, clip on kinky drawstring curly ponytail bun,premium medium short synthetic puff ponytail for natural hair]",
+          "click[item - afro bun puff hair bun soft afro curly hair wigs extension hairpieces hair accessory synthetic short afro wigs black]"
+        ]
+      },
+      {
+        "step": 10,
+        "observation": "WebShop\nInstruction: \ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Search [button_]\n",
+        "action_taken": "search[hair extension natural looking]",
+        "valid_actions": [
+          "search[long clip-in hair extension natural looking]",
+          "search[long clip-in hair extension]",
+          "search[natural looking hair extension]",
+          "search[short clip-in hair extension natural looking]",
+          "search[natural looking long clip-in hair extension]",
+          "search[short clip-in hair extension]",
+          "search[natural looking hair extension long clip-in]",
+          "search[hair extension natural looking]",
+          "search[a long clip-in hair extension]",
+          "search[natural looking human hair extension]",
+          "search[i need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars]"
+        ]
+      },
+      {
+        "step": 11,
+        "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B09QQKPZJR [button_]\nLroveb Beanie Hat Knit with Long Wavy Curly Hair Extensions Wig Winter Warm Fashion Long Curly Hair Hat Wig Wool Curl Corn Perm Curl Knitted Cap Attached Synthetic Hairpiece\n$36.06\n\n[button] B09QQLDJ93 [button_]\nLroveb Fashion Long Curly Wig Head Dyed Black Gradient Golden Long Straight Wig African Long Curly Hair Wigs Ladies Gradient Color Chemical Fiber Silk Corn Perm Wig for Women\n$34.89\n\n[button] B086HJGYS7 [button_]\nHair Bun Extensions 100% Human Hair Piece Updo Scrunchies Donut Chignons Hairpiece Ponytail Hair Accessories for Women Girls\n$12.99\n\n[button] B09P3X4XBH [button_]\nSimayixx Wigs Ponytail Extension For Black Women, Fashionable Drawstring Premium Medium Brown Short Synthetic Ponytail For Natural Hair, Clip On Kinky Drawstring Curly Ponytail(E)\n$10.0\n\n[button] B09SLZ21XY [button_]\nSimayixx Gifts For Women Wigs Ponytail Extension For Black Women, Fashionable Drawstring Premium Medium Brown Short Synthetic Ponytail For Natural Hair(E)\n$12.99\n\n[button] B07JBJDPP7 [button_]\nAdorna Chic 18\" Premium Quality Full Density Synthetic Hair Extension Heat Resistant (Blonde Ombre)\n$79.99\n\n[button] B07VRC7NTV [button_]\n2 Pieces Afro Puff Drawstring Ponytail Synthetic Short Curly Hair Afro Bun Extension Afro Chignon Hairpieces Wig Updo Hair Extensions (Black)\n$12.59\n\n[button] B09RWVCDHL [button_]\nSimayixx Wigs For Black Women Human Hair High Puff Ponytail With Bangs Curl Bangs And Puff Bangs Clip In Hairpieces Ponytail With Bangs Curly Puff Style Full And Even Shape(D)\n$13.8\n\n[button] B09P8DMDK5 [button_]\nDrawstring Ponytail Extension for Black Women, Clip On Kinky Drawstring Curly Ponytail Bun,Premium Medium Short Synthetic Puff Ponytail for Natural Hair\n$5.67\n\n[button] B0924PQ9R4 [button_]\nAfro Bun Puff Hair Bun Soft Afro Curly Hair Wigs Extension Hairpieces Hair Accessory Synthetic Short Afro Wigs Black\n$100.0\n",
+        "action_taken": "click[item - lroveb beanie hat knit with long wavy curly hair extensions wig winter warm fashion long curly hair hat wig wool curl corn perm curl knitted cap attached synthetic hairpiece]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[next >]",
+          "click[item - lroveb beanie hat knit with long wavy curly hair extensions wig winter warm fashion long curly hair hat wig wool curl corn perm curl knitted cap attached synthetic hairpiece]",
+          "click[item - lroveb fashion long curly wig head dyed black gradient golden long straight wig african long curly hair wigs ladies gradient color chemical fiber silk corn perm wig for women]",
+          "click[item - hair bun extensions 100% human hair piece updo scrunchies donut chignons hairpiece ponytail hair accessories for women girls]",
+          "click[item - simayixx wigs ponytail extension for black women, fashionable drawstring premium medium brown short synthetic ponytail for natural hair, clip on kinky drawstring curly ponytail(e)]",
+          "click[item - simayixx gifts for women wigs ponytail extension for black women, fashionable drawstring premium medium brown short synthetic ponytail for natural hair(e)]",
+          "click[item - adorna chic 18\" premium quality full density synthetic hair extension heat resistant (blonde ombre)]",
+          "click[item - 2 pieces afro puff drawstring ponytail synthetic short curly hair afro bun extension afro chignon hairpieces wig updo hair extensions (black)]",
+          "click[item - simayixx wigs for black women human hair high puff ponytail with bangs curl bangs and puff bangs clip in hairpieces ponytail with bangs curly puff style full and even shape(d)]",
+          "click[item - drawstring ponytail extension for black women, clip on kinky drawstring curly ponytail bun,premium medium short synthetic puff ponytail for natural hair]",
+          "click[item - afro bun puff hair bun soft afro curly hair wigs extension hairpieces hair accessory synthetic short afro wigs black]"
+        ]
+      },
+      {
+        "step": 12,
+        "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nLroveb Beanie Hat Knit with Long Wavy Curly Hair Extensions Wig Winter Warm Fashion Long Curly Hair Hat Wig Wool Curl Corn Perm Curl Knitted Cap Attached Synthetic Hairpiece\nPrice: $36.06\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[features]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]"
+        ]
+      },
+      {
+        "step": 13,
+        "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\n Wigs are made of heat-resistant silk. Wigs are soft, smooth, realistic and heat-resistant. It has a medium split, wavy curly hair shape that looks like normal hair. It's natural. \n [Easy to wear & time saving] Wigs for white women does not need glue or sewing. It takes only 10 seconds to put on a wig. You can save half the time when you go out to dress up. The average cap circumference of hair replacement wigs,which is suitable for most head sizes. There are two adjustable belts in wig cap, which can help you adjust the cap size according to your head. The belt is strong, elastic and not easy to deform \n \u00b7\u00a0\u2665Appearance Occasions:Perfect for Daily Use, Work, Concerts, Theme Parties, Wedding Bride, Dating, Filming, Masquerade, Costume, Fashion, Carnival, Halloween, Christmas, New Year or Just for Fun, Cosplay Like Fairy, Princess,Mermaid or Witch;Good Gift For Your Honey. \n Perfect Gift: This Product with a cute appearance and packaging, full of childishness. It is the best choice as a gift for your mom, wife, girlfriends on birthday, Thanksgiving Day, Christmas, Halloween, or other festivals. \n \u00b7\u00a0\u3010Services\u3011: We are committed to providing all customers with good-quality products and a 100% satisfactory shopping experience. We also offer 24-hour online customer service. Any problems with this blue wig, we provide Return and Exchange. \n",
+        "action_taken": "click[< prev]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]"
+        ]
+      },
+      {
+        "step": 14,
+        "observation": "Instruction:\ni need a long clip-in hair extension which is natural looking, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nLroveb Beanie Hat Knit with Long Wavy Curly Hair Extensions Wig Winter Warm Fashion Long Curly Hair Hat Wig Wool Curl Corn Perm Curl Knitted Cap Attached Synthetic Hairpiece\nPrice: $36.06\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[buy now]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]"
+        ]
+      }
+    ],
+    "reward": 100.0,
+    "done": true,
+    "success": true
+  },
+  {
+    "task_id": 1,
+    "goal": "Instruction: i want a noise cancelling cosycost usb microphone, and price lower than 70.00 dollars",
+    "steps": [
+      {
+        "step": 0,
+        "observation": "WebShop\nInstruction: \ni want a noise cancelling cosycost usb microphone, and price lower than 70.00 dollars\n[button] Search [button_]\n",
+        "action_taken": "search[sound cancelling cosycost usb microphone]",
+        "valid_actions": [
+          "search[noise cancelling cosycost usb microphone]",
+          "search[ noise cancelling cosycost usb microphone]",
+          "search[non noise cancelling cosycost usb microphone]",
+          "search[queen cancelling cosycost usb microphone]",
+          "search[ noise cancelling cosycost usb microphone.]",
+          "search[noise cancelling cosycost usb microphone.]",
+          "search[coaxlling cosycost usb microphone]",
+          "search[non noise cancelling cosycost usb microphone.]",
+          "search[queen cancelling cosycost usb microphone.]",
+          "search[noise cancelling cosycost usb microphone,]",
+          "search[i want a noise cancelling cosycost usb microphone, and price lower than 70.00 dollars]"
+        ]
+      },
+      {
+        "step": 1,
+        "observation": "Instruction:\ni want a noise cancelling cosycost usb microphone, and price lower than 70.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B0972Q1T8T [button_]\nCosycost USB Microphone,Condenser Computer PC Gaming Microphone for PS4/5 Laptop Windows Mac OS Android Phone,Noise Cancelling Instant Mute,Studio Mic for Voice,Music Recording,Podcasting,Streaming\n$32.99\n\n[button] B08Q3VH38Y [button_]\nUSB, 3.5 and USB-C, Quality Sound Headset with Microphone, Noise Cancelling mic, Mute Button LED, Laptop, PC, MAC, Zoom, Skype, Video Conference Calls, Lightweight Headphones with mic\n$20.99\n\n[button] B072L2D6LY [button_]\nAndrea Communications NC-255VM USB On-Ear Stereo USB Computer Headset with Noise-Canceling Microphone, in-Line Volume/Mute Controls, and Plug\n$34.59\n\n[button] B005K22JQ6 [button_]\nMultimedia Gaming USB Mic Headset - Over Ear Professional Wired Headphone w/ Noise Cancelling Mic, 3D 360 Stereo Surround Sound - PC Gaming Console - Game, Skype Chat, Call Center - Pyle Home PHPMCU10\n$24.17\n\n[button] B07XPNB5MD [button_]\nComputer USB Headset, Call Center Headset with Microphone Noise Cancelling, Wired Business Headset for Skype/PC/Laptop/Mac, Business Black\n$19.99\n\n[button] B071H84LTJ [button_]\nAndrea Communications NC-455VM USB Over-Ear Circumaural Stereo USB Computer Headset with Noise-Canceling Microphone, in-Line Volume/Mute Controls, and Plug\n$49.24\n\n[button] B09KZN3G83 [button_]\nUSB Headset with Microphone Noise Cancelling for Call Center, Adjustable Boom Mic, Inline Volume Control & Mute, Wired On Ear Computer PC Headphones for Zoom, Web, Skype\n$19.99\n\n[button] B01M7SHQNO [button_]\nUSB Headset with Microphone Noise Cancelling & Mic Mute, Mono Computer Headphone for Call Center Office Business PC Softphone Calls Microsoft Teams Skype Chat, Clear Voice for Speech Dictation\n$36.99\n\n[button] B00C0NWBEI [button_]\nKoss Communications USB Headset with Microphone (CS100-USB),White\n$18.99\n\n[button] B08SGMQYS4 [button_]\nEKSA Headset with Microphone for Laptop, Wired USB Computer Headphones with Environmental Noise Cancellation, Lightweight Mute Control, Business Telephone Headset for PC,Skype, Call Center, Office\n$29.95\n",
+        "action_taken": "click[next >]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[next >]",
+          "click[item - cosycost usb microphone,condenser computer pc gaming microphone for ps4/5 laptop windows mac os android phone,noise cancelling instant mute,studio mic for voice,music recording,podcasting,streaming]",
+          "click[item - usb, 3.5 and usb-c, quality sound headset with microphone, noise cancelling mic, mute button led, laptop, pc, mac, zoom, skype, video conference calls, lightweight headphones with mic]",
+          "click[item - andrea communications nc-255vm usb on-ear stereo usb computer headset with noise-canceling microphone, in-line volume/mute controls, and plug]",
+          "click[item - multimedia gaming usb mic headset - over ear professional wired headphone w/ noise cancelling mic, 3d 360 stereo surround sound - pc gaming console - game, skype chat, call center - pyle home phpmcu10]",
+          "click[item - computer usb headset, call center headset with microphone noise cancelling, wired business headset for skype/pc/laptop/mac, business black]",
+          "click[item - andrea communications nc-455vm usb over-ear circumaural stereo usb computer headset with noise-canceling microphone, in-line volume/mute controls, and plug]",
+          "click[item - usb headset with microphone noise cancelling for call center, adjustable boom mic, inline volume control & mute, wired on ear computer pc headphones for zoom, web, skype]",
+          "click[item - usb headset with microphone noise cancelling & mic mute, mono computer headphone for call center office business pc softphone calls microsoft teams skype chat, clear voice for speech dictation]",
+          "click[item - koss communications usb headset with microphone (cs100-usb),white]",
+          "click[item - eksa headset with microphone for laptop, wired usb computer headphones with environmental noise cancellation, lightweight mute control, business telephone headset for pc,skype, call center, office]"
+        ]
+      },
+      {
+        "step": 2,
+        "observation": "Instruction:\ni want a noise cancelling cosycost usb microphone, and price lower than 70.00 dollars\n[button] Back to Search [button_]\nPage 2 (Total results: 50)\n[button] < Prev [button_]\n[button] Next > [button_]\n\n[button] B0814B3B71 [button_]\nUSB Headset with Noise Cancelling Microphone, Binaural Computer Headphone for Call Center Office Business PC Softphone Calls Microsoft Teams Skype Chat, Clear Voice for Voice Recognition, Comfort\n$46.99\n\n[button] B0814B53GD [button_]\nUSB Headset with Noise Cancelling Microphone, Mono Computer Headphone for Call Center Office Business PC Softphone Calls Microsoft Teams Skype Chat, Clear Voice for Voice Recognition, Comfortable\n$43.99\n\n[button] B08QCCRLTH [button_]\nNulaxy Computer Headset with Microphone,Business Wired Headset, 3.5mm Jack Headphones with Noise Cancelling Microphone,Inline Control, PC Headset for Skype, Webinar, Office, Classroom, Home\n$19.99\n\n[button] B08K972R42 [button_]\nSony WH-1000XM4 Wireless Noise Canceling Over-Ear Headphones (Silver) with Knox Gear 4 Port USB 3.0 Hub and USB Bluetooth Dongle Adapter Work from Home Bundle (3 Items)\n$348.0\n\n[button] B08DKQ6RZG [button_]\nUSB Phone Headset with Microphone Noise Cancelling, Binaural PC Headphone for Computer Office Call Center Business Skype Chat, w/Mic Mute for Work from Home Voice Recognition School Education\n$29.99\n\n[button] B09M75DDSV [button_]\nYealink Headset with Microphone Teams Certified UH36& WH66 USB-C and Wireless Bluetooth DECT Headphones with Microphone Noise Cancelling Teams Certified Workstation for VoIP Phone Computer PC Laptop\n$331.99\n\n[button] B09N3M6H2Z [button_]\nWired Stereo Headset Noise Cancelling Microphone with in-line Controls/Volume Controller, All-Day Comfort Design, Works for Playstation, Nintendo Switch, PC with USB Connection (HS-HP101UNCBK)\n$199.99\n\n[button] B07D3QPLNL [button_]\nUSB Headset with Microphone for Computer Laptop Noise Cancelling Headphone with Dragon Dictation Mic for PC Softphones Microsoft Teams Zoom Chat Online Teaching Webex Conference Calls Remote Office\n$36.99\n\n[button] B09MQBJG8F [button_]\nUSB Headset with Noise Canceling Microphone, 3.5mm Wired Headphones with 270\u00b0 Rotatable Mic, Inline Volume Control & Mute, Stereo On-Ear Business Headset for Zoom Skype, Clear Sound Ultra Comfort\n$17.99\n\n[button] B086ZSNFQ9 [button_]\nUSB Headset with Microphone Noise Cancelling and Volume Controls, Computer PC Headphone with Voice Recognition Mic for Dragon Teams Zoom Skype Softphones Conference Calls Online Education and More\n$38.99\n",
+        "action_taken": "click[item - usb headset with noise cancelling microphone, binaural computer headphone for call center office business pc softphone calls microsoft teams skype chat, clear voice for voice recognition, comfort]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[next >]",
+          "click[item - usb headset with noise cancelling microphone, binaural computer headphone for call center office business pc softphone calls microsoft teams skype chat, clear voice for voice recognition, comfort]",
+          "click[item - usb headset with noise cancelling microphone, mono computer headphone for call center office business pc softphone calls microsoft teams skype chat, clear voice for voice recognition, comfortable]",
+          "click[item - nulaxy computer headset with microphone,business wired headset, 3.5mm jack headphones with noise cancelling microphone,inline control, pc headset for skype, webinar, office, classroom, home]",
+          "click[item - sony wh-1000xm4 wireless noise canceling over-ear headphones (silver) with knox gear 4 port usb 3.0 hub and usb bluetooth dongle adapter work from home bundle (3 items)]",
+          "click[item - usb phone headset with microphone noise cancelling, binaural pc headphone for computer office call center business skype chat, w/mic mute for work from home voice recognition school education]",
+          "click[item - yealink headset with microphone teams certified uh36& wh66 usb-c and wireless bluetooth dect headphones with microphone noise cancelling teams certified workstation for voip phone computer pc laptop]",
+          "click[item - wired stereo headset noise cancelling microphone with in-line controls/volume controller, all-day comfort design, works for playstation, nintendo switch, pc with usb connection (hs-hp101uncbk)]",
+          "click[item - usb headset with microphone for computer laptop noise cancelling headphone with dragon dictation mic for pc softphones microsoft teams zoom chat online teaching webex conference calls remote office]",
+          "click[item - usb headset with noise canceling microphone, 3.5mm wired headphones with 270\u00b0 rotatable mic, inline volume control & mute, stereo on-ear business headset for zoom skype, clear sound ultra comfort]",
+          "click[item - usb headset with microphone noise cancelling and volume controls, computer pc headphone with voice recognition mic for dragon teams zoom skype softphones conference calls online education and more]"
+        ]
+      },
+      {
+        "step": 3,
+        "observation": "Instruction:\ni want a noise cancelling cosycost usb microphone, and price lower than 70.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nUSB Headset with Noise Cancelling Microphone, Binaural Computer Headphone for Call Center Office Business PC Softphone Calls Microsoft Teams Skype Chat, Clear Voice for Voice Recognition, Comfort\nPrice: $46.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[buy now]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]"
+        ]
+      }
+    ],
+    "reward": 100.0,
+    "done": true,
+    "success": true
+  },
+  {
+    "task_id": 6,
+    "goal": "Instruction: i'm looking for a queen size bedspread set in the color redwood, and price lower than 70.00 dollars",
+    "steps": [
+      {
+        "step": 0,
+        "observation": "WebShop\nInstruction: \ni'm looking for a queen size bedspread set in the color redwood, and price lower than 70.00 dollars\n[button] Search [button_]\n",
+        "action_taken": "search[redwood queen size bedspread]",
+        "valid_actions": [
+          "search[queen size bedspread in the color redwood]",
+          "search[ queen size bedspread set in the color redwood]",
+          "search[king size bedspread set in the color redwood]",
+          "search[queen size bedspread]",
+          "search[king size bedspread in the color redwood]",
+          "search[queen size bedspread, redwood]",
+          "search[queen size bedspread with redwood]",
+          "search[queen size bedspread that is redwood]",
+          "search[queen size bedspread set in the color red]",
+          "search[queen size bedspread in the color red]",
+          "search[i'm looking for a queen size bedspread set in the color redwood, and price lower than 70.00 dollars]"
+        ]
+      },
+      {
+        "step": 1,
+        "observation": "Instruction:\ni'm looking for a queen size bedspread set in the color redwood, and price lower than 70.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B07B4KXQZV [button_]\nLodge Bedspread Full/Queen Size Quilt with 2 Shams. Cabin 3-Piece Reversible All Season Quilt Set. Rustic Quilt Coverlet Bed Set. Stonehurst Collection.\n$44.99\n\n[button] B07PGQ3JYB [button_]\nLodge Bedspread Full/Queen Size Quilt with 2 Shams. Cabin 3-Piece Reversible All Season Quilt Set. Rustic Quilt Coverlet Bed Set. Wilderness Collection (Moose - Grey)\n$44.99\n\n[button] B092R84ZHP [button_]\nBlue Indigo Print Cotton Handmade Handblock Quilted Blanket Indian Cottodspread Kantha Indigo Print Beork Bohemian Bed Decor Block Throw Blanket Twin/King/Queen (Twin 60X90 inches)\n$100.0\n\n[button] B07WZBXSK3 [button_]\nTravan 3-Piece Queen Quilt Set Quilted Bedspread Oversized Microfiber Lightweight Bedspread Coverlet Set with Shams Bedding Set for All Season, Grey, Queen\n$64.99\n\n[button] B07HJDTPTN [button_]\nLevtex Home - Camden Quilt Set -Full/Queen Quilt + Two Standard Pillow Shams - Buffalo Check in Grey and Cream - Quilt Size (88 x 92 in.) and Pillow Sham Size (26 x 20 in.)- Reversible Pattern -Cotton\n$100.0\n\n[button] B087LY6LWJ [button_]\nLevtex home - Mills Waffle - Decorative Pillow - Poly Filled - Grey - Sham Size (20 x 20in.)\n$39.99\n\n[button] B07PJKJSL9 [button_]\nIndian Bedcover, Cotton Bedspread India, Indian Bed Throw, Queen Bedframe, FREE SHIPPING\n$60.0\n\n[button] B07HJDWFG1 [button_]\nLevtex Home - Camden Quilt Set -King Quilt + Two King Pillow Shams - Buffalo Check in Grey and Cream - Quilt Size (106 x 92 in.) and Pillow Sham Size (36 x 20 in.) - Reversible Pattern - Cotton\n$159.99\n\n[button] B07HJDZHFZ [button_]\nLevtex Home - Camden -Decorative Pillow (14X16in.) - Lets Get Cozy - Grey and Cream\n$39.99\n\n[button] B09J1T1W7R [button_]\nLevtex home - Mills Waffle - Throw - Bright White Cotton Waffle - Throw Size 50 x 60in.\n$100.0\n",
+        "action_taken": "click[item - lodge bedspread full/queen size quilt with 2 shams. cabin 3-piece reversible all season quilt set. rustic quilt coverlet bed set. stonehurst collection.]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[next >]",
+          "click[item - lodge bedspread full/queen size quilt with 2 shams. cabin 3-piece reversible all season quilt set. rustic quilt coverlet bed set. stonehurst collection.]",
+          "click[item - lodge bedspread full/queen size quilt with 2 shams. cabin 3-piece reversible all season quilt set. rustic quilt coverlet bed set. wilderness collection (moose - grey)]",
+          "click[item - blue indigo print cotton handmade handblock quilted blanket indian cottodspread kantha indigo print beork bohemian bed decor block throw blanket twin/king/queen (twin 60x90 inches)]",
+          "click[item - travan 3-piece queen quilt set quilted bedspread oversized microfiber lightweight bedspread coverlet set with shams bedding set for all season, grey, queen]",
+          "click[item - levtex home - camden quilt set -full/queen quilt + two standard pillow shams - buffalo check in grey and cream - quilt size (88 x 92 in.) and pillow sham size (26 x 20 in.)- reversible pattern -cotton]",
+          "click[item - levtex home - mills waffle - decorative pillow - poly filled - grey - sham size (20 x 20in.)]",
+          "click[item - indian bedcover, cotton bedspread india, indian bed throw, queen bedframe, free shipping]",
+          "click[item - levtex home - camden quilt set -king quilt + two king pillow shams - buffalo check in grey and cream - quilt size (106 x 92 in.) and pillow sham size (36 x 20 in.) - reversible pattern - cotton]",
+          "click[item - levtex home - camden -decorative pillow (14x16in.) - lets get cozy - grey and cream]",
+          "click[item - levtex home - mills waffle - throw - bright white cotton waffle - throw size 50 x 60in.]"
+        ]
+      },
+      {
+        "step": 2,
+        "observation": "Instruction:\ni'm looking for a queen size bedspread set in the color redwood, and price lower than 70.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nsize\n  [button] twin [button_]\n  [button] full  |  queen [button_]\n  [button] full | queen [button_]\n  [button] king [button_]\ncolor\n  [button] bristol [button_]\n  [button] chocolate  |  green [button_]\n  [button] deer  |  trees  |  snow [button_]\n  [button] festive stripes [button_]\n  [button] holiday homestead [button_]\n  [button] holiday wishes [button_]\n  [button] moose - chocolate [button_]\n  [button] moose - grey [button_]\n  [button] navy  |  grey [button_]\n  [button] red  |  black [button_]\n  [button] redwood [button_]\n  [button] rio ridge - forest green [button_]\n  [button] salt creek [button_]\n  [button] stonehurst [button_]\n  [button] wilder [button_]\n  [button] yosemite [button_]\n  [button] green | brown [button_]\nLodge Bedspread Full/Queen Size Quilt with 2 Shams. Cabin 3-Piece Reversible All Season Quilt Set. Rustic Quilt Coverlet Bed Set. Stonehurst Collection.\nPrice: $44.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[redwood]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]",
+          "click[wilder]",
+          "click[rio ridge - forest green]",
+          "click[holiday wishes]",
+          "click[king]",
+          "click[redwood]",
+          "click[bristol]",
+          "click[moose - grey]",
+          "click[festive stripes]",
+          "click[salt creek]",
+          "click[chocolate  |  green]",
+          "click[green | brown]"
+        ]
+      },
+      {
+        "step": 3,
+        "observation": "You have clicked redwood.\nInstruction:\ni'm looking for a queen size bedspread set in the color redwood, and price lower than 70.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nsize\n  [button] twin [button_]\n  [button] full  |  queen [button_]\n  [button] full | queen [button_]\n  [button] king [button_]\ncolor\n  [button] bristol [button_]\n  [button] chocolate  |  green [button_]\n  [button] deer  |  trees  |  snow [button_]\n  [button] festive stripes [button_]\n  [button] holiday homestead [button_]\n  [button] holiday wishes [button_]\n  [button] moose - chocolate [button_]\n  [button] moose - grey [button_]\n  [button] navy  |  grey [button_]\n  [button] red  |  black [button_]\n  [clicked button] redwood [clicked button_]\n  [button] rio ridge - forest green [button_]\n  [button] salt creek [button_]\n  [button] stonehurst [button_]\n  [button] wilder [button_]\n  [button] yosemite [button_]\n  [button] green | brown [button_]\nLodge Bedspread Full/Queen Size Quilt with 2 Shams. Cabin 3-Piece Reversible All Season Quilt Set. Rustic Quilt Coverlet Bed Set. Stonehurst Collection.\nPrice: $44.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[full  |  queen]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]",
+          "click[red  |  black]",
+          "click[yosemite]",
+          "click[navy  |  grey]",
+          "click[festive stripes]",
+          "click[bristol]",
+          "click[full  |  queen]",
+          "click[deer  |  trees  |  snow]",
+          "click[wilder]",
+          "click[stonehurst]",
+          "click[chocolate  |  green]",
+          "click[green | brown]"
+        ]
+      },
+      {
+        "step": 4,
+        "observation": "You have clicked redwood.\nYou have clicked full  |  queen.\nInstruction:\ni'm looking for a queen size bedspread set in the color redwood, and price lower than 70.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nsize\n  [button] twin [button_]\n  [clicked button] full  |  queen [clicked button_]\n  [button] full | queen [button_]\n  [button] king [button_]\ncolor\n  [button] bristol [button_]\n  [button] chocolate  |  green [button_]\n  [button] deer  |  trees  |  snow [button_]\n  [button] festive stripes [button_]\n  [button] holiday homestead [button_]\n  [button] holiday wishes [button_]\n  [button] moose - chocolate [button_]\n  [button] moose - grey [button_]\n  [button] navy  |  grey [button_]\n  [button] red  |  black [button_]\n  [clicked button] redwood [clicked button_]\n  [button] rio ridge - forest green [button_]\n  [button] salt creek [button_]\n  [button] stonehurst [button_]\n  [button] wilder [button_]\n  [button] yosemite [button_]\n  [button] green | brown [button_]\nLodge Bedspread Full/Queen Size Quilt with 2 Shams. Cabin 3-Piece Reversible All Season Quilt Set. Rustic Quilt Coverlet Bed Set. Stonehurst Collection.\nPrice: $44.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[buy now]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]",
+          "click[moose - chocolate]",
+          "click[holiday wishes]",
+          "click[holiday homestead]",
+          "click[wilder]",
+          "click[bristol]",
+          "click[navy  |  grey]",
+          "click[chocolate  |  green]",
+          "click[twin]",
+          "click[moose - grey]",
+          "click[rio ridge - forest green]",
+          "click[green | brown]"
+        ]
+      }
+    ],
+    "reward": 100.0,
+    "done": true,
+    "success": true
+  },
+  {
+    "task_id": 8,
+    "goal": "Instruction: i want to find xx-large black workout sweatpants with a relaxed fit, and price lower than 40.00 dollars",
+    "steps": [
+      {
+        "step": 0,
+        "observation": "WebShop\nInstruction: \ni want to find xx-large black workout sweatpants with a relaxed fit, and price lower than 40.00 dollars\n[button] Search [button_]\n",
+        "action_taken": "search[xx-large black workout sweatpants with a relaxed fit]",
+        "valid_actions": [
+          "search[xxl black workout sweatpants with a relaxed fit]",
+          "search[xxl black workout sweatpants]",
+          "search[xx-large black workout sweatpants]",
+          "search[xxl black workout sweatpants that are relaxed fit]",
+          "search[xxl black workout sweatpants with relaxed fit]",
+          "search[xx-large black workout sweatpants with relaxed fit]",
+          "search[xxl black workout sweatpants, relaxed fit]",
+          "search[xx-large black workout sweatpants, relaxed fit]",
+          "search[xxl black workout sweatpants relaxed fit]",
+          "search[ xx-large black workout sweatpants]",
+          "search[i want to find xx-large black workout sweatpants with a relaxed fit, and price lower than 40.00 dollars]"
+        ]
+      },
+      {
+        "step": 1,
+        "observation": "Instruction:\ni want to find xx-large black workout sweatpants with a relaxed fit, and price lower than 40.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B0962X9S1W [button_]\nAdogirl Womens Casual High Wasited Joggers Sweatpants Drawstring Workout Yoga Lounge Pants with Pockets\n$12.99 to $13.29\n\n[button] B09PNGTJGS [button_]\n2022 Womens Yoga Pants with Pocket High Waisted Seamless Workout Tennis Skirt Pants Soft Stretch Trendy Solid Athletic Tights\n$8.99 to $14.99\n\n[button] B09P5Y4MFX [button_]\nMens Shorts Cargo Shorts for Men Trousers for Men Classic Relaxed Fit Cargo Pants Outdoor Short Pants\n$26.99\n\n[button] B09RSJNMHS [button_]\nQTOCIO Men's Active Basic Jogger Pants Lightweight Jersey Jogger Gym Sweatpants Baggy Workout Trousers Sports Work Long Pants\n$7.99 to $8.99\n\n[button] B09QYVR254 [button_]\nKKONION Women Comfy Yoga Sweatpants Poylester Breathable Long Trousers Relax Fit Lounge Pants\n$57.99\n\n[button] B08TB8PCRL [button_]\nLeeHanTon Mens Jogging Fleece Elastic Waist Loose Fit Workout Running Sweatpants\n$22.99 to $24.99\n\n[button] B09PD8Q92L [button_]\nqolati Mens Shorts Cargo Shorts for Men Multi Pocket Shorts for Men Outdoor Summer Shorts Lounge Pants for Men Fashion\n$22.99\n\n[button] B09P8TKXJ5 [button_]\n2022 Womens Yoga Pants with Pockets High Waist Tummy Control Seamless Workout Shorts Trendy Solid Color Athletic Tennis Skirt\n$9.99 to $15.99\n\n[button] B097B67173 [button_]\nTNNZEET 2 Pack Sweatpants for Women, Joggers with Pockets, Lounge Yoga Workout Pants\n$19.99\n\n[button] B09QXHXR93 [button_]\nKUDICO Mens Cotton Joggers Pants Casual Gym Athletic Workout Track Pants Comfy Soft Loose Fit Tapered Sweatpants with Pockets\n$2.99 to $8.99\n",
+        "action_taken": "click[item - adogirl womens casual high wasited joggers sweatpants drawstring workout yoga lounge pants with pockets]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[next >]",
+          "click[item - adogirl womens casual high wasited joggers sweatpants drawstring workout yoga lounge pants with pockets]",
+          "click[item - 2022 womens yoga pants with pocket high waisted seamless workout tennis skirt pants soft stretch trendy solid athletic tights]",
+          "click[item - mens shorts cargo shorts for men trousers for men classic relaxed fit cargo pants outdoor short pants]",
+          "click[item - qtocio men's active basic jogger pants lightweight jersey jogger gym sweatpants baggy workout trousers sports work long pants]",
+          "click[item - kkonion women comfy yoga sweatpants poylester breathable long trousers relax fit lounge pants]",
+          "click[item - leehanton mens jogging fleece elastic waist loose fit workout running sweatpants]",
+          "click[item - qolati mens shorts cargo shorts for men multi pocket shorts for men outdoor summer shorts lounge pants for men fashion]",
+          "click[item - 2022 womens yoga pants with pockets high waist tummy control seamless workout shorts trendy solid color athletic tennis skirt]",
+          "click[item - tnnzeet 2 pack sweatpants for women, joggers with pockets, lounge yoga workout pants]",
+          "click[item - kudico mens cotton joggers pants casual gym athletic workout track pants comfy soft loose fit tapered sweatpants with pockets]"
+        ]
+      },
+      {
+        "step": 2,
+        "observation": "Instruction:\ni want to find xx-large black workout sweatpants with a relaxed fit, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\ncolor\n  [button] arctic plum [button_]\n  [button] black [button_]\n  [button] blue [button_]\nsize\n  [button] small [button_]\n  [button] medium [button_]\n  [button] large [button_]\n  [button] x-large [button_]\n  [button] xx-large [button_]\nAdogirl Womens Casual High Wasited Joggers Sweatpants Drawstring Workout Yoga Lounge Pants with Pockets\nPrice: $12.99 to $13.29\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[xx-large]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]",
+          "click[arctic plum]",
+          "click[black]",
+          "click[blue]",
+          "click[small]",
+          "click[medium]",
+          "click[large]",
+          "click[x-large]",
+          "click[xx-large]"
+        ]
+      },
+      {
+        "step": 3,
+        "observation": "You have clicked xx-large.\nInstruction:\ni want to find xx-large black workout sweatpants with a relaxed fit, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\ncolor\n  [button] arctic plum [button_]\n  [button] black [button_]\n  [button] blue [button_]\nsize\n  [button] small [button_]\n  [button] medium [button_]\n  [button] large [button_]\n  [button] x-large [button_]\n  [clicked button] xx-large [clicked button_]\nAdogirl Womens Casual High Wasited Joggers Sweatpants Drawstring Workout Yoga Lounge Pants with Pockets\nPrice: $12.99 to $13.29\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[black]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]",
+          "click[arctic plum]",
+          "click[black]",
+          "click[blue]",
+          "click[small]",
+          "click[medium]",
+          "click[large]",
+          "click[x-large]",
+          "click[xx-large]"
+        ]
+      },
+      {
+        "step": 4,
+        "observation": "You have clicked xx-large.\nYou have clicked black.\nInstruction:\ni want to find xx-large black workout sweatpants with a relaxed fit, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\ncolor\n  [button] arctic plum [button_]\n  [clicked button] black [clicked button_]\n  [button] blue [button_]\nsize\n  [button] small [button_]\n  [button] medium [button_]\n  [button] large [button_]\n  [button] x-large [button_]\n  [clicked button] xx-large [clicked button_]\nAdogirl Womens Casual High Wasited Joggers Sweatpants Drawstring Workout Yoga Lounge Pants with Pockets\nPrice: $12.99 to $13.29\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[buy now]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]",
+          "click[arctic plum]",
+          "click[black]",
+          "click[blue]",
+          "click[small]",
+          "click[medium]",
+          "click[large]",
+          "click[x-large]",
+          "click[xx-large]"
+        ]
+      }
+    ],
+    "reward": 100.0,
+    "done": true,
+    "success": true
+  },
+  {
+    "task_id": 12,
+    "goal": "Instruction: i am looking for a remote control for an lg blu-ray dvd home theater system, and price lower than 70.00 dollars",
+    "steps": [
+      {
+        "step": 0,
+        "observation": "WebShop\nInstruction: \ni am looking for a remote control for an lg blu-ray dvd home theater system, and price lower than 70.00 dollars\n[button] Search [button_]\n",
+        "action_taken": "search[remote control lg blu-ray dvd home theater system]",
+        "valid_actions": [
+          "search[remote control lg blu-ray dvd home theater system]",
+          "search[remote control for lg blu-ray dvd home theater system]",
+          "search[remote control lg blu-ray dvd home theater system.]",
+          "search[lg blu-ray dvd home theater system]",
+          "search[remote control lg blu-ray dvd home theater system,]",
+          "search[remote control home theater system]",
+          "search[remote control lg blu-ray dvd home theater]",
+          "search[remote control dvd home theater system]",
+          "search[remote control lg blu-ray dvd]",
+          "search[remote control]",
+          "search[i am looking for a remote control for an lg blu-ray dvd home theater system, and price lower than 70.00 dollars]"
+        ]
+      },
+      {
+        "step": 1,
+        "observation": "Instruction:\ni am looking for a remote control for an lg blu-ray dvd home theater system, and price lower than 70.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B08B5XZ7LR [button_]\nNew AKB73775801 Remote for LG Blu-ray Disc Player Home Theater System BH5140 S54S1-S S54T1-W BH5440P S54T1-S S54T1-C BH5540T BH5140SF0 LHB655 S65T1-S S65T1-C S65T1-W LHB655FB LHB675 LHB675FB S65T3-S\n$7.95\n\n[button] B088WYLKNG [button_]\nAKB73596102 Replace Remote Control Sub AKB73596101 fit for LG LG 3D Blu-ray Disc DVD Home Theater Cinema System BH6220S BH6420 BH6620P BH6720 BH6720S BH6820 S62D3-W S62S1-S S62S1-W S62T1-C S62T1-S\n$8.97\n\n[button] B09R4X56QH [button_]\nNew AKB73775820 Remote Control Compatible with LG Blu-ray Disc DVD Player Home Theater System\n$25.99\n\n[button] B01G8H1LM4 [button_]\nHCDZ Replacement Remote Control for LG LHB975 LHB675 AKB72976005 3D Blu-ray DVD Home Theater System\n$17.89\n\n[button] B01G8H1O30 [button_]\nHCDZ Replacement Remote Control for LG AKB73775804 LHB326 Blu-ray DVD Home Theater System\n$15.88\n\n[button] B01G8H1944 [button_]\nHCDZ Replacement Remote Control for LG LHB335 LHB535 AKB37026822 AKB37026802 HB954SA Wi-Fi Network Blu-ray Disc DVD Home Theater System\n$15.84\n\n[button] B09CH2SPRR [button_]\nAKB73635402 Replace Remote Control fit for LG Home Theater System BH9320H BH7220BW BH7520TW BH9520TW BB5520A S92H1-S S92T1-C S92T1-W S72B1-F S72B1-S S72B1-C S72B1-W S72T1-S S72T1-W S92T1-S SHX56-D\n$12.99\n\n[button] B01G8H0QIY [button_]\nHCDZ Replacement Remote Control for LG BH7230BW BH7230BWB HT303SU Blu-ray DVD Home Cinema System\n$15.91\n\n[button] B01G8H0SCS [button_]\nHCDZ Replacement Remote Control for LG BH7220 BH7220B BH7220C 3D Blu-ray DVD Home Cinema System\n$15.9\n\n[button] B01G8H100M [button_]\nHCDZ Replacement Remote Control for LG LHB725 AKB73356001 HT905TA 3D Blu-ray DVD Home Cinema System\n$15.89\n",
+        "action_taken": "click[item - new akb73775820 remote control compatible with lg blu-ray disc dvd player home theater system]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[next >]",
+          "click[item - new akb73775801 remote for lg blu-ray disc player home theater system bh5140 s54s1-s s54t1-w bh5440p s54t1-s s54t1-c bh5540t bh5140sf0 lhb655 s65t1-s s65t1-c s65t1-w lhb655fb lhb675 lhb675fb s65t3-s]",
+          "click[item - akb73596102 replace remote control sub akb73596101 fit for lg lg 3d blu-ray disc dvd home theater cinema system bh6220s bh6420 bh6620p bh6720 bh6720s bh6820 s62d3-w s62s1-s s62s1-w s62t1-c s62t1-s]",
+          "click[item - new akb73775820 remote control compatible with lg blu-ray disc dvd player home theater system]",
+          "click[item - hcdz replacement remote control for lg lhb975 lhb675 akb72976005 3d blu-ray dvd home theater system]",
+          "click[item - hcdz replacement remote control for lg akb73775804 lhb326 blu-ray dvd home theater system]",
+          "click[item - hcdz replacement remote control for lg lhb335 lhb535 akb37026822 akb37026802 hb954sa wi-fi network blu-ray disc dvd home theater system]",
+          "click[item - akb73635402 replace remote control fit for lg home theater system bh9320h bh7220bw bh7520tw bh9520tw bb5520a s92h1-s s92t1-c s92t1-w s72b1-f s72b1-s s72b1-c s72b1-w s72t1-s s72t1-w s92t1-s shx56-d]",
+          "click[item - hcdz replacement remote control for lg bh7230bw bh7230bwb ht303su blu-ray dvd home cinema system]",
+          "click[item - hcdz replacement remote control for lg bh7220 bh7220b bh7220c 3d blu-ray dvd home cinema system]",
+          "click[item - hcdz replacement remote control for lg lhb725 akb73356001 ht905ta 3d blu-ray dvd home cinema system]"
+        ]
+      },
+      {
+        "step": 2,
+        "observation": "Instruction:\ni am looking for a remote control for an lg blu-ray dvd home theater system, and price lower than 70.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nNew AKB73775820 Remote Control Compatible with LG Blu-ray Disc DVD Player Home Theater System\nPrice: $25.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[description]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]"
+        ]
+      },
+      {
+        "step": 3,
+        "observation": "Instruction:\ni am looking for a remote control for an lg blu-ray dvd home theater system, and price lower than 70.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nNew AKB73775820 Remote Control Compatible with LG Blu-ray Disc DVD Player Home Theater SystemNo need to program, Just install 2 new 1.5V AAA alkaline batteries, then it will work.Include 1 new replacement IR remote controller as picture.(Batteries and Instruction are not included)Replace Remote Control Model: AKB73775820Compatible with following LG Player Models:BH5140S S54S1-S S54T1-W BH5440P S54T1-S S54T1-C BH5540TBH6240S BH6340H S64H1-S S64H1-C S64H1-W S63T1-C BH6440PS63T1-S S63T1-W BH6540T BH6430P S63S1-S LHB675NNotes: Any question, please do not hesitate to contact us, we will do our best to help you resolve it.\n",
+        "action_taken": "click[< prev]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]"
+        ]
+      },
+      {
+        "step": 4,
+        "observation": "Instruction:\ni am looking for a remote control for an lg blu-ray dvd home theater system, and price lower than 70.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nNew AKB73775820 Remote Control Compatible with LG Blu-ray Disc DVD Player Home Theater System\nPrice: $25.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[< prev]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]"
+        ]
+      },
+      {
+        "step": 5,
+        "observation": "Instruction:\ni am looking for a remote control for an lg blu-ray dvd home theater system, and price lower than 70.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B08B5XZ7LR [button_]\nNew AKB73775801 Remote for LG Blu-ray Disc Player Home Theater System BH5140 S54S1-S S54T1-W BH5440P S54T1-S S54T1-C BH5540T BH5140SF0 LHB655 S65T1-S S65T1-C S65T1-W LHB655FB LHB675 LHB675FB S65T3-S\n$7.95\n\n[button] B088WYLKNG [button_]\nAKB73596102 Replace Remote Control Sub AKB73596101 fit for LG LG 3D Blu-ray Disc DVD Home Theater Cinema System BH6220S BH6420 BH6620P BH6720 BH6720S BH6820 S62D3-W S62S1-S S62S1-W S62T1-C S62T1-S\n$8.97\n\n[clicked button] B09R4X56QH [clicked button_]\nNew AKB73775820 Remote Control Compatible with LG Blu-ray Disc DVD Player Home Theater System\n$25.99\n\n[button] B01G8H1LM4 [button_]\nHCDZ Replacement Remote Control for LG LHB975 LHB675 AKB72976005 3D Blu-ray DVD Home Theater System\n$17.89\n\n[button] B01G8H1O30 [button_]\nHCDZ Replacement Remote Control for LG AKB73775804 LHB326 Blu-ray DVD Home Theater System\n$15.88\n\n[button] B01G8H1944 [button_]\nHCDZ Replacement Remote Control for LG LHB335 LHB535 AKB37026822 AKB37026802 HB954SA Wi-Fi Network Blu-ray Disc DVD Home Theater System\n$15.84\n\n[button] B09CH2SPRR [button_]\nAKB73635402 Replace Remote Control fit for LG Home Theater System BH9320H BH7220BW BH7520TW BH9520TW BB5520A S92H1-S S92T1-C S92T1-W S72B1-F S72B1-S S72B1-C S72B1-W S72T1-S S72T1-W S92T1-S SHX56-D\n$12.99\n\n[button] B01G8H0QIY [button_]\nHCDZ Replacement Remote Control for LG BH7230BW BH7230BWB HT303SU Blu-ray DVD Home Cinema System\n$15.91\n\n[button] B01G8H0SCS [button_]\nHCDZ Replacement Remote Control for LG BH7220 BH7220B BH7220C 3D Blu-ray DVD Home Cinema System\n$15.9\n\n[button] B01G8H100M [button_]\nHCDZ Replacement Remote Control for LG LHB725 AKB73356001 HT905TA 3D Blu-ray DVD Home Cinema System\n$15.89\n",
+        "action_taken": "click[next >]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[next >]",
+          "click[item - new akb73775801 remote for lg blu-ray disc player home theater system bh5140 s54s1-s s54t1-w bh5440p s54t1-s s54t1-c bh5540t bh5140sf0 lhb655 s65t1-s s65t1-c s65t1-w lhb655fb lhb675 lhb675fb s65t3-s]",
+          "click[item - akb73596102 replace remote control sub akb73596101 fit for lg lg 3d blu-ray disc dvd home theater cinema system bh6220s bh6420 bh6620p bh6720 bh6720s bh6820 s62d3-w s62s1-s s62s1-w s62t1-c s62t1-s]",
+          "click[item - new akb73775820 remote control compatible with lg blu-ray disc dvd player home theater system]",
+          "click[item - hcdz replacement remote control for lg lhb975 lhb675 akb72976005 3d blu-ray dvd home theater system]",
+          "click[item - hcdz replacement remote control for lg akb73775804 lhb326 blu-ray dvd home theater system]",
+          "click[item - hcdz replacement remote control for lg lhb335 lhb535 akb37026822 akb37026802 hb954sa wi-fi network blu-ray disc dvd home theater system]",
+          "click[item - akb73635402 replace remote control fit for lg home theater system bh9320h bh7220bw bh7520tw bh9520tw bb5520a s92h1-s s92t1-c s92t1-w s72b1-f s72b1-s s72b1-c s72b1-w s72t1-s s72t1-w s92t1-s shx56-d]",
+          "click[item - hcdz replacement remote control for lg bh7230bw bh7230bwb ht303su blu-ray dvd home cinema system]",
+          "click[item - hcdz replacement remote control for lg bh7220 bh7220b bh7220c 3d blu-ray dvd home cinema system]",
+          "click[item - hcdz replacement remote control for lg lhb725 akb73356001 ht905ta 3d blu-ray dvd home cinema system]"
+        ]
+      },
+      {
+        "step": 6,
+        "observation": "Instruction:\ni am looking for a remote control for an lg blu-ray dvd home theater system, and price lower than 70.00 dollars\n[button] Back to Search [button_]\nPage 2 (Total results: 50)\n[button] < Prev [button_]\n[button] Next > [button_]\n\n[button] B06W5RMW74 [button_]\nNew LG BLURAY DISC Player Home Theater Replaced Remote Control AKB72975301 AKB73615702 AKB73095401 AKB73215304 AKB73495301 AKB73315301 Remote Control fit for LG BD610 BD650 BD660 AKB73315301\n$7.95\n\n[button] B01G8H0UBW [button_]\nHCDZ Replacement Remote Control for LG BH6430P BH6730S BH6730T BH6730P BH6330H BH6230S 3D Blu-ray DVD Home Cinema System\n$15.92\n\n[button] B01G8H0W88 [button_]\nHCDZ Replacement Remote Control for LG BH7530TW BH7530TWB AKB73635409 BH5320F 3D Blu-ray DVD Home Cinema System\n$15.91\n\n[button] B01G8H0WFQ [button_]\nHCDZ Replacement Remote Control for LG LHB9963D HT904TA HT-953TV 3D Blu-ray DVD Home Cinema System\n$15.88\n\n[button] B01G8H11YC [button_]\nHCDZ Replacement Remote Control for LG HB965DF HB965PZT LHB977 Network Blu-ray Disc DVD Home Cinema System\n$15.98\n\n[button] B01G8H17PA [button_]\nHCDZ Replacement Remote Control for LG HB405SU HB44M HB44C HB45E HB44S Network Blu-ray Disc DVD Home Cinema System\n$15.85\n\n[button] B01G8H1BOC [button_]\nHCDZ Replacement Remote Control for LG BH9540TW LHB755W AKB73775631 3D AKB73375501 AKB73115301 AKB72976022 Blu-ray DVD Home Theatre System\n$15.83\n\n[button] B08ZV6GFQ7 [button_]\nReplaced Remote Control Compatible for LG BH5140SF0 S54T1-S LHB675FB S63H1-W BH5140S S63H1-C BH6430P S43S2-S BH6730P S63T1-S/C S64H1-C 3D Blu-ray DVD Home Cinema Theater System\n$8.85\n\n[button] B08ZVFM7CZ [button_]\nReplaced Remote Control Compatible for LG BH5140 S54T1-W LHB675 S65T3S BH4530T BH6230S S43T1-S BH6340H S43S1-W BH6540T S63T1-S S64H1-S 3D Blu-ray DVD Home Cinema Theater System\n$8.85\n\n[button] B08ZVXJZML [button_]\nReplaced Remote Control Compatible for LG LHB655FB S54S1-S BH4430P S63S2-C BH5540T BH6330H S63S2-S BH6530T S63T1-C BH6730T S63T2-S 3D Blu-ray DVD Home Cinema Theater System\n$8.85\n",
+        "action_taken": "click[< prev]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[next >]",
+          "click[item - new lg bluray disc player home theater replaced remote control akb72975301 akb73615702 akb73095401 akb73215304 akb73495301 akb73315301 remote control fit for lg bd610 bd650 bd660 akb73315301]",
+          "click[item - hcdz replacement remote control for lg bh6430p bh6730s bh6730t bh6730p bh6330h bh6230s 3d blu-ray dvd home cinema system]",
+          "click[item - hcdz replacement remote control for lg bh7530tw bh7530twb akb73635409 bh5320f 3d blu-ray dvd home cinema system]",
+          "click[item - hcdz replacement remote control for lg lhb9963d ht904ta ht-953tv 3d blu-ray dvd home cinema system]",
+          "click[item - hcdz replacement remote control for lg hb965df hb965pzt lhb977 network blu-ray disc dvd home cinema system]",
+          "click[item - hcdz replacement remote control for lg hb405su hb44m hb44c hb45e hb44s network blu-ray disc dvd home cinema system]",
+          "click[item - hcdz replacement remote control for lg bh9540tw lhb755w akb73775631 3d akb73375501 akb73115301 akb72976022 blu-ray dvd home theatre system]",
+          "click[item - replaced remote control compatible for lg bh5140sf0 s54t1-s lhb675fb s63h1-w bh5140s s63h1-c bh6430p s43s2-s bh6730p s63t1-s/c s64h1-c 3d blu-ray dvd home cinema theater system]",
+          "click[item - replaced remote control compatible for lg bh5140 s54t1-w lhb675 s65t3s bh4530t bh6230s s43t1-s bh6340h s43s1-w bh6540t s63t1-s s64h1-s 3d blu-ray dvd home cinema theater system]",
+          "click[item - replaced remote control compatible for lg lhb655fb s54s1-s bh4430p s63s2-c bh5540t bh6330h s63s2-s bh6530t s63t1-c bh6730t s63t2-s 3d blu-ray dvd home cinema theater system]"
+        ]
+      },
+      {
+        "step": 7,
+        "observation": "Instruction:\ni am looking for a remote control for an lg blu-ray dvd home theater system, and price lower than 70.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B08B5XZ7LR [button_]\nNew AKB73775801 Remote for LG Blu-ray Disc Player Home Theater System BH5140 S54S1-S S54T1-W BH5440P S54T1-S S54T1-C BH5540T BH5140SF0 LHB655 S65T1-S S65T1-C S65T1-W LHB655FB LHB675 LHB675FB S65T3-S\n$7.95\n\n[button] B088WYLKNG [button_]\nAKB73596102 Replace Remote Control Sub AKB73596101 fit for LG LG 3D Blu-ray Disc DVD Home Theater Cinema System BH6220S BH6420 BH6620P BH6720 BH6720S BH6820 S62D3-W S62S1-S S62S1-W S62T1-C S62T1-S\n$8.97\n\n[clicked button] B09R4X56QH [clicked button_]\nNew AKB73775820 Remote Control Compatible with LG Blu-ray Disc DVD Player Home Theater System\n$25.99\n\n[button] B01G8H1LM4 [button_]\nHCDZ Replacement Remote Control for LG LHB975 LHB675 AKB72976005 3D Blu-ray DVD Home Theater System\n$17.89\n\n[button] B01G8H1O30 [button_]\nHCDZ Replacement Remote Control for LG AKB73775804 LHB326 Blu-ray DVD Home Theater System\n$15.88\n\n[button] B01G8H1944 [button_]\nHCDZ Replacement Remote Control for LG LHB335 LHB535 AKB37026822 AKB37026802 HB954SA Wi-Fi Network Blu-ray Disc DVD Home Theater System\n$15.84\n\n[button] B09CH2SPRR [button_]\nAKB73635402 Replace Remote Control fit for LG Home Theater System BH9320H BH7220BW BH7520TW BH9520TW BB5520A S92H1-S S92T1-C S92T1-W S72B1-F S72B1-S S72B1-C S72B1-W S72T1-S S72T1-W S92T1-S SHX56-D\n$12.99\n\n[button] B01G8H0QIY [button_]\nHCDZ Replacement Remote Control for LG BH7230BW BH7230BWB HT303SU Blu-ray DVD Home Cinema System\n$15.91\n\n[button] B01G8H0SCS [button_]\nHCDZ Replacement Remote Control for LG BH7220 BH7220B BH7220C 3D Blu-ray DVD Home Cinema System\n$15.9\n\n[button] B01G8H100M [button_]\nHCDZ Replacement Remote Control for LG LHB725 AKB73356001 HT905TA 3D Blu-ray DVD Home Cinema System\n$15.89\n",
+        "action_taken": "click[item - akb73635402 replace remote control fit for lg home theater system bh9320h bh7220bw bh7520tw bh9520tw bb5520a s92h1-s s92t1-c s92t1-w s72b1-f s72b1-s s72b1-c s72b1-w s72t1-s s72t1-w s92t1-s shx56-d]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[next >]",
+          "click[item - new akb73775801 remote for lg blu-ray disc player home theater system bh5140 s54s1-s s54t1-w bh5440p s54t1-s s54t1-c bh5540t bh5140sf0 lhb655 s65t1-s s65t1-c s65t1-w lhb655fb lhb675 lhb675fb s65t3-s]",
+          "click[item - akb73596102 replace remote control sub akb73596101 fit for lg lg 3d blu-ray disc dvd home theater cinema system bh6220s bh6420 bh6620p bh6720 bh6720s bh6820 s62d3-w s62s1-s s62s1-w s62t1-c s62t1-s]",
+          "click[item - new akb73775820 remote control compatible with lg blu-ray disc dvd player home theater system]",
+          "click[item - hcdz replacement remote control for lg lhb975 lhb675 akb72976005 3d blu-ray dvd home theater system]",
+          "click[item - hcdz replacement remote control for lg akb73775804 lhb326 blu-ray dvd home theater system]",
+          "click[item - hcdz replacement remote control for lg lhb335 lhb535 akb37026822 akb37026802 hb954sa wi-fi network blu-ray disc dvd home theater system]",
+          "click[item - akb73635402 replace remote control fit for lg home theater system bh9320h bh7220bw bh7520tw bh9520tw bb5520a s92h1-s s92t1-c s92t1-w s72b1-f s72b1-s s72b1-c s72b1-w s72t1-s s72t1-w s92t1-s shx56-d]",
+          "click[item - hcdz replacement remote control for lg bh7230bw bh7230bwb ht303su blu-ray dvd home cinema system]",
+          "click[item - hcdz replacement remote control for lg bh7220 bh7220b bh7220c 3d blu-ray dvd home cinema system]",
+          "click[item - hcdz replacement remote control for lg lhb725 akb73356001 ht905ta 3d blu-ray dvd home cinema system]"
+        ]
+      },
+      {
+        "step": 8,
+        "observation": "Instruction:\ni am looking for a remote control for an lg blu-ray dvd home theater system, and price lower than 70.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nAKB73635402 Replace Remote Control fit for LG Home Theater System BH9320H BH7220BW BH7520TW BH9520TW BB5520A S92H1-S S92T1-C S92T1-W S72B1-F S72B1-S S72B1-C S72B1-W S72T1-S S72T1-W S92T1-S SHX56-D\nPrice: $12.99\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[< prev]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]"
+        ]
+      },
+      {
+        "step": 9,
+        "observation": "Instruction:\ni am looking for a remote control for an lg blu-ray dvd home theater system, and price lower than 70.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B08B5XZ7LR [button_]\nNew AKB73775801 Remote for LG Blu-ray Disc Player Home Theater System BH5140 S54S1-S S54T1-W BH5440P S54T1-S S54T1-C BH5540T BH5140SF0 LHB655 S65T1-S S65T1-C S65T1-W LHB655FB LHB675 LHB675FB S65T3-S\n$7.95\n\n[button] B088WYLKNG [button_]\nAKB73596102 Replace Remote Control Sub AKB73596101 fit for LG LG 3D Blu-ray Disc DVD Home Theater Cinema System BH6220S BH6420 BH6620P BH6720 BH6720S BH6820 S62D3-W S62S1-S S62S1-W S62T1-C S62T1-S\n$8.97\n\n[clicked button] B09R4X56QH [clicked button_]\nNew AKB73775820 Remote Control Compatible with LG Blu-ray Disc DVD Player Home Theater System\n$25.99\n\n[button] B01G8H1LM4 [button_]\nHCDZ Replacement Remote Control for LG LHB975 LHB675 AKB72976005 3D Blu-ray DVD Home Theater System\n$17.89\n\n[button] B01G8H1O30 [button_]\nHCDZ Replacement Remote Control for LG AKB73775804 LHB326 Blu-ray DVD Home Theater System\n$15.88\n\n[button] B01G8H1944 [button_]\nHCDZ Replacement Remote Control for LG LHB335 LHB535 AKB37026822 AKB37026802 HB954SA Wi-Fi Network Blu-ray Disc DVD Home Theater System\n$15.84\n\n[clicked button] B09CH2SPRR [clicked button_]\nAKB73635402 Replace Remote Control fit for LG Home Theater System BH9320H BH7220BW BH7520TW BH9520TW BB5520A S92H1-S S92T1-C S92T1-W S72B1-F S72B1-S S72B1-C S72B1-W S72T1-S S72T1-W S92T1-S SHX56-D\n$12.99\n\n[button] B01G8H0QIY [button_]\nHCDZ Replacement Remote Control for LG BH7230BW BH7230BWB HT303SU Blu-ray DVD Home Cinema System\n$15.91\n\n[button] B01G8H0SCS [button_]\nHCDZ Replacement Remote Control for LG BH7220 BH7220B BH7220C 3D Blu-ray DVD Home Cinema System\n$15.9\n\n[button] B01G8H100M [button_]\nHCDZ Replacement Remote Control for LG LHB725 AKB73356001 HT905TA 3D Blu-ray DVD Home Cinema System\n$15.89\n",
+        "action_taken": "click[item - akb73596102 replace remote control sub akb73596101 fit for lg lg 3d blu-ray disc dvd home theater cinema system bh6220s bh6420 bh6620p bh6720 bh6720s bh6820 s62d3-w s62s1-s s62s1-w s62t1-c s62t1-s]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[next >]",
+          "click[item - new akb73775801 remote for lg blu-ray disc player home theater system bh5140 s54s1-s s54t1-w bh5440p s54t1-s s54t1-c bh5540t bh5140sf0 lhb655 s65t1-s s65t1-c s65t1-w lhb655fb lhb675 lhb675fb s65t3-s]",
+          "click[item - akb73596102 replace remote control sub akb73596101 fit for lg lg 3d blu-ray disc dvd home theater cinema system bh6220s bh6420 bh6620p bh6720 bh6720s bh6820 s62d3-w s62s1-s s62s1-w s62t1-c s62t1-s]",
+          "click[item - new akb73775820 remote control compatible with lg blu-ray disc dvd player home theater system]",
+          "click[item - hcdz replacement remote control for lg lhb975 lhb675 akb72976005 3d blu-ray dvd home theater system]",
+          "click[item - hcdz replacement remote control for lg akb73775804 lhb326 blu-ray dvd home theater system]",
+          "click[item - hcdz replacement remote control for lg lhb335 lhb535 akb37026822 akb37026802 hb954sa wi-fi network blu-ray disc dvd home theater system]",
+          "click[item - akb73635402 replace remote control fit for lg home theater system bh9320h bh7220bw bh7520tw bh9520tw bb5520a s92h1-s s92t1-c s92t1-w s72b1-f s72b1-s s72b1-c s72b1-w s72t1-s s72t1-w s92t1-s shx56-d]",
+          "click[item - hcdz replacement remote control for lg bh7230bw bh7230bwb ht303su blu-ray dvd home cinema system]",
+          "click[item - hcdz replacement remote control for lg bh7220 bh7220b bh7220c 3d blu-ray dvd home cinema system]",
+          "click[item - hcdz replacement remote control for lg lhb725 akb73356001 ht905ta 3d blu-ray dvd home cinema system]"
+        ]
+      },
+      {
+        "step": 10,
+        "observation": "Instruction:\ni am looking for a remote control for an lg blu-ray dvd home theater system, and price lower than 70.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\nAKB73596102 Replace Remote Control Sub AKB73596101 fit for LG LG 3D Blu-ray Disc DVD Home Theater Cinema System BH6220S BH6420 BH6620P BH6720 BH6720S BH6820 S62D3-W S62S1-S S62S1-W S62T1-C S62T1-S\nPrice: $8.97\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[buy now]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]"
+        ]
+      }
+    ],
+    "reward": 100.0,
+    "done": true,
+    "success": true
+  },
+  {
+    "task_id": 17,
+    "goal": "Instruction: i am looking for mn4 color foundation for my sensitive skin, and price lower than 40.00 dollars",
+    "steps": [
+      {
+        "step": 0,
+        "observation": "WebShop\nInstruction: \ni am looking for mn4 color foundation for my sensitive skin, and price lower than 40.00 dollars\n[button] Search [button_]\n",
+        "action_taken": "search[mn4 color foundation for my sensitive skin]",
+        "valid_actions": [
+          "search[mn4 color foundation for my sensitive skin]",
+          "search[mens4 color foundation for sensitive skin]",
+          "search[mn4 color foundation for sensitive skin]",
+          "search[mn4 color foundation for sensitive skin.]",
+          "search[mens4 color foundation for sensitive skin.]",
+          "search[mens4 color foundation for my sensitive skin]",
+          "search[mens4 color foundation for my sensitive skin.]",
+          "search[mens 4 color foundation for sensitive skin]",
+          "search[mn4 color foundation]",
+          "search[mn4 color foundation sensitive skin]",
+          "search[i am looking for mn4 color foundation for my sensitive skin, and price lower than 40.00 dollars]"
+        ]
+      },
+      {
+        "step": 1,
+        "observation": "Instruction:\ni am looking for mn4 color foundation for my sensitive skin, and price lower than 40.00 dollars\n[button] Back to Search [button_]\nPage 1 (Total results: 50)\n[button] Next > [button_]\n\n[button] B077PR9TL4 [button_]\nPhysicians Formula The Healthy Foundation with SPF 20, LW2, 1 Fl Oz\n$7.59\n\n[button] B07VLKYJNH [button_]\nP\u00dcR 4-in-1 Love Your Selfie Longwear Foundation & Concealer - Full Coverage Foundation & Concealer Makeup For Dark Spots, Blemishes and Imperfections - Long-Lasting Liquid Makeup & Skincare\n$36.0\n\n[button] B09J1X9M1P [button_]\nNeutrogena Healthy Skin Sensitive Skin Serum Foundation with Pro-Vitamin B5, Color Correcting & Pore Minimizing Liquid Foundation & Face Serum, Buildable Coverage, Medium 02, 1 oz\n$14.39\n\n[button] B001H926QO [button_]\nL'Oreal Paris True Match Mineral Loose Powder Foundation Light Ivory, 0.35 Ounce\n$10.0\n\n[button] B001H963I6 [button_]\nL'Oreal Paris True Match Mineral Loose Powder Foundation, Classic Tan, 0.35oz\n$9.0\n\n[button] B00KBBKM7Y [button_]\nAnti-Aging Foundation by Almay, Smart Shade Face Makeup, Medium Coverage, Natural Finish with SPF 20, Hypoallergenic, Fragrance Free, Dermatologist Tested, 100 My Best Light, 1 Oz\n$10.64\n\n[button] B001H926PA [button_]\nL'Oreal Paris True Match Mineral Loose Powder Foundation, Soft Ivory, 0.35oz\n$11.97\n\n[button] B07TVTV13G [button_]\nAvashine Color Changing Foundation, All-Day Flawless Foundation Makeup, Foundation Cream, Liquid Foundation,30ml, SPF 15, Lightweight,Fragrance-Free, Warm Skin Tone\n$13.88\n\n[button] B08T6GL4NQ [button_]\nSTUDIOMAKEUP Flawless Skin Foundation w/ Hyaluronic Acid For Hydrating Skin (Honey Light Shade)\u2013 Radiant Hydrating Foundation for Mature Skin \u2013Medium Foundation Makeup for Natural Look, Suitable For All Skin Types\n$100.0\n\n[button] B08T6MLST4 [button_]\nSTUDIOMAKEUP Flawless Skin Foundation w/ Hyaluronic Acid For Hydrating Skin (Oat Light Shade) \u2013 Radiant, Hydrating Foundation for Mature Skin \u2013 Light Foundation Makeup for Natural Look - Suitable For All Skin Types\n$22.0\n",
+        "action_taken": "click[item - physicians formula the healthy foundation with spf 20, lw2, 1 fl oz]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[next >]",
+          "click[item - physicians formula the healthy foundation with spf 20, lw2, 1 fl oz]",
+          "click[item - p\u00fcr 4-in-1 love your selfie longwear foundation & concealer - full coverage foundation & concealer makeup for dark spots, blemishes and imperfections - long-lasting liquid makeup & skincare]",
+          "click[item - neutrogena healthy skin sensitive skin serum foundation with pro-vitamin b5, color correcting & pore minimizing liquid foundation & face serum, buildable coverage, medium 02, 1 oz]",
+          "click[item - l'oreal paris true match mineral loose powder foundation light ivory, 0.35 ounce]",
+          "click[item - l'oreal paris true match mineral loose powder foundation, classic tan, 0.35oz]",
+          "click[item - anti-aging foundation by almay, smart shade face makeup, medium coverage, natural finish with spf 20, hypoallergenic, fragrance free, dermatologist tested, 100 my best light, 1 oz]",
+          "click[item - l'oreal paris true match mineral loose powder foundation, soft ivory, 0.35oz]",
+          "click[item - avashine color changing foundation, all-day flawless foundation makeup, foundation cream, liquid foundation,30ml, spf 15, lightweight,fragrance-free, warm skin tone]",
+          "click[item - studiomakeup flawless skin foundation w/ hyaluronic acid for hydrating skin (honey light shade)\u2013 radiant hydrating foundation for mature skin \u2013medium foundation makeup for natural look, suitable for all skin types]",
+          "click[item - studiomakeup flawless skin foundation w/ hyaluronic acid for hydrating skin (oat light shade) \u2013 radiant, hydrating foundation for mature skin \u2013 light foundation makeup for natural look - suitable for all skin types]"
+        ]
+      },
+      {
+        "step": 2,
+        "observation": "Instruction:\ni am looking for mn4 color foundation for my sensitive skin, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\ncolor\n  [button] 1 [button_]\n  [button] dc1 [button_]\n  [button] dn3 [button_]\n  [button] dn4 [button_]\n  [button] lc1 [button_]\n  [button] ln3 [button_]\n  [button] ln4 [button_]\n  [button] lw2 [button_]\n  [button] mc1 [button_]\n  [button] mn3 [button_]\n  [button] mn4 [button_]\n  [button] mw2 [button_]\nsize\n  [button] 1 fl oz (pack of 1) [button_]\n  [button] 1 ounce (pack of 1) [button_]\n  [button] 1 fluid ounce [button_]\nPhysicians Formula The Healthy Foundation with SPF 20, LW2, 1 Fl Oz\nPrice: $7.59\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[mn4]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]",
+          "click[dc1]",
+          "click[1]",
+          "click[mc1]",
+          "click[lc1]",
+          "click[mn4]",
+          "click[1 fl oz (pack of 1)]",
+          "click[mw2]",
+          "click[ln4]",
+          "click[ln3]",
+          "click[mn3]"
+        ]
+      },
+      {
+        "step": 3,
+        "observation": "You have clicked mn4.\nInstruction:\ni am looking for mn4 color foundation for my sensitive skin, and price lower than 40.00 dollars\n[button] Back to Search [button_]\n[button] < Prev [button_]\ncolor\n  [button] 1 [button_]\n  [button] dc1 [button_]\n  [button] dn3 [button_]\n  [button] dn4 [button_]\n  [button] lc1 [button_]\n  [button] ln3 [button_]\n  [button] ln4 [button_]\n  [button] lw2 [button_]\n  [button] mc1 [button_]\n  [button] mn3 [button_]\n  [clicked button] mn4 [clicked button_]\n  [button] mw2 [button_]\nsize\n  [button] 1 fl oz (pack of 1) [button_]\n  [button] 1 ounce (pack of 1) [button_]\n  [button] 1 fluid ounce [button_]\nPhysicians Formula The Healthy Foundation with SPF 20, LW2, 1 Fl Oz\nPrice: $7.59\nRating: N.A.\n[button] Description [button_]\n[button] Features [button_]\n[button] Reviews [button_]\n[button] Buy Now [button_]\n",
+        "action_taken": "click[buy now]",
+        "valid_actions": [
+          "click[back to search]",
+          "click[< prev]",
+          "click[description]",
+          "click[features]",
+          "click[reviews]",
+          "click[buy now]",
+          "click[mc1]",
+          "click[dc1]",
+          "click[1 fl oz (pack of 1)]",
+          "click[mn4]",
+          "click[mw2]",
+          "click[lw2]",
+          "click[1 fluid ounce]",
+          "click[ln3]",
+          "click[ln4]",
+          "click[lc1]"
+        ]
+      }
+    ],
+    "reward": 100.0,
+    "done": true,
+    "success": true
+  }
+]

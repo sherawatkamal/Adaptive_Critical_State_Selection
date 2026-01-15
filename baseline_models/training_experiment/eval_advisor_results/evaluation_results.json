@@ -1,0 +1,38 @@
+[
+  {
+    "model_name": "train1_all_recoverable",
+    "description": "Train-1: All Recoverable",
+    "model_path": "./trained_models_advisor/train1_all_recoverable_model.pth",
+    "successes": 12,
+    "total_tasks": 200,
+    "success_rate": 0.06,
+    "avg_reward": 20.523203879453884
+  },
+  {
+    "model_name": "train2_middle_u_recoverable",
+    "description": "Train-2: Middle U Recoverable",
+    "model_path": "./trained_models_advisor/train2_middle_u_recoverable_model.pth",
+    "successes": 4,
+    "total_tasks": 200,
+    "success_rate": 0.02,
+    "avg_reward": 6.669826007326008
+  },
+  {
+    "model_name": "train3_all_states",
+    "description": "Train-3: All States",
+    "model_path": "./trained_models_advisor/train3_all_states_model.pth",
+    "successes": 11,
+    "total_tasks": 200,
+    "success_rate": 0.055,
+    "avg_reward": 28.11181013431013
+  },
+  {
+    "model_name": "train4_high_low_u_recoverable",
+    "description": "Train-4: High/Low U Recoverable",
+    "model_path": "./trained_models_advisor/train4_high_low_u_recoverable_model.pth",
+    "successes": 0,
+    "total_tasks": 200,
+    "success_rate": 0.0,
+    "avg_reward": 0.0
+  }
+]
