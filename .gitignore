@@ -59,6 +59,8 @@ training_all_*.json
 # TRAJECTORIES AND SIMULATION DATA
 # -----------------------------------------------------------------------------
 trajectories/
+trajectories_qwen25_8k/
+trajectories_3000_failures/
 *_trajectories.json
 *_trajectories/
 gpt4_trajectories/
@@ -182,6 +184,7 @@ htmlcov/
 # - Small config JSONs
 # - Example/sample data (if small)
 # - Documentation images
-# =============================================================================data/items_ins_v2.json
+# =============================================================================
+data/items_ins_v2.json
 data/
 .env

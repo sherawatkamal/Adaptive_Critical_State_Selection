@@ -1,0 +1,534 @@
+{
+  "config": {
+    "num_failures": 10,
+    "attempt_counts": [
+      1,
+      3,
+      5
+    ],
+    "window": 1,
+    "max_steps": 50
+  },
+  "per_trajectory": [
+    {
+      "task_id": 0,
+      "predicted_step": 2,
+      "steps_tried": [
+        1,
+        2,
+        3
+      ],
+      "trajectory_length": 6,
+      "attempts": [
+        {
+          "attempt": 1,
+          "success": true,
+          "reward": 10.0,
+          "step_tried": 2,
+          "skipped": false
+        },
+        {
+          "attempt": 2,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 3,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 4,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 5,
+          "success": true,
+          "skipped": true
+        }
+      ],
+      "first_success_attempt": 1,
+      "success_at": {
+        "1": true,
+        "3": true,
+        "5": true
+      }
+    },
+    {
+      "task_id": 2,
+      "predicted_step": 1,
+      "steps_tried": [
+        0,
+        1,
+        2
+      ],
+      "trajectory_length": 100,
+      "attempts": [
+        {
+          "attempt": 1,
+          "success": false,
+          "reward": 7.5,
+          "step_tried": 0,
+          "skipped": false
+        },
+        {
+          "attempt": 2,
+          "success": false,
+          "reward": 7.5,
+          "step_tried": 0,
+          "skipped": false
+        },
+        {
+          "attempt": 3,
+          "success": false,
+          "reward": 7.5,
+          "step_tried": 1,
+          "skipped": false
+        },
+        {
+          "attempt": 4,
+          "success": false,
+          "reward": 7.5,
+          "step_tried": 0,
+          "skipped": false
+        },
+        {
+          "attempt": 5,
+          "success": false,
+          "reward": 7.5,
+          "step_tried": 0,
+          "skipped": false
+        }
+      ],
+      "first_success_attempt": null,
+      "success_at": {
+        "1": false,
+        "3": false,
+        "5": false
+      }
+    },
+    {
+      "task_id": 3,
+      "predicted_step": 1,
+      "steps_tried": [
+        0,
+        1,
+        2
+      ],
+      "trajectory_length": 100,
+      "attempts": [
+        {
+          "attempt": 1,
+          "success": false,
+          "reward": 7.5,
+          "step_tried": 0,
+          "skipped": false
+        },
+        {
+          "attempt": 2,
+          "success": true,
+          "reward": 10.0,
+          "step_tried": 0,
+          "skipped": false
+        },
+        {
+          "attempt": 3,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 4,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 5,
+          "success": true,
+          "skipped": true
+        }
+      ],
+      "first_success_attempt": 2,
+      "success_at": {
+        "1": false,
+        "3": true,
+        "5": true
+      }
+    },
+    {
+      "task_id": 4,
+      "predicted_step": 2,
+      "steps_tried": [
+        1,
+        2
+      ],
+      "trajectory_length": 3,
+      "attempts": [
+        {
+          "attempt": 1,
+          "success": false,
+          "reward": 0.0,
+          "step_tried": 1,
+          "skipped": false
+        },
+        {
+          "attempt": 2,
+          "success": false,
+          "reward": 2.5,
+          "step_tried": 1,
+          "skipped": false
+        },
+        {
+          "attempt": 3,
+          "success": false,
+          "reward": 2.5,
+          "step_tried": 1,
+          "skipped": false
+        },
+        {
+          "attempt": 4,
+          "success": false,
+          "reward": 2.5,
+          "step_tried": 1,
+          "skipped": false
+        },
+        {
+          "attempt": 5,
+          "success": false,
+          "reward": 2.5,
+          "step_tried": 1,
+          "skipped": false
+        }
+      ],
+      "first_success_attempt": null,
+      "success_at": {
+        "1": false,
+        "3": false,
+        "5": false
+      }
+    },
+    {
+      "task_id": 5,
+      "predicted_step": 1,
+      "steps_tried": [
+        0,
+        1,
+        2
+      ],
+      "trajectory_length": 5,
+      "attempts": [
+        {
+          "attempt": 1,
+          "success": false,
+          "reward": 8.0,
+          "step_tried": 0,
+          "skipped": false
+        },
+        {
+          "attempt": 2,
+          "success": false,
+          "reward": 8.0,
+          "step_tried": 2,
+          "skipped": false
+        },
+        {
+          "attempt": 3,
+          "success": false,
+          "reward": 8.0,
+          "step_tried": 1,
+          "skipped": false
+        },
+        {
+          "attempt": 4,
+          "success": false,
+          "reward": 6.0,
+          "step_tried": 0,
+          "skipped": false
+        },
+        {
+          "attempt": 5,
+          "success": false,
+          "reward": 6.0,
+          "step_tried": 0,
+          "skipped": false
+        }
+      ],
+      "first_success_attempt": null,
+      "success_at": {
+        "1": false,
+        "3": false,
+        "5": false
+      }
+    },
+    {
+      "task_id": 9,
+      "predicted_step": 1,
+      "steps_tried": [
+        0,
+        1,
+        2
+      ],
+      "trajectory_length": 100,
+      "attempts": [
+        {
+          "attempt": 1,
+          "success": true,
+          "reward": 10.0,
+          "step_tried": 0,
+          "skipped": false
+        },
+        {
+          "attempt": 2,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 3,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 4,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 5,
+          "success": true,
+          "skipped": true
+        }
+      ],
+      "first_success_attempt": 1,
+      "success_at": {
+        "1": true,
+        "3": true,
+        "5": true
+      }
+    },
+    {
+      "task_id": 10,
+      "predicted_step": 2,
+      "steps_tried": [
+        1,
+        2
+      ],
+      "trajectory_length": 3,
+      "attempts": [
+        {
+          "attempt": 1,
+          "success": true,
+          "reward": 10.0,
+          "step_tried": 1,
+          "skipped": false
+        },
+        {
+          "attempt": 2,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 3,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 4,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 5,
+          "success": true,
+          "skipped": true
+        }
+      ],
+      "first_success_attempt": 1,
+      "success_at": {
+        "1": true,
+        "3": true,
+        "5": true
+      }
+    },
+    {
+      "task_id": 11,
+      "predicted_step": 1,
+      "steps_tried": [
+        0,
+        1,
+        2
+      ],
+      "trajectory_length": 12,
+      "attempts": [
+        {
+          "attempt": 1,
+          "success": false,
+          "reward": 6.0,
+          "step_tried": 0,
+          "skipped": false
+        },
+        {
+          "attempt": 2,
+          "success": false,
+          "reward": 6.0,
+          "step_tried": 0,
+          "skipped": false
+        },
+        {
+          "attempt": 3,
+          "success": false,
+          "reward": 6.0,
+          "step_tried": 0,
+          "skipped": false
+        },
+        {
+          "attempt": 4,
+          "success": false,
+          "reward": 6.0,
+          "step_tried": 0,
+          "skipped": false
+        },
+        {
+          "attempt": 5,
+          "success": false,
+          "reward": 8.0,
+          "step_tried": 1,
+          "skipped": false
+        }
+      ],
+      "first_success_attempt": null,
+      "success_at": {
+        "1": false,
+        "3": false,
+        "5": false
+      }
+    },
+    {
+      "task_id": 14,
+      "predicted_step": 2,
+      "steps_tried": [
+        1,
+        2
+      ],
+      "trajectory_length": 3,
+      "attempts": [
+        {
+          "attempt": 1,
+          "success": true,
+          "reward": 10.0,
+          "step_tried": 2,
+          "skipped": false
+        },
+        {
+          "attempt": 2,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 3,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 4,
+          "success": true,
+          "skipped": true
+        },
+        {
+          "attempt": 5,
+          "success": true,
+          "skipped": true
+        }
+      ],
+      "first_success_attempt": 1,
+      "success_at": {
+        "1": true,
+        "3": true,
+        "5": true
+      }
+    },
+    {
+      "task_id": 15,
+      "predicted_step": 2,
+      "steps_tried": [
+        1,
+        2,
+        3
+      ],
+      "trajectory_length": 7,
+      "attempts": [
+        {
+          "attempt": 1,
+          "success": false,
+          "reward": 5.0,
+          "step_tried": 2,
+          "skipped": false
+        },
+        {
+          "attempt": 2,
+          "success": false,
+          "reward": 5.0,
+          "step_tried": 1,
+          "skipped": false
+        },
+        {
+          "attempt": 3,
+          "success": false,
+          "reward": 5.0,
+          "step_tried": 1,
+          "skipped": false
+        },
+        {
+          "attempt": 4,
+          "success": false,
+          "reward": 5.0,
+          "step_tried": 2,
+          "skipped": false
+        },
+        {
+          "attempt": 5,
+          "success": false,
+          "reward": 5.0,
+          "step_tried": 1,
+          "skipped": false
+        }
+      ],
+      "first_success_attempt": null,
+      "success_at": {
+        "1": false,
+        "3": false,
+        "5": false
+      }
+    }
+  ],
+  "summary": {
+    "total_trajectories": 10,
+    "success_rates": {
+      "1": {
+        "count": 4,
+        "rate": 40.0
+      },
+      "3": {
+        "count": 5,
+        "rate": 50.0
+      },
+      "5": {
+        "count": 5,
+        "rate": 50.0
+      }
+    },
+    "diagnosis_stats": {
+      "total_predictions": 10,
+      "parse_failures": 0,
+      "top_predictions": [
+        [
+          2,
+          5
+        ],
+        [
+          1,
+          5
+        ]
+      ]
+    }
+  }
+}

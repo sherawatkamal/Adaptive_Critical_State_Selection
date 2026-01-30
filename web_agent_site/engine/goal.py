@@ -1,6 +1,7 @@
 """
 Functions for specifying goals and reward calculations.
 """
+import hashlib
 import itertools
 import random
 import spacy
@@ -12,6 +13,18 @@ from web_agent_site.engine.normalize import normalize_color
 nlp = spacy.load("en_core_web_sm")
 
 PRICE_RANGE = [10.0 * i for i in range(1, 100)]
+
+
+def get_deterministic_price(asin: str, price_range: list) -> float:
+    """
+    Select price deterministically based on product ASIN hash.
+    This ensures the same product always gets the same price bound,
+    making experiments reproducible.
+    """
+    h = int(hashlib.md5(asin.encode()).hexdigest(), 16)
+    idx = h % len(price_range)
+    return sorted(price_range)[idx]
+
 
 def get_goals(all_products, product_prices, human_goals=True):
     if human_goals:
@@ -36,7 +49,8 @@ def get_human_goals(all_products, product_prices):
                 price = product_prices[asin]
                 price_range = [p for p in PRICE_RANGE if p > price][:4]
                 if len(price_range) >= 2:
-                    _, price_upper = sorted(random.sample(price_range, 2))
+                    # Use deterministic price selection based on ASIN hash
+                    price_upper = get_deterministic_price(asin, price_range)
                     price_text = \
                         f', and price lower than {price_upper:.2f} dollars'
                 else:
@@ -81,7 +95,8 @@ def get_synthetic_goals(all_products, product_prices):
             price = product_prices[asin]
             price_range = [p for p in PRICE_RANGE if p > price][:4]
             if len(price_range) >= 2:
-                _, price_upper = sorted(random.sample(price_range, 2))
+                # Use deterministic price selection based on ASIN hash
+                price_upper = get_deterministic_price(asin, price_range)
                 price_text = \
                     f', and price lower than {price_upper:.2f} dollars'
             else:

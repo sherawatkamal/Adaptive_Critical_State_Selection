@@ -1,9 +1,11 @@
 """
+FIXED: Deterministic product price generation
 """
 import os
 import re
 import json
 import random
+import hashlib  # NEW: For deterministic price generation
 from collections import defaultdict
 from ast import literal_eval
 from decimal import Decimal
@@ -178,17 +180,36 @@ def get_product_per_page(top_n_products, page):
 
 
 def generate_product_prices(all_products):
+    """
+    Generate deterministic product prices based on ASIN hash.
+    
+    FIXED: Uses MD5 hash of ASIN to deterministically select price
+    within the product's pricing range, making experiments reproducible.
+    
+    Previously used random.uniform() which caused different prices
+    every time the environment was initialized, breaking reproducibility
+    for trajectory collection and EEF simulation.
+    """
     product_prices = dict()
     for product in all_products:
         asin = product['asin']
         pricing = product['pricing']
+        
         if not pricing:
             price = 100.0
         elif len(pricing) == 1:
             price = pricing[0]
         else:
-            price = random.uniform(*pricing[:2])
+            # FIXED: Deterministic price selection based on ASIN hash
+            # Old (buggy): price = random.uniform(*pricing[:2])
+            h = int(hashlib.md5(asin.encode()).hexdigest(), 16)
+            # Normalize hash to [0, 1] range
+            normalized = (h % 10000) / 10000.0
+            # Scale to price range [pricing[0], pricing[1]]
+            price = pricing[0] + normalized * (pricing[1] - pricing[0])
+        
         product_prices[asin] = price
+    
     return product_prices
 
 
