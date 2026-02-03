@@ -1,14 +1,14 @@
 #!/bin/bash
 # Run IDT pipeline: tests, build dataset (toy N=20), train predictor, eval plots.
-# Usage: from repo root, run: bash scripts/run_all_idt.sh
+# Usage: from baseline_models/, run: bash run_all_idt.sh
 
 set -e
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 export PYTHONPATH="$ROOT"
 
 echo "=== 1) Unit tests ==="
-python -m pytest tests/test_toy_env.py tests/test_patches.py tests/test_replay.py tests/test_verifier.py tests/test_search_min_patch.py -v
+python -m pytest idt/tests/test_toy_env.py idt/tests/test_patches.py idt/tests/test_replay.py idt/tests/test_verifier.py idt/tests/test_search_min_patch.py -v
 
 echo "=== 2) Build IDT dataset (toy N=20) ==="
 python -m idt.scripts.build_idt_dataset --toy --num_trajectories 20 --out_path idt_dataset.jsonl --K 5 --threshold 0.6

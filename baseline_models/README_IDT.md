@@ -24,12 +24,14 @@ IDT changes the unit from "predict mistake step" to **find minimal patches (tiny
 
 ## How to run patch search on failures
 
+Run from `baseline_models/` with `PYTHONPATH=.` (or from repo root with `PYTHONPATH=baseline_models`).
+
 ```bash
 # Toy env (no WebShop)
 python -m idt.scripts.run_patch_search --toy --num 1
 
 # Real failures file (uses toy env adapter by default; plug WebShop env/agent for full pipeline)
-python -m idt.scripts.run_patch_search --failures_path baseline_models/simulation/failures_3k.json --num 1
+python -m idt.scripts.run_patch_search --failures_path simulation/failures_3k.json --num 1
 ```
 
 ## How to build the dataset
@@ -59,55 +61,63 @@ Outputs: `idt_eval_out/metrics.json`, `idt_eval_out/landscape_by_k.png`, `idt_ev
 ## How to run tests
 
 ```bash
-# From repo root (ensure PYTHONPATH includes repo root)
-pytest tests/test_toy_env.py tests/test_patches.py tests/test_replay.py tests/test_verifier.py tests/test_search_min_patch.py -v
+# From baseline_models/ with PYTHONPATH=.
+cd baseline_models
+export PYTHONPATH=.
+pytest idt/tests/test_toy_env.py idt/tests/test_patches.py idt/tests/test_replay.py idt/tests/test_verifier.py idt/tests/test_search_min_patch.py -v
 ```
 
 ---
 
 ## RUNBOOK (exact commands)
 
+All commands assume you are in **baseline_models/** with `PYTHONPATH=.` (or in repo root with `PYTHONPATH=baseline_models`).
+
 ### 1) Run unit tests
 
 ```bash
-cd /Users/kamal/Downloads/WebShop
-PYTHONPATH=. pytest tests/test_toy_env.py tests/test_patches.py tests/test_replay.py tests/test_verifier.py tests/test_search_min_patch.py -v
+cd baseline_models
+export PYTHONPATH=.
+pytest idt/tests/test_toy_env.py idt/tests/test_patches.py idt/tests/test_replay.py idt/tests/test_verifier.py idt/tests/test_search_min_patch.py -v
 ```
 
 ### 2) Build dataset on N=20 failures (toy)
 
 ```bash
-cd /Users/kamal/Downloads/WebShop
-PYTHONPATH=. python -m idt.scripts.build_idt_dataset --toy --num_trajectories 20 --out_path idt_dataset.jsonl --K 5 --threshold 0.6
+cd baseline_models
+export PYTHONPATH=.
+python -m idt.scripts.build_idt_dataset --toy --num_trajectories 20 --out_path idt_dataset.jsonl --K 5 --threshold 0.6
 ```
 
 ### 3) Train teachability predictor
 
 ```bash
-cd /Users/kamal/Downloads/WebShop
-PYTHONPATH=. python -m idt.scripts.train_teachability --dataset_path idt_dataset.jsonl --model_out teachability_model.joblib
+cd baseline_models
+export PYTHONPATH=.
+python -m idt.scripts.train_teachability --dataset_path idt_dataset.jsonl --model_out teachability_model.joblib
 ```
 
 ### 4) Generate evaluation plots
 
 ```bash
-cd /Users/kamal/Downloads/WebShop
-PYTHONPATH=. python -m idt.scripts.eval_landscape --dataset_path idt_dataset.jsonl --out_dir idt_eval_out
+cd baseline_models
+export PYTHONPATH=.
+python -m idt.scripts.eval_landscape --dataset_path idt_dataset.jsonl --out_dir idt_eval_out
 ```
 
 ---
 
 ## ARC OOD (out-of-distribution cluster)
 
-On ARC OOD, use **toy mode** so you don't depend on WebShop env/Java/Lucene. Only the new IDT code is committed; no changes to `baseline_models` or `web_agent_site` are required.
+On ARC OOD, use **toy mode** so you don't depend on WebShop env/Java/Lucene. IDT lives under `baseline_models/`; no changes to `web_agent_site` are required.
 
 ### Setup (once)
 
 ```bash
-# Clone repo and go to root
+# Clone repo
 cd /path/to/WebShop
 
-# Create env (conda or venv) and install
+# Create env (conda or venv) and install (from repo root)
 conda create -n idt python=3.10 -y
 conda activate idt
 pip install -r requirements.txt
@@ -116,14 +126,14 @@ pip install -r requirements.txt
 # Otherwise use --toy for all steps.
 ```
 
-### Run (from repo root)
+### Run (from baseline_models/)
 
 ```bash
-cd /path/to/WebShop
+cd /path/to/WebShop/baseline_models
 export PYTHONPATH=.
 
 # 1) Unit tests
-pytest tests/test_toy_env.py tests/test_patches.py tests/test_replay.py tests/test_verifier.py tests/test_search_min_patch.py -v
+pytest idt/tests/test_toy_env.py idt/tests/test_patches.py idt/tests/test_replay.py idt/tests/test_verifier.py idt/tests/test_search_min_patch.py -v
 
 # 2) Build IDT dataset (toy, N=20)
 python -m idt.scripts.build_idt_dataset --toy --num_trajectories 20 --out_path idt_dataset.jsonl --K 5 --threshold 0.6
@@ -138,9 +148,9 @@ python -m idt.scripts.eval_landscape --dataset_path idt_dataset.jsonl --out_dir 
 ### One-shot pipeline script
 
 ```bash
-cd /path/to/WebShop
+cd /path/to/WebShop/baseline_models
 export PYTHONPATH=.
-bash scripts/run_all_idt.sh
+bash run_all_idt.sh
 ```
 
 ### With real failure data on ARC
@@ -148,6 +158,8 @@ bash scripts/run_all_idt.sh
 If you have a `failures.json` (or JSONL) on ARC and want to run on it **without** the full WebShop env (toy env/agent will be used; recovery stats are not WebShop-meaningful):
 
 ```bash
+cd /path/to/WebShop/baseline_models
+export PYTHONPATH=.
 python -m idt.scripts.build_idt_dataset \
   --failures_path /path/to/failures.json \
   --num_trajectories 100 \
@@ -155,7 +167,7 @@ python -m idt.scripts.build_idt_dataset \
   --toy
 ```
 
-To use the **real** WebShop env and agent on ARC you need the baseline_models WebEnv, agent checkpoint, and a working search backend (Java/Lucene or a BM25 fallback); that setup is environment-specific and not included in this commit.
+To use the **real** WebShop env and agent on ARC you need the baseline_models WebEnv, agent checkpoint, and a working search backend (Java/Lucene or a BM25 fallback); that setup is environment-specific.
 
 ---
 

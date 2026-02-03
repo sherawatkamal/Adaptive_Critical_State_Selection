@@ -30,8 +30,9 @@ def create_webshop_env_and_agent(
     os.environ['IDT_USE_BM25'] = '1'
     # Limit products for faster env init (avoid loading ~1.2M products)
     os.environ['IDT_NUM_PRODUCTS'] = os.environ.get('IDT_NUM_PRODUCTS', '1000')
+    # idt may live at repo_root/idt or baseline_models/idt
     repo_root = Path(__file__).resolve().parents[1]
-    baseline_dir = repo_root / "baseline_models"
+    baseline_dir = repo_root / "baseline_models" if (repo_root / "baseline_models").is_dir() else repo_root
     if not baseline_dir.is_dir():
         raise FileNotFoundError(f"baseline_models not found at {baseline_dir}")
 
