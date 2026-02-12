@@ -53,6 +53,32 @@ python baseline_models/idt_teachability/run_idt_patch.py \
 pytest -q baseline_models/idt_teachability/tests
 ```
 
+### Full experiment suite (EXP0–EXP7)
+
+Run all ablations and produce plots + report:
+
+```bash
+# Full run (N=500)
+python -m baseline_models.idt_teachability.experiments.run_all_experiments \
+  --failure_data baseline_models/failures.json \
+  --num_trajectories 500
+
+# Smoke test only (EXP0, N=10)
+python -m baseline_models.idt_teachability.experiments.run_all_experiments \
+  --failure_data baseline_models/failures.json \
+  --smoke
+
+# Fast run (EXP1–6 on N=100)
+python -m baseline_models.idt_teachability.experiments.run_all_experiments \
+  --failure_data baseline_models/failures.json \
+  --fast --num_trajectories 100
+```
+
+Outputs:
+- `outputs/patch_results_*.json`, `patch_stats_*.json`, `patch_training_samples_*.json` per experiment
+- `outputs/plots/*.png`
+- `outputs/report_IDT_experiments.md`
+
 ## Notes
 
 - Reward scaling: consistent with your EEF simulator, the code treats `reward==10.0` as success and reports `reward*10` (so success → 100).

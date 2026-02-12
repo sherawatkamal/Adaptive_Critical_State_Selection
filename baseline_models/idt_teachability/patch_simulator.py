@@ -42,6 +42,11 @@ class RolloutOutcome:
     full_traj: List[Dict[str, Any]]
     forced_action: Optional[str] = None
     error: Optional[str] = None
+    # Compute counters
+    env_steps: int = 0
+    model_calls: int = 0
+    # When forced action was provided but not used
+    forced_skip_reason: Optional[str] = None  # 'invalid', 'forced_fallback', 'exception_fallback', None if forced was used
 
 
 class PatchSimulator:
@@ -196,6 +201,11 @@ class PatchSimulator:
         full_traj = list(replay.full_traj)
         sim_traj: List[Dict[str, Any]] = []
 
+        # Compute counters
+        env_steps_sim = 0
+        model_calls_sim = 0
+        forced_skip_reason: Optional[str] = None
+
         # Simulate from the target state
         done = False
         total_reward = 0.0
@@ -213,13 +223,21 @@ class PatchSimulator:
                     else:
                         # Fall back to agent
                         action, _ = self.agent.get_action(obs, info, method=method)
+                        model_calls_sim += 1
+                        forced_skip_reason = "invalid"  # patch not in valid_acts
                 action_info = {"type": "forced" if action == forced_first_action else "forced_fallback"}
+                if action != forced_first_action and forced_skip_reason is None:
+                    forced_skip_reason = "forced_fallback"
             else:
                 action, action_info = self.agent.get_action(obs, info, method=method)
+                model_calls_sim += 1
 
             try:
                 obs, reward, done, info, record = self._step_env(obs, info, action, step_idx=sim_step, is_replay=False)
+                env_steps_sim += 1
             except Exception as e:
+                if forced_first_action is not None and forced_skip_reason is None:
+                    forced_skip_reason = "exception_fallback"
                 return RolloutOutcome(
                     success=False,
                     reward=0.0,
@@ -227,6 +245,9 @@ class PatchSimulator:
                     full_traj=full_traj,
                     forced_action=forced_first_action,
                     error=f"env.step exception: {e}",
+                    env_steps=env_steps_sim,
+                    model_calls=model_calls_sim,
+                    forced_skip_reason=forced_skip_reason,
                 )
 
             record["action_info"] = action_info
@@ -252,4 +273,7 @@ class PatchSimulator:
             full_traj=full_traj,
             forced_action=forced_first_action,
             error=None,
+            env_steps=env_steps_sim,
+            model_calls=model_calls_sim,
+            forced_skip_reason=forced_skip_reason,
         )

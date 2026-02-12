@@ -4,20 +4,32 @@ run_idt_patch.py
 
 IDT-style "patch teachability" evaluation on top of your current EEF pipeline.
 
-Concept (simple):
-  - Pick candidate steps in each failed trajectory (baseline/entropy/diagnosis).
-  - At each step:
-      (a) baseline: restart from that step and let the agent explore.
-      (b) patched: restart from that step, FORCE an alternative first action, then let the agent explore.
-  - Compare success/reward with fixed compute budgets.
+What this script does (high level):
+  1) For each failed trajectory, select a few candidate steps (baseline/entropy/diagnosis).
+  2) For each candidate step t:
+       - Baseline: replay to step t and let the agent continue (stochastic rollouts).
+       - Patched: replay to step t, FORCE a proposed alternative first action at t, then continue.
+  3) Compare baseline vs patched under fixed rollout budgets.
 
-This operationalizes the question:
-  "Is this step a teachable moment *because a small patch at this step can recover*?"
+Why this is useful:
+  - It operationalizes "teachable moments" as: states where a *minimal intervention*
+    (here: a single forced first action) has high leverage.
 
-Outputs:
-  - patch_results_*.json: per-(trajectory, step) evaluation records
-  - patch_stats_*.json: summary statistics
-  - patch_training_samples_*.json: (state, goal, action, valid_actions) samples for patch-supervision
+Important implementation details added in this version:
+  - Deterministic seeding per (trajectory, step, attempt) for reproducibility.
+  - Optional "paired seeds" (default): baseline and patched share seeds, reducing noise in Δ.
+  - Patch validity checks: by default, skip patch actions that are invalid at the state
+    (unless --allow_invalid_patch_actions).
+  - Logs whether the forced action was actually executed (vs falling back to agent).
+
+Expected repo layout:
+  baseline_models/
+    idt_teachability/   (this file)
+    ckpts/...
+    simulation/Qwen2.5/qwen25_instruct_v1
+
+You can run from either repo root or baseline_models/:
+  python baseline_models/idt_teachability/run_idt_patch.py --failure_data baseline_models/failures.json
 """
 
 from __future__ import annotations
@@ -26,17 +38,15 @@ import os
 import sys
 import json
 import argparse
+import random
 from datetime import datetime
 from typing import Dict, Any, List, Tuple, Optional
 
+import numpy as np
+import torch
+
 # ---------------------------------------------------------------------------
 # NOTE ON PATHS
-#
-# This code is intended to live under:
-#   baseline_models/idt_teachability/
-# alongside:
-#   baseline_models/ckpts/
-#   baseline_models/simulation/Qwen2.5/qwen25_instruct_v1/
 #
 # Users may run this script from either the repo root or baseline_models/.
 # We therefore add BOTH the repo root and baseline_models/ to sys.path.
@@ -46,12 +56,12 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 BASELINE_DIR = os.path.abspath(os.path.join(THIS_DIR, ".."))  # baseline_models/
 REPO_ROOT = os.path.abspath(os.path.join(BASELINE_DIR, ".."))  # repo root
 
-# Prefer local baseline_models modules (eef_detailed_with_diagnosis.py is often stored there)
 sys.path.insert(0, BASELINE_DIR)
 sys.path.insert(0, REPO_ROOT)
 
 from idt_teachability.patch_simulator import PatchSimulator
-from idt_teachability.patchers import make_patcher
+from idt_teachability.patchers import make_patcher, PatchProposal
+from idt_teachability.idt_core import run_idt_experiment
 
 # Reuse your existing environment/model setup + state selectors
 from eef_detailed_with_diagnosis import (
@@ -65,6 +75,47 @@ from eef_detailed_with_diagnosis import (
     select_critical_states_diagnosis,
 )
 
+
+# --------------------------
+# Reproducibility helpers
+# --------------------------
+
+def _stable_int(x: Any) -> int:
+    """Convert arbitrary object to a stable-ish non-negative int (for seed derivation)."""
+    if x is None:
+        return 0
+    # Most task_ids are ints, but keep it robust.
+    try:
+        return int(x)
+    except Exception:
+        return abs(hash(str(x))) % 1_000_000_000
+
+
+def set_all_seeds(seed: int) -> None:
+    """Set python, numpy, and torch seeds for reproducible stochastic policies."""
+    seed = int(seed) % 2_000_000_000  # keep in a safe range for torch
+    random.seed(seed)
+    np.random.seed(seed % (2**32 - 1))
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def derive_base_seed(global_seed: int, task_id: Any, traj_idx: int, step_idx: int) -> int:
+    """Derive a deterministic base seed per (trajectory, step)."""
+    # Large-ish multipliers to avoid collisions.
+    base = (
+        _stable_int(global_seed) * 1_000_003
+        + _stable_int(task_id) * 9_173
+        + int(traj_idx) * 1_003
+        + int(step_idx) * 97
+    )
+    return int(base % 2_000_000_000)
+
+
+# --------------------------
+# Failure loading
+# --------------------------
 
 def load_failures(path: str) -> List[Dict[str, Any]]:
     """Load a failure dataset.
@@ -106,6 +157,10 @@ def load_failures(path: str) -> List[Dict[str, Any]]:
     )
 
 
+# --------------------------
+# State selection wrapper
+# --------------------------
+
 def _select_states(
     trajectory: Dict[str, Any],
     *,
@@ -129,9 +184,30 @@ def _select_states(
     return select_critical_states_baseline(trajectory, M=M, agent=agent)
 
 
+def _is_action_valid_at_state(action: str, valid_actions: List[str], *, allow_any_search: bool) -> bool:
+    if not isinstance(action, str) or not action:
+        return False
+    if action in valid_actions:
+        return True
+    if allow_any_search and action.startswith("search["):
+        return True
+    return False
+
+
+def _forced_was_used(out) -> bool:
+    """Detect whether PatchSimulator actually executed the forced action at sim step 0."""
+    try:
+        if not out.sim_traj:
+            return False
+        info = out.sim_traj[0].get("action_info", {}) or {}
+        return info.get("type") == "forced"
+    except Exception:
+        return False
+
+
 def main():
     parser = argparse.ArgumentParser(description="IDT Patch Teachability Evaluation (on top of EEF/WebShop)")
-    parser.add_argument("--failure_data", type=str, required=True, help="Path to pre-collected failure trajectories (json)")
+    parser.add_argument("--failure_data", type=str, required=True, help="Path to pre-collected failure trajectories (json/jsonl)")
     parser.add_argument(
         "--output_dir",
         type=str,
@@ -141,7 +217,7 @@ def main():
 
     # State selection
     parser.add_argument("--strategy", type=str, default="diagnosis",
-                        choices=["baseline", "entropy", "stratified_entropy", "diagnosis"],
+                        choices=["baseline", "entropy", "stratified_entropy", "diagnosis", "last_n", "search_steps", "random_steps"],
                         help="How to select candidate steps inside a failure trajectory")
     parser.add_argument("--M", type=int, default=3, help="Number of candidate steps per trajectory")
 
@@ -168,16 +244,22 @@ def main():
     parser.add_argument("--diagnosis_window", type=int, default=1,
                         help="If strategy=diagnosis, evaluate steps in [pred-window, pred+window]")
 
-    # Rollout budgets
+    # Rollout budgets (use same attempt count for fair baseline vs patched comparison)
     parser.add_argument("--max_steps", type=int, default=50, help="Max steps per rollout after the intervention step")
     parser.add_argument("--baseline_attempts", type=int, default=3, help="How many baseline rollouts per (traj, step)")
-    parser.add_argument("--patch_attempts", type=int, default=1, help="How many rollouts per proposed patch action")
+    parser.add_argument("--patch_attempts", type=int, default=None,
+                        help="Rollouts per patch candidate (default: same as baseline_attempts for fair comparison)")
     parser.add_argument("--simulation_budget", type=int, default=999999, help="Total rollout budget across dataset")
 
     # Action sampling
     parser.add_argument("--greedy", action="store_true", default=False, help="Use greedy instead of softmax sampling")
-    parser.add_argument("--stop_on_success", action="store_true", default=True, help="Stop early when a rollout succeeds")
 
+    # Early stopping
+    parser.add_argument("--no_stop_on_success", action="store_true", default=False,
+                        help="Disable early stopping on success (default: stop early).")
+
+    # Backward-compat: older versions accepted --stop_on_success (it was always-on).
+    parser.add_argument("--stop_on_success", action="store_true", default=True, help=argparse.SUPPRESS)
     # Patcher
     parser.add_argument("--patcher", type=str, default="agent_topk",
                         choices=["agent_topk", "random", "diagnosis_text"],
@@ -186,17 +268,30 @@ def main():
     parser.add_argument("--allow_any_search", action="store_true", default=False,
                         help="Allow forced search[query] even if not listed in info['valid'].")
 
+    # Validity / logging / reproducibility
+    parser.add_argument("--allow_invalid_patch_actions", action="store_true", default=False,
+                        help="Do not filter invalid patch proposals (not recommended).")
+    parser.add_argument("--unpaired_seeds", action="store_true", default=False,
+                        help="Do NOT reuse the same seeds between baseline and patch evaluations (more noise).")
+    parser.add_argument("--seed", type=int, default=0, help="Global seed (used to derive per-(traj,step) seeds).")
+    parser.add_argument("--debug_step_details", action="store_true", default=False,
+                        help="Print original action, patch validity, and whether forced was used.")
+
     # Book-keeping
     parser.add_argument("--num_trajectories", type=int, default=None, help="Process only first N trajectories")
-    parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--save_full_trajectories", action="store_true", default=False,
                         help="Include full replay+rollout trajectories in outputs (large files)")
     parser.add_argument("--verbose", action="store_true", default=True)
 
     args = parser.parse_args()
+    if args.patch_attempts is None:
+        args.patch_attempts = args.baseline_attempts
     os.makedirs(args.output_dir, exist_ok=True)
 
     action_method = "greedy" if args.greedy else "softmax"
+    attempt_mismatch = args.baseline_attempts != args.patch_attempts
+    stop_on_success = bool(getattr(args, 'stop_on_success', True)) and (not args.no_stop_on_success)
+    paired_seeds = (not args.unpaired_seeds)
 
     print("=" * 80)
     print("IDT PATCH TEACHABILITY EVALUATION")
@@ -207,7 +302,14 @@ def main():
     print(f"Student model:     {args.model_path}")
     print(f"Patcher:           {args.patcher} (k={args.patch_k})")
     print(f"Rollouts:          baseline_attempts={args.baseline_attempts}, patch_attempts={args.patch_attempts}")
+    if attempt_mismatch:
+        print(f"  WARNING: attempt count mismatch (baseline has more attempts → baseline advantage)")
+    else:
+        print(f"  Fair comparison: same attempt count per (traj, step)")
     print(f"Action method:     {action_method}")
+    print(f"Stop on success:   {stop_on_success}")
+    print(f"Paired seeds:      {paired_seeds} (baseline and patched share same seeds per attempt index)")
+    print(f"Allow any search:  {args.allow_any_search}")
     print(f"Budget:            {args.simulation_budget}")
     print("=" * 80)
 
@@ -229,269 +331,52 @@ def main():
             )
         diagnosis_model = DiagnosisModelSelector(args.diagnosis_model_path, args.diagnosis_base_model)
 
-    patcher = make_patcher(args.patcher, seed=args.seed)
-    simulator = PatchSimulator(env, agent, max_steps=args.max_steps, debug=args.verbose)
-
     # Load failures
     failures = load_failures(args.failure_data)
     if args.num_trajectories is not None:
         failures = failures[: args.num_trajectories]
 
-    # Results
-    all_records: List[Dict[str, Any]] = []
-    training_samples: List[Dict[str, Any]] = []
+    # Run via idt_core (includes coverage, compute counters, forced_skip_reason)
+    all_records, stats, training_samples = run_idt_experiment(
+        failures=failures,
+        env=env,
+        agent=agent,
+        strategy=args.strategy,
+        M=args.M,
+        patcher=args.patcher,
+        patch_k=args.patch_k,
+        diagnosis_model=diagnosis_model,
+        diagnosis_window=args.diagnosis_window,
+        baseline_attempts=args.baseline_attempts,
+        patch_attempts=args.patch_attempts,
+        paired_seeds=paired_seeds,
+        max_steps=args.max_steps,
+        allow_any_search=args.allow_any_search,
+        allow_invalid_patch_actions=args.allow_invalid_patch_actions,
+        stop_on_success=stop_on_success,
+        greedy=args.greedy,
+        seed=args.seed,
+        simulation_budget=args.simulation_budget,
+        verbose=args.verbose,
+    )
 
-    rollouts_used = 0
-    total_steps_evaluated = 0
+    n = stats.get("replay_ok_steps", 0)
+    rescue_rate = stats.get("rescue_rate", 0)
+    rescue_count = stats.get("rescue_count", 0)
+    n_baseline_failed = stats.get("n_baseline_failed", 0)
+    break_rate = stats.get("break_rate", 0)
+    break_count = stats.get("break_count", 0)
+    n_baseline_succeeded = stats.get("n_baseline_succeeded", 0)
+    n_with_patch = stats.get("n_with_patch", 0)
+    patch_valid_count = stats.get("patch_valid_count", 0)
+    patch_valid_rate = stats.get("patch_valid_rate", 0)
+    forced_used_count = stats.get("forced_used_count", 0)
+    forced_used_rate = stats.get("forced_used_rate", 0)
+    attempt_mismatch = args.baseline_attempts != args.patch_attempts
+    stats["attempt_mismatch"] = attempt_mismatch
+    stats["action_method"] = action_method
 
-    for traj_idx, traj in enumerate(failures):
-        if rollouts_used >= args.simulation_budget:
-            break
-
-        task_id = traj.get("task_id")
-        goal = traj.get("goal", "")
-        steps = traj.get("steps", [])
-        traj_len = len(steps)
-        original_reward = float(traj.get("reward", 0.0))
-
-        # Pick candidate steps
-        candidate_steps, selection_info = _select_states(
-            traj,
-            strategy=args.strategy,
-            M=args.M,
-            agent=agent,
-            diagnosis_model=diagnosis_model,
-            diagnosis_window=args.diagnosis_window,
-        )
-
-        if not candidate_steps:
-            continue
-
-        if args.verbose:
-            print(f"\n[{traj_idx+1}/{len(failures)}] task_id={task_id} len={traj_len} orig_reward={original_reward:.0f}")
-            print("  candidate_steps:", candidate_steps)
-            if args.strategy == "diagnosis" and selection_info:
-                pred = selection_info[0].get("predicted_mistake_step", "?")
-                print("  diagnosis prediction:", pred)
-
-        for step_idx in candidate_steps:
-            if rollouts_used >= args.simulation_budget:
-                break
-            if step_idx < 0 or step_idx >= traj_len:
-                continue
-
-            total_steps_evaluated += 1
-
-            # Gather original action (to exclude from patch proposals)
-            orig_action = steps[step_idx].get("action_taken")
-            if orig_action is None:
-                orig_action = steps[step_idx].get("action")
-
-            # We need state obs + valid actions at that state to propose patches.
-            replay = simulator.replay_prefix(traj, step_idx)
-            if not replay.ok:
-                # Can't evaluate this step
-                rec = {
-                    "task_id": task_id,
-                    "recovery_step": step_idx,
-                    "traj_len": traj_len,
-                    "original_reward": original_reward,
-                    "replay_ok": False,
-                    "replay_error": replay.error,
-                    "baseline_best_reward": None,
-                    "baseline_success": False,
-                    "patched_best_reward": None,
-                    "patched_success": False,
-                    "best_patch_action": None,
-                    "improvement": None,
-                    "strategy": args.strategy,
-                    "patcher": args.patcher,
-                }
-                all_records.append(rec)
-                continue
-
-            state_obs = replay.obs
-            state_info = replay.info
-            state_goal = state_info.get("goal", goal)
-            valid_actions = state_info.get("valid", []) or []
-
-            # Baseline rollouts
-            baseline_best_reward = -1.0
-            baseline_best_success = False
-
-            for a in range(args.baseline_attempts):
-                if rollouts_used >= args.simulation_budget:
-                    break
-                out = simulator.rollout_from_state(traj, step_idx, method=action_method)
-                rollouts_used += 1
-
-                if out.reward > baseline_best_reward:
-                    baseline_best_reward = out.reward
-                    baseline_best_success = out.success
-
-                if args.stop_on_success and out.success:
-                    break
-
-            # Patch proposals
-            # If we have diagnosis info, attach the model response for diagnosis_text patcher.
-            diag_resp = None
-            if args.patcher == "diagnosis_text":
-                # Find selection_info record for this step (if any)
-                # In select_critical_states_diagnosis, only the predicted step has model_response populated.
-                srec = next((s for s in selection_info if s.get("state_idx") == step_idx), None)
-                if srec:
-                    diag_resp = srec.get("model_response") or None
-
-                proposals = patcher.propose(
-                    state_obs, state_goal, valid_actions,
-                    original_action=orig_action,
-                    agent=agent,
-                    k=args.patch_k,
-                    diagnosis_response=diag_resp,
-                )
-            else:
-                proposals = patcher.propose(
-                    state_obs, state_goal, valid_actions,
-                    original_action=orig_action,
-                    agent=agent,
-                    k=args.patch_k,
-                )
-
-            patched_best_reward = -1.0
-            patched_best_success = False
-            best_patch_action = None
-            best_patch_meta = None
-
-            for proposal in proposals:
-                if rollouts_used >= args.simulation_budget:
-                    break
-
-                action_to_force = proposal.action
-
-                # Run patch_attempts rollouts for this forced action
-                local_best_reward = -1.0
-                local_best_success = False
-
-                for pa in range(args.patch_attempts):
-                    if rollouts_used >= args.simulation_budget:
-                        break
-                    out = simulator.rollout_from_state(
-                        traj, step_idx, method=action_method,
-                        forced_first_action=action_to_force,
-                        allow_any_search=args.allow_any_search,
-                    )
-                    rollouts_used += 1
-
-                    if out.reward > local_best_reward:
-                        local_best_reward = out.reward
-                        local_best_success = out.success
-
-                    if args.stop_on_success and out.success:
-                        break
-
-                # Compare against global patched best
-                if local_best_reward > patched_best_reward:
-                    patched_best_reward = local_best_reward
-                    patched_best_success = local_best_success
-                    best_patch_action = action_to_force
-                    best_patch_meta = {"proposal_score": proposal.score, "proposal_meta": proposal.meta}
-
-                if args.stop_on_success and patched_best_success:
-                    break
-
-            # If there were no proposals, mark patched as baseline (no extra)
-            if not proposals:
-                patched_best_reward = baseline_best_reward
-                patched_best_success = baseline_best_success
-
-            improvement = patched_best_reward - baseline_best_reward
-
-            rec = {
-                "task_id": task_id,
-                "goal": state_goal[:500] if isinstance(state_goal, str) else state_goal,
-                "recovery_step": step_idx,
-                "traj_len": traj_len,
-                "original_reward": original_reward,
-                "replay_ok": True,
-                "num_valid_actions": len(valid_actions),
-                "baseline_best_reward": baseline_best_reward,
-                "baseline_success": baseline_best_success,
-                "patched_best_reward": patched_best_reward,
-                "patched_success": patched_best_success,
-                "best_patch_action": best_patch_action,
-                "best_patch_meta": best_patch_meta,
-                "improvement": improvement,
-                "strategy": args.strategy,
-                "patcher": args.patcher,
-                "original_action": orig_action,
-            }
-
-            # Keep selection details if available
-            sel = next((s for s in selection_info if s.get("state_idx") == step_idx), None)
-            if sel:
-                for k in ["predicted_mistake_step", "offset_from_prediction", "is_predicted_step", "true_entropy", "normalized_entropy", "combined_score", "method"]:
-                    if k in sel:
-                        rec[k] = sel[k]
-
-            if args.save_full_trajectories:
-                # WARNING: big outputs
-                rec["state_observation"] = state_obs[:2000]
-                rec["valid_actions"] = valid_actions
-
-            all_records.append(rec)
-
-            # Training sample: only if patched beats baseline (or achieves success)
-            if best_patch_action is not None and (patched_best_success or improvement > 0.0):
-                training_samples.append({
-                    "state": state_obs,
-                    "goal": state_goal,
-                    "action": best_patch_action,
-                    "valid_actions": valid_actions,
-                    "task_id": task_id,
-                    "recovery_step": step_idx,
-                    "final_reward": patched_best_reward,
-                    "source": "patch_success" if patched_best_success else "patch_improvement",
-                    "original_action": orig_action,
-                    "baseline_best_reward": baseline_best_reward,
-                    "patched_best_reward": patched_best_reward,
-                })
-
-            if args.verbose:
-                print(f"  step={step_idx:>2} baseline={baseline_best_reward:>5.0f} patched={patched_best_reward:>5.0f} "
-                      f"Δ={improvement:>+5.0f} patch={best_patch_action}")
-
-    # Aggregate stats
-    n = len([r for r in all_records if r.get("replay_ok")])
-    baseline_success = sum(1 for r in all_records if r.get("replay_ok") and r.get("baseline_success"))
-    patched_success = sum(1 for r in all_records if r.get("replay_ok") and r.get("patched_success"))
-    improved = sum(1 for r in all_records if r.get("replay_ok") and (r.get("improvement") is not None and r.get("improvement") > 0))
-
-    avg_improvement = 0.0
-    if n > 0:
-        deltas = [r["improvement"] for r in all_records if r.get("replay_ok") and r.get("improvement") is not None]
-        if deltas:
-            avg_improvement = sum(deltas) / len(deltas)
-
-    stats = {
-        "failures_processed": len(failures),
-        "steps_evaluated": total_steps_evaluated,
-        "replay_ok_steps": n,
-        "rollouts_used": rollouts_used,
-        "simulation_budget": args.simulation_budget,
-        "baseline_success_rate": float(baseline_success) / max(n, 1),
-        "patched_success_rate": float(patched_success) / max(n, 1),
-        "improvement_rate": float(improved) / max(n, 1),
-        "avg_improvement": avg_improvement,
-        "strategy": args.strategy,
-        "patcher": args.patcher,
-        "baseline_attempts": args.baseline_attempts,
-        "patch_attempts": args.patch_attempts,
-        "patch_k": args.patch_k,
-        "action_method": action_method,
-        "simulator_stats": simulator.stats,
-    }
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S") = datetime.now().strftime("%Y%m%d_%H%M%S")
     results_path = os.path.join(args.output_dir, f"patch_results_{args.strategy}_{args.patcher}_{timestamp}.json")
     stats_path = os.path.join(args.output_dir, f"patch_stats_{args.strategy}_{args.patcher}_{timestamp}.json")
     train_path = os.path.join(args.output_dir, f"patch_training_samples_{args.strategy}_{args.patcher}_{timestamp}.json")
@@ -509,12 +394,39 @@ def main():
     print("Results:", results_path)
     print("Stats:  ", stats_path)
     print("Train:  ", train_path)
-    print("\nSummary:")
-    print(f"  replay-ok steps:  {n}")
+    print("\n--- Coverage / Denominators ---")
+    cov = stats.get("coverage", {})
+    for k in ["N_traj_total", "N_traj_processed", "N_step_candidates_total", "N_step_replay_ok", "N_step_with_patch_candidates"]:
+        if k in cov:
+            print(f"  {k}: {cov[k]}")
+    skip = cov.get("skip_reasons", {})
+    if skip:
+        print("  Skip reasons:", skip)
+    forced_skip = cov.get("forced_skip_reason_counts", {})
+    if forced_skip:
+        print("  Forced skip reason counts:", forced_skip)
+    print("\n--- Compute ---")
+    comp = stats.get("compute", {})
+    for k in ["env_steps_baseline", "env_steps_patched", "model_calls_baseline", "model_calls_patched", "number_of_patch_candidates_evaluated"]:
+        if k in comp:
+            print(f"  {k}: {comp[k]}")
+    print("\n--- Fairness ---")
+    print(f"  Attempts: baseline={args.baseline_attempts}, patch={args.patch_attempts}" + (" (mismatch: baseline advantaged)" if attempt_mismatch else " (fair: same)"))
+    print(f"  Paired seeds: {paired_seeds}")
+    print("\n--- Patch validity & execution ---")
+    print(f"  Steps with patch proposals: {n_with_patch}")
+    print(f"  patch_valid (patch in valid_actions): {patch_valid_count}/{n_with_patch} ({patch_valid_rate:.1%})")
+    print(f"  forced_used (simulator executed forced action): {forced_used_count}/{n_with_patch} ({forced_used_rate:.1%})")
+    if n_with_patch and (patch_valid_rate < 0.99 or forced_used_rate < 0.99):
+        print("  → Many invalid or fallback patches can make results noisy.")
+    print("\n--- Success metrics (patched = best over patch candidates) ---")
+    print(f"  replay-ok steps:   {n}")
     print(f"  baseline success: {stats['baseline_success_rate']:.2%}")
-    print(f"  patched success:  {stats['patched_success_rate']:.2%}")
-    print(f"  improved:         {stats['improvement_rate']:.2%}")
-    print(f"  avg Δ reward:     {stats['avg_improvement']:.2f}")
+    print(f"  patched success: {stats['patched_success_rate']:.2%} (best-of-candidates)")
+    print(f"  rescue rate:      {rescue_rate:.2%}  (baseline failed → patched succeeded: {rescue_count}/{n_baseline_failed})")
+    print(f"  break rate:      {break_rate:.2%}  (baseline succeeded → patched failed: {break_count}/{n_baseline_succeeded})")
+    print(f"  improved (Δ>0):  {stats['improvement_rate']:.2%}")
+    print(f"  avg Δ reward:    {stats['avg_improvement']:.2f}")
 
 
 if __name__ == "__main__":
