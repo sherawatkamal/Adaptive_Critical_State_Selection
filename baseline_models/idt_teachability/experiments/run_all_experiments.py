@@ -409,6 +409,7 @@ def run_exp6_trajectory_discovery(failures: List[Dict], env, agent, diagnosis_mo
 
             best_reward = -1.0
             best_action = None
+            best_successful_out = None
             reliable_count = 0
             for prop in proposals[:3]:
                 success_count = 0
@@ -417,6 +418,8 @@ def run_exp6_trajectory_discovery(failures: List[Dict], env, agent, diagnosis_mo
                     out = simulator.rollout_from_state(traj, step_idx, method="softmax", forced_first_action=prop.action)
                     if out.success:
                         success_count += 1
+                        if out.full_traj:
+                            best_successful_out = out
                     if out.reward > best_reward:
                         best_reward = out.reward
                         best_action = prop.action
@@ -427,7 +430,7 @@ def run_exp6_trajectory_discovery(failures: List[Dict], env, agent, diagnosis_mo
                 pt = _classify_patch_type(best_action)
                 patch_type_counts[pt] = patch_type_counts.get(pt, 0) + 1
                 if best_overall is None or best_reward > best_overall[2]:
-                    best_overall = (step_idx, best_action, best_reward, replay.obs[:1000] if replay.ok else "")
+                    best_overall = (step_idx, best_action, best_reward, replay.obs[:1000] if replay.ok else "", best_successful_out)
 
         if best_overall:
             t_final, a_final, best_reward, obs_snip = best_overall
@@ -447,8 +450,10 @@ def run_exp6_trajectory_discovery(failures: List[Dict], env, agent, diagnosis_mo
             if full_success_trajectories:
                 success_out = None
                 seed_for_full = derive_base_seed(args.seed, task_id, traj_idx, t_final)
-                for attempt in range(5):
-                    set_all_seeds(seed_for_full + 1000 + attempt)
+                # Try discovery-phase seeds first (same as in loop above), then more attempts
+                for attempt in range(25):
+                    s = seed_for_full + 100 + (attempt % 2) if attempt < 4 else seed_for_full + 2000 + attempt
+                    set_all_seeds(s)
                     out = simulator.rollout_from_state(
                         traj, t_final, method="softmax", forced_first_action=a_final
                     )
